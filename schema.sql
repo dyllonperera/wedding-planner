@@ -24,10 +24,11 @@ create table if not exists vendors (
   contact_name text,
   contact_phone text,
   contact_email text,
-  status text not null default 'researching', -- researching | contacted | booked | paid_deposit | paid_full
+  status text not null default 'researching', -- researching | contacted | booked
+  payment_status text not null default 'unpaid', -- unpaid | deposit_paid | paid_full
   price numeric,
   deposit_amount numeric,
-  deposit_paid boolean not null default false,
+  deposit_paid boolean not null default false, -- legacy, superseded by payment_status
   notes text,
   created_at timestamptz not null default now()
 );

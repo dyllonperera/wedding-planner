@@ -70,6 +70,26 @@ addressed to them by name — no open link, no strangers adding themselves. They
 confirm and adjust their own party size if needed. The Her side / His side capacity
 bars now count total people (party size summed), not just entries.
 
+### One more step: split vendor status into Status + Payment
+
+Vendors now have two separate dropdowns — **Status** (Researching / Contacted /
+Booked) and **Payment** (Not paid / Deposit paid / Paid in full) — instead of one
+combined dropdown plus a separate checkbox. The deposit amount you enter now actually
+shows up in its own column too (it was being collected but never displayed before).
+
+Run this once in Supabase → **SQL Editor**:
+
+```sql
+alter table vendors add column if not exists payment_status text not null default 'unpaid';
+update vendors set payment_status = 'paid_full' where status = 'paid_full';
+update vendors set payment_status = 'deposit_paid' where status = 'paid_deposit' or (deposit_paid = true and payment_status = 'unpaid');
+update vendors set status = 'booked' where status in ('paid_deposit','paid_full');
+```
+
+This adds the new column and carries your existing data over sensibly — anything
+marked "Paid in full" or "Deposit paid" (via the old dropdown or the old checkbox)
+keeps that payment info, with its booking Status reset to "Booked".
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

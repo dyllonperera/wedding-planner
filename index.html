@@ -383,6 +383,7 @@
 
   .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:600;}
   .badge.researching{background:#EDEAE1; color:#7A7362;}
+  .badge.unpaid{background:#EDEAE1; color:#7A7362;}
   .badge.contacted{background:#E4EAF2; color:#37567F;}
   .badge.booked{background:#E1EBE7; color:#2C4A44;}
   .badge.paid_deposit{background:#F4EAD3; color:#8C6D3F;}
@@ -393,26 +394,6 @@
 
   .budget-summary{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
   .budget-summary .stat-card{padding:14px 18px; flex:1; min-width:150px;}
-
-  .donut-wrap{
-    display:flex; gap:28px; align-items:center; flex-wrap:wrap; margin-bottom:24px;
-    background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
-    border-radius:16px; padding:22px 24px; animation:fadeInUp .6s var(--ease) both;
-  }
-  .donut{width:150px; height:150px; border-radius:50%; position:relative; flex-shrink:0; animation:donutSpinIn .9s var(--ease-snap) both;}
-  @keyframes donutSpinIn{ from{opacity:0; transform:rotate(-90deg) scale(.7);} to{opacity:1; transform:rotate(0) scale(1);} }
-  .donut-hole{
-    position:absolute; inset:20px; border-radius:50%; background:var(--paper);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    box-shadow:inset 0 2px 10px rgba(0,0,0,.08);
-  }
-  .dh-total{font-family:var(--font-mono); font-weight:600; font-size:.92rem; color:var(--ink);}
-  .dh-label{font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:2px;}
-  .donut-legend{display:flex; flex-direction:column; gap:9px; flex:1; min-width:180px;}
-  .donut-legend-row{display:flex; align-items:center; gap:9px; font-size:.82rem;}
-  .donut-legend-row .dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
-  .donut-legend-row .cat{flex:1; color:var(--ink-soft);}
-  .donut-legend-row .amt{font-family:var(--font-mono); font-weight:600; color:var(--ink);}
 
   .mood-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:14px; margin-top:18px;}
   .mood-item{
@@ -810,10 +791,6 @@
       <svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 13a3 3 0 0 1-6 0M15 13a3 3 0 0 1-6 0M21 13a3 3 0 0 1-6 0"/></svg>
       Vendors
     </button>
-    <button data-section="budget">
-      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9h4a2 2 0 0 1 0 4H9m0 0h4a2 2 0 0 1 0 4H9M12 6v2M12 16v2"/></svg>
-      Budget
-    </button>
     <button data-section="tasks">
       <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg>
       Checklist
@@ -849,15 +826,12 @@
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
-const BUDGET_CATS = [...VENDOR_CATS, 'Rings','Honeymoon / Travel','Contingency'];
 const TASK_CATS = ['Venue','Legal & Paperwork','Attire','Vendors','Guests','Design & Decor','Logistics','Other'];
 const SIDE_LIST = ['Her side', 'His side'];
 const SIDE_CAPACITY = { 'Her side': 125, 'His side': 75 };
 
-const STATUS_LABELS = {
-  researching:'Researching', contacted:'Contacted', booked:'Booked',
-  paid_deposit:'Deposit paid', paid_full:'Paid in full'
-};
+const STATUS_LABELS = { researching:'Researching', contacted:'Contacted', booked:'Booked' };
+const PAYMENT_LABELS = { unpaid:'Not paid', deposit_paid:'Deposit paid', paid_full:'Paid in full' };
 const RSVP_LABELS = { pending:'Pending', yes:'Yes', no:'No' };
 
 const THEME_COPY = {
@@ -889,7 +863,7 @@ const state = {
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
-  data:{ wedding:{vendors:[],budget_items:[],tasks:[],guests:[],moodboard:[]}, homecoming:{vendors:[],budget_items:[],tasks:[],guests:[],moodboard:[]} }
+  data:{ wedding:{vendors:[],tasks:[],guests:[],moodboard:[]}, homecoming:{vendors:[],tasks:[],guests:[],moodboard:[]} }
 };
 
 /* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
@@ -903,6 +877,32 @@ function fmtMoney(lkrValue){
   }
   const rate = state.fxRate ?? FX_FALLBACK_RATE;
   return new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD', maximumFractionDigits:2}).format(lkrValue * rate);
+}
+
+function computeSpent(eventId){
+  const vendors = state.data[eventId].vendors;
+  return vendors.reduce((sum, v) => {
+    if (v.payment_status === 'paid_full') return sum + (Number(v.price) || 0);
+    if (v.payment_status === 'deposit_paid') return sum + (Number(v.deposit_amount) || 0);
+    return sum;
+  }, 0);
+}
+
+// For table inputs tagged data-currency="true": show converted value when viewing in AUD,
+// but always store/send the true LKR amount so LKR stays the source of truth.
+function toDisplayAmount(lkrValue){
+  if (lkrValue === null || lkrValue === undefined || lkrValue === '') return '';
+  if (state.displayCurrency === 'LKR') return lkrValue;
+  const rate = state.fxRate ?? FX_FALLBACK_RATE;
+  return Math.round(lkrValue * rate * 100) / 100;
+}
+function fromDisplayAmount(enteredValue){
+  if (enteredValue === '' || enteredValue === null || enteredValue === undefined) return null;
+  const num = Number(enteredValue);
+  if (Number.isNaN(num)) return null;
+  if (state.displayCurrency === 'LKR') return num;
+  const rate = state.fxRate ?? FX_FALLBACK_RATE;
+  return Math.round(num / rate);
 }
 
 function renderFxCaption(){
@@ -1142,7 +1142,7 @@ function checkMilestones(eventId){
 
   const pct = (arr, pred) => arr.length ? arr.filter(pred).length / arr.length : 0;
   const checks = [
-    { key:'vendors', pred:v=>['booked','paid_deposit','paid_full'].includes(v.status), id:'vendors-100', title:'Every Vendor Booked!', msg:'The lineup is locked in.' },
+    { key:'vendors', pred:v=>v.status==='booked', id:'vendors-100', title:'Every Vendor Booked!', msg:'The lineup is locked in.' },
     { key:'tasks', pred:t=>t.completed, id:'tasks-100', title:'Checklist Complete!', msg:'Nothing left to do but wait.' },
     { key:'guests', pred:g=>g.rsvp_status==='yes', id:'guests-100', title:"Everyone's Confirmed!", msg:'The guest list is set.' }
   ];
@@ -1277,9 +1277,9 @@ function renderSummary(){
   }
 
   const d = state.data[state.currentEvent];
-  const vendorsBooked = d.vendors.filter(v => ['booked','paid_deposit','paid_full'].includes(v.status)).length;
-  const plannedSum = d.budget_items.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
-  const actualSum = d.budget_items.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
+  const vendorsBooked = d.vendors.filter(v => v.status === 'booked').length;
+  const spentSoFar = computeSpent(state.currentEvent);
+  const totalQuoted = d.vendors.reduce((s,v)=> s + (Number(v.price)||0), 0);
   const tasksDone = d.tasks.filter(t=>t.completed).length;
   const guestsYes = d.guests.filter(g=>g.rsvp_status==='yes').length;
 
@@ -1287,7 +1287,7 @@ function renderSummary(){
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18"/></svg></div>
       <div class="v">${vendorsBooked}/${d.vendors.length}</div><div class="l">Vendors booked</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a2 2 0 0 1 0 4H9"/></svg></div>
-      <div class="v">${fmtMoney(actualSum)}</div><div class="l">of ${fmtMoney(plannedSum)} spent</div></div>
+      <div class="v">${fmtMoney(spentSoFar)}</div><div class="l">Spent so far${totalQuoted ? ' of ' + fmtMoney(totalQuoted) + ' quoted' : ''}</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg></div>
       <div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></div>
@@ -1301,7 +1301,6 @@ function renderSection(){
   const el = document.getElementById('sectionContent');
   let html;
   if (state.currentSection === 'vendors') html = renderVendors();
-  else if (state.currentSection === 'budget') html = renderBudget();
   else if (state.currentSection === 'tasks') html = renderTasks();
   else if (state.currentSection === 'guests') html = renderGuests();
   else html = renderMoodboard();
@@ -1311,6 +1310,10 @@ function renderSection(){
 function renderVendors(){
   const rows = state.data[state.currentEvent].vendors;
   const statusOptions = Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  const paymentOptions = Object.entries(PAYMENT_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  const cur = state.displayCurrency;
+  const spentSoFar = computeSpent(state.currentEvent);
+  const totalQuoted = rows.reduce((s,v)=> s + (Number(v.price)||0), 0);
   const body = rows.length ? rows.map(r => `
     <tr>
       <td data-label="Category"><input list="vendorCatList" data-table="vendors" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
@@ -1321,20 +1324,31 @@ function renderVendors(){
           Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.status?'selected':''}>${l}</option>`).join('')
         }</select>
       </td>
-      <td data-label="Price"><input type="number" data-table="vendors" data-id="${r.id}" data-field="price" value="${r.price ?? ''}" placeholder="0"></td>
-      <td data-label="Deposit paid" style="text-align:center;"><input type="checkbox" data-table="vendors" data-id="${r.id}" data-field="deposit_paid" ${r.deposit_paid?'checked':''}></td>
+      <td data-label="Payment">
+        <select data-table="vendors" data-id="${r.id}" data-field="payment_status" class="badge ${r.payment_status||'unpaid'}">${
+          Object.entries(PAYMENT_LABELS).map(([v,l])=>`<option value="${v}" ${v===(r.payment_status||'unpaid')?'selected':''}>${l}</option>`).join('')
+        }</select>
+      </td>
+      <td data-label="Price (${cur})"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0"></td>
+      <td data-label="Deposit (${cur})"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0"></td>
       <td data-label="Notes"><input data-table="vendors" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="8">No vendors yet for this event — add your first one above.</td></tr>`;
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="9">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
+    <div class="budget-summary">
+      <div class="stat-card"><div class="v">${fmtMoney(spentSoFar)}</div><div class="l">Spent so far</div></div>
+      <div class="stat-card"><div class="v">${fmtMoney(totalQuoted)}</div><div class="l">Total quoted</div></div>
+      <div class="stat-card"><div class="v">${fmtMoney(totalQuoted - spentSoFar)}</div><div class="l">Remaining to pay</div></div>
+    </div>
     <button class="add-toggle" data-toggle="vendorForm">+ Add vendor</button>
     <form class="add-form" id="vendorForm">
       <div class="field"><label>Category</label><input list="vendorCatList" id="v_category" required></div>
       <div class="field"><label>Vendor name</label><input id="v_name" required></div>
       <div class="field"><label>Phone / email</label><input id="v_contact"></div>
       <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
+      <div class="field"><label>Payment</label><select id="v_payment">${paymentOptions}</select></div>
       <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
       <div class="field"><label>Deposit (LKR)</label><input id="v_deposit" type="number"></div>
       <div class="field full"><label>Notes</label><input id="v_notes"></div>
@@ -1344,81 +1358,7 @@ function renderVendors(){
       </div>
     </form>
     <table class="data-table">
-      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Price (LKR)</th><th>Deposit paid</th><th>Notes</th><th></th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>`;
-}
-
-function renderDonut(items){
-  const totals = {};
-  items.forEach(b => { const cat = b.category || 'Other'; totals[cat] = (totals[cat] || 0) + (Number(b.planned_amount) || 0); });
-  let entries = Object.entries(totals).filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]);
-  if (entries.length > 6){
-    const top = entries.slice(0, 5);
-    const otherSum = entries.slice(5).reduce((s,[,v]) => s + v, 0);
-    entries = [...top, ['Other', otherSum]];
-  }
-  const total = entries.reduce((s,[,v]) => s + v, 0);
-  if (!total) return `<p style="color:var(--ink-soft); font-size:.85rem; padding:4px 2px 20px;">Add planned amounts to see the spend breakdown.</p>`;
-  const palette = ['var(--accent)','var(--accent2)','color-mix(in srgb, var(--accent) 55%, var(--accent2))','color-mix(in srgb, var(--accent) 78%, white)','color-mix(in srgb, var(--accent2) 65%, white)','#BFB6A6'];
-  let cum = 0;
-  const stops = entries.map(([,v], i) => {
-    const startPct = (cum / total) * 100; cum += v;
-    const endPct = (cum / total) * 100;
-    return `${palette[i % palette.length]} ${startPct}% ${endPct}%`;
-  }).join(', ');
-  const legend = entries.map(([cat,v], i) => `
-    <div class="donut-legend-row">
-      <span class="dot" style="background:${palette[i % palette.length]}"></span>
-      <span class="cat">${esc(cat)}</span>
-      <span class="amt">${fmtMoney(v)}</span>
-    </div>`).join('');
-  return `
-    <div class="donut-wrap">
-      <div class="donut" style="background:conic-gradient(${stops});">
-        <div class="donut-hole"><div class="dh-total">${fmtMoney(total)}</div><div class="dh-label">planned</div></div>
-      </div>
-      <div class="donut-legend">${legend}</div>
-    </div>`;
-}
-
-function renderBudget(){
-  const rows = state.data[state.currentEvent].budget_items;
-  const plannedSum = rows.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
-  const actualSum = rows.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
-  const body = rows.length ? rows.map(r => `
-    <tr>
-      <td data-label="Category"><input list="budgetCatList" data-table="budget_items" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
-      <td data-label="Item"><input data-table="budget_items" data-id="${r.id}" data-field="item_name" value="${esc(r.item_name)}"></td>
-      <td data-label="Planned"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="planned_amount" value="${r.planned_amount ?? 0}"></td>
-      <td data-label="Actual"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="actual_amount" value="${r.actual_amount ?? ''}" placeholder="0"></td>
-      <td data-label="Diff" style="font-family:var(--font-mono); color:${(r.actual_amount||0) > (r.planned_amount||0) ? 'var(--danger)' : 'var(--ink-soft)'};">${fmtMoney((r.planned_amount||0) - (r.actual_amount||0))}</td>
-      <td data-label="Notes"><input data-table="budget_items" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
-      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="budget_items" data-id="${r.id}">✕</button></td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="7">No budget lines yet — add your first one above.</td></tr>`;
-
-  return `
-    ${datalist('budgetCatList', BUDGET_CATS)}
-    ${renderDonut(rows)}
-    <div class="budget-summary">
-      <div class="stat-card"><div class="v">${fmtMoney(plannedSum)}</div><div class="l">Planned total</div></div>
-      <div class="stat-card"><div class="v">${fmtMoney(actualSum)}</div><div class="l">Actual so far</div></div>
-      <div class="stat-card"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${fmtMoney(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
-    </div>
-    <button class="add-toggle" data-toggle="budgetForm">+ Add budget line</button>
-    <form class="add-form" id="budgetForm">
-      <div class="field"><label>Category</label><input list="budgetCatList" id="b_category" required></div>
-      <div class="field"><label>Item</label><input id="b_item" required></div>
-      <div class="field"><label>Planned (LKR)</label><input id="b_planned" type="number" required></div>
-      <div class="field"><label>Actual (LKR)</label><input id="b_actual" type="number"></div>
-      <div class="field full"><label>Notes</label><input id="b_notes"></div>
-      <div class="submit-row">
-        <button type="button" class="btn-ghost" data-toggle="budgetForm">Cancel</button>
-        <button type="submit" class="btn-primary">Save line</button>
-      </div>
-    </form>
-    <table class="data-table">
-      <thead><tr><th>Category</th><th>Item</th><th>Planned (LKR)</th><th>Actual (LKR)</th><th>Diff</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -1658,10 +1598,10 @@ document.getElementById('sectionContent').addEventListener('change', e => {
   const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
   let value;
   if (el.type === 'checkbox') value = el.checked;
-  else if (el.type === 'number') value = el.value === '' ? null : Number(el.value);
+  else if (el.type === 'number') value = el.dataset.currency === 'true' ? fromDisplayAmount(el.value) : (el.value === '' ? null : Number(el.value));
   else value = el.value;
   updateRow(table, id, { [field]: value });
-  if (el.type === 'checkbox' && el.checked && ['deposit_paid','completed'].includes(field)){
+  if (el.type === 'checkbox' && el.checked && field === 'completed'){
     const rect = el.getBoundingClientRect();
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
@@ -1672,9 +1612,14 @@ document.getElementById('sectionContent').addEventListener('change', e => {
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (['status','deposit_paid','completed','rsvp_status','party_size','actual_amount','planned_amount','side'].includes(field)){
+  if (el.tagName === 'SELECT' && field === 'payment_status' && (value === 'deposit_paid' || value === 'paid_full')){
+    const rect = el.getBoundingClientRect();
+    burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    playChime('sparkle');
+  }
+  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','side'].includes(field)){
     renderSummary();
-    if (['status','deposit_paid'].includes(field)) return;
+    if (['status','payment_status'].includes(field)) return;
     renderSection();
   }
 });
@@ -1687,18 +1632,10 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
       name: document.getElementById('v_name').value,
       contact_phone: document.getElementById('v_contact').value,
       status: document.getElementById('v_status').value,
+      payment_status: document.getElementById('v_payment').value,
       price: document.getElementById('v_price').value ? Number(document.getElementById('v_price').value) : null,
       deposit_amount: document.getElementById('v_deposit').value ? Number(document.getElementById('v_deposit').value) : null,
       notes: document.getElementById('v_notes').value
-    });
-    e.target.reset(); e.target.classList.remove('open');
-  } else if (e.target.id === 'budgetForm'){
-    insertRow('budget_items', {
-      category: document.getElementById('b_category').value,
-      item_name: document.getElementById('b_item').value,
-      planned_amount: Number(document.getElementById('b_planned').value || 0),
-      actual_amount: document.getElementById('b_actual').value ? Number(document.getElementById('b_actual').value) : null,
-      notes: document.getElementById('b_notes').value
     });
     e.target.reset(); e.target.classList.remove('open');
   } else if (e.target.id === 'taskForm'){
@@ -1730,8 +1667,8 @@ function buildPrintSheet(){
   const dateStr = ev.event_date
     ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
     : 'Date not yet set';
-  const vendorRows = d.vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td>${esc(v.contact_phone||'')}</td><td>${STATUS_LABELS[v.status]||v.status}</td></tr>`).join('')
-    || '<tr><td colspan="4">No vendors added</td></tr>';
+  const vendorRows = d.vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td>${esc(v.contact_phone||'')}</td><td>${STATUS_LABELS[v.status]||v.status}</td><td>${PAYMENT_LABELS[v.payment_status]||'Not paid'}</td></tr>`).join('')
+    || '<tr><td colspan="5">No vendors added</td></tr>';
   const openTasks = d.tasks.filter(t => !t.completed).sort((a,b) => (a.due_date||'9999') < (b.due_date||'9999') ? -1 : 1);
   const taskRows = openTasks.map(t => `<tr><td>${esc(t.title)}</td><td>${t.due_date || '—'}</td><td>${esc(t.category||'')}</td></tr>`).join('')
     || '<tr><td colspan="3">Everything is done</td></tr>';
@@ -1742,7 +1679,7 @@ function buildPrintSheet(){
     <h1>${THEME_COPY[state.currentEvent].title} — Day-Of Run Sheet</h1>
     <p class="print-date">${dateStr}</p>
     <h2>Vendors</h2>
-    <table><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th></tr></thead><tbody>${vendorRows}</tbody></table>
+    <table><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th></tr></thead><tbody>${vendorRows}</tbody></table>
     <h2>Open Tasks</h2>
     <table><thead><tr><th>Task</th><th>Due</th><th>Category</th></tr></thead><tbody>${taskRows}</tbody></table>
     <h2>Guests</h2>
@@ -1857,10 +1794,10 @@ async function init(){
   evRows.forEach(r => state.events[r.id] = r);
 
   for (const ev of ['wedding','homecoming']){
-    const [vendors, budget_items, tasks, guests, moodboard] = await Promise.all([
-      fetchTable('vendors', ev), fetchTable('budget_items', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodboard(ev)
+    const [vendors, tasks, guests, moodboard] = await Promise.all([
+      fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodboard(ev)
     ]);
-    state.data[ev] = { vendors, budget_items, tasks, guests, moodboard };
+    state.data[ev] = { vendors, tasks, guests, moodboard };
   }
   renderSummary();
   renderSection();
