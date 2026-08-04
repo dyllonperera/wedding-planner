@@ -10,7 +10,7 @@
 <style>
   :root{
     --ink:#2B2420; --ink-soft:#8A7458; --paper:#FFFCF5; --paper-warm:#FBF1DD; --line:#E9D9B8;
-    --accent:#C79A4B; --accent2:#C98A94;
+    --accent:#C79A4B; --accent2:#C98A94; --danger:#B23B2E;
     --hero-top:#FFF6E0; --hero-mid:#FCE9C4; --hero-bottom:#F1D6A0; --hero-text:#3A2A18;
     --font-display:'Fraunces', serif; --font-body:'Inter', sans-serif;
   }
@@ -32,7 +32,8 @@
   }
   @keyframes fadeInUp{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
   .eyebrow{font-size:.72rem; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-soft); margin:0 0 6px; text-align:center;}
-  h1{font-family:var(--font-display); font-weight:600; font-size:1.7rem; text-align:center; margin:0 0 6px; color:var(--ink);}
+  h1{font-family:var(--font-display); font-weight:600; font-size:1.6rem; text-align:center; margin:0 0 6px; color:var(--ink);}
+  .guestname{font-family:var(--font-display); font-weight:600; font-size:1.3rem; text-align:center; color:var(--accent); margin:0 0 6px;}
   .sub{text-align:center; color:var(--ink-soft); font-size:.88rem; margin:0 0 28px;}
   .field{margin-bottom:16px;}
   .field label{display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px;}
@@ -41,6 +42,7 @@
     border:1px solid var(--line); border-radius:10px; background:var(--paper-warm); color:var(--ink);
   }
   .field input:focus, .field select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);}
+  .field .hint{font-size:.74rem; color:var(--ink-soft); margin-top:6px;}
   .rsvp-choice{display:flex; gap:10px;}
   .rsvp-choice button{
     flex:1; padding:12px; border:1.5px solid var(--line); background:var(--paper-warm); border-radius:10px;
@@ -49,8 +51,6 @@
   }
   .rsvp-choice button.active[data-v="yes"]{background:#DFEEDD; border-color:#2E6B3E; color:#2E6B3E;}
   .rsvp-choice button.active[data-v="no"]{background:#F0E1E3; border-color:#8C3B47; color:#8C3B47;}
-  .checkrow{display:flex; align-items:center; gap:8px; margin-bottom:16px;}
-  .checkrow label{font-size:.88rem; color:var(--ink);}
   button.submit{
     width:100%; background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff;
     border:none; padding:13px; border-radius:10px; font-weight:600; font-size:.95rem; cursor:pointer;
@@ -60,25 +60,29 @@
   .thanks{text-align:center; display:none;}
   .thanks.show{display:block;}
   .thanks svg{width:44px; height:44px; color:var(--accent); margin-bottom:14px;}
-  .thanks h1{margin-bottom:10px;}
-  #form.hide{display:none;}
-  .error{color:#B23B2E; font-size:.82rem; text-align:center; min-height:18px; margin-top:4px;}
+  #form.hide, #loading.hide, #notfound.hide{display:none;}
+  .error{color:var(--danger); font-size:.82rem; text-align:center; min-height:18px; margin-top:4px;}
+  #loading{text-align:center; color:var(--ink-soft); font-size:.9rem;}
+  #notfound{text-align:center;}
+  #notfound .sub{margin-bottom:0;}
 </style>
 </head>
 <body>
   <div class="card">
-    <p class="eyebrow" id="eyebrow">You're invited to the</p>
-    <h1 id="title">Wedding</h1>
-    <p class="sub" id="sub">We'd love to know if you can make it.</p>
+    <div id="loading">Loading your invitation…</div>
 
-    <form id="form">
-      <div class="field"><label>Your name</label><input id="name" required></div>
-      <div class="field"><label>Which side?</label>
-        <select id="side">
-          <option value="">Prefer not to say</option>
-          <option>His side</option><option>Her side</option><option>Family</option><option>Friends</option><option>Other</option>
-        </select>
-      </div>
+    <div id="notfound" class="hide">
+      <p class="eyebrow">Hmm</p>
+      <h1>This link isn't quite right</h1>
+      <p class="sub">Double-check the link you were sent, or reach out to the couple directly.</p>
+    </div>
+
+    <form id="form" class="hide">
+      <p class="eyebrow" id="eyebrow">You're invited to the</p>
+      <h1 id="title">Wedding</h1>
+      <p class="guestname" id="guestName"></p>
+      <p class="sub">We'd love to know if you can make it.</p>
+
       <div class="field">
         <label>Will you be attending?</label>
         <div class="rsvp-choice">
@@ -86,9 +90,10 @@
           <button type="button" data-v="no">Regretfully decline</button>
         </div>
       </div>
-      <div class="checkrow">
-        <input type="checkbox" id="plusOne">
-        <label for="plusOne">I'll be bringing a plus one</label>
+      <div class="field">
+        <label>How many in your party?</label>
+        <input id="partySize" type="number" min="1" value="1">
+        <p class="hint" id="partyHint"></p>
       </div>
       <div class="field"><label>Dietary requirements / notes</label><input id="notes" placeholder="Optional"></div>
       <button class="submit" type="submit" id="submitBtn">Send RSVP</button>
@@ -98,7 +103,7 @@
     <div class="thanks" id="thanks">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21c0-5-4-6-4-10a4 4 0 0 1 8 0c0 4-4 5-4 10Z"/></svg>
       <h1>Thank you!</h1>
-      <p class="sub">Your RSVP has been received.</p>
+      <p class="sub" id="thanksMsg">Your RSVP has been received.</p>
     </div>
   </div>
 
@@ -108,15 +113,15 @@
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 const params = new URLSearchParams(window.location.search);
 const eventId = params.get('event') === 'homecoming' ? 'homecoming' : 'wedding';
+const guestId = params.get('guest');
 document.body.dataset.theme = eventId;
 
 const COPY = {
-  wedding: { title:'Wedding', eyebrow:"You're invited to the", sub:"We'd love to know if you can make it." },
-  homecoming: { title:'Homecoming', eyebrow:"You're invited to the", sub:"A night to remember — let us know if you'll be there." }
+  wedding: { title:'Wedding', eyebrow:"You're invited to the" },
+  homecoming: { title:'Homecoming', eyebrow:"You're invited to the" }
 };
 document.getElementById('title').textContent = COPY[eventId].title;
 document.getElementById('eyebrow').textContent = COPY[eventId].eyebrow;
-document.getElementById('sub').textContent = COPY[eventId].sub;
 
 let rsvpValue = null;
 document.querySelectorAll('.rsvp-choice button').forEach(btn => {
@@ -126,35 +131,59 @@ document.querySelectorAll('.rsvp-choice button').forEach(btn => {
   });
 });
 
+async function loadGuest(){
+  if (!guestId){ showNotFound(); return; }
+  const { data, error } = await supabaseClient.from('guests').select('*').eq('id', guestId).eq('event_id', eventId).maybeSingle();
+  if (error || !data){ showNotFound(); return; }
+
+  document.getElementById('guestName').textContent = data.name;
+  document.getElementById('partySize').value = data.party_size || 1;
+  document.getElementById('partyHint').textContent = `We have you down for a party of ${data.party_size || 1}${(data.party_size||1) > 1 ? " — adjust if that's changed" : ''}.`;
+  document.getElementById('notes').value = data.dietary_notes || '';
+  if (data.rsvp_status === 'yes' || data.rsvp_status === 'no'){
+    const btn = document.querySelector(`.rsvp-choice button[data-v="${data.rsvp_status}"]`);
+    if (btn){ rsvpValue = data.rsvp_status; btn.classList.add('active'); }
+  }
+
+  document.getElementById('loading').classList.add('hide');
+  document.getElementById('form').classList.remove('hide');
+}
+
+function showNotFound(){
+  document.getElementById('loading').classList.add('hide');
+  document.getElementById('notfound').classList.remove('hide');
+}
+
 document.getElementById('form').addEventListener('submit', async e => {
   e.preventDefault();
   const errEl = document.getElementById('err');
   errEl.textContent = '';
-  const name = document.getElementById('name').value.trim();
-  if (!name){ errEl.textContent = 'Please enter your name.'; return; }
   if (!rsvpValue){ errEl.textContent = 'Please let us know if you can make it.'; return; }
+  const partySize = Math.max(1, Number(document.getElementById('partySize').value || 1));
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
 
-  const { error } = await supabaseClient.from('guests').insert([{
-    event_id: eventId,
-    name,
-    side: document.getElementById('side').value || null,
+  const { error } = await supabaseClient.from('guests').update({
     rsvp_status: rsvpValue,
-    plus_one: document.getElementById('plusOne').checked,
+    party_size: partySize,
     dietary_notes: document.getElementById('notes').value || null
-  }]);
+  }).eq('id', guestId);
 
   if (error){
-    errEl.textContent = "Something went wrong — please try again.";
+    errEl.textContent = 'Something went wrong — please try again.';
     btn.disabled = false; btn.textContent = 'Send RSVP';
     return;
   }
 
+  document.getElementById('thanksMsg').textContent = rsvpValue === 'yes'
+    ? `Wonderful — we've got you down for ${partySize === 1 ? '1 person' : partySize + ' people'}.`
+    : "We'll miss you, but thanks for letting us know.";
   document.getElementById('form').classList.add('hide');
   document.getElementById('thanks').classList.add('show');
 });
+
+loadGuest();
 </script>
 </body>
 </html>

@@ -60,7 +60,8 @@ create table if not exists guests (
   name text not null,
   side text, -- his side | her side | family | friends
   rsvp_status text not null default 'pending', -- pending | yes | no
-  plus_one boolean not null default false,
+  plus_one boolean not null default false, -- legacy, superseded by party_size
+  party_size integer not null default 1, -- people this entry covers, e.g. "Mr & Mrs Perera" = 2
   dietary_notes text,
   notes text,
   created_at timestamptz not null default now()

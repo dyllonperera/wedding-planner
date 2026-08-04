@@ -49,6 +49,27 @@ create policy "moodboard anon delete" on storage.objects for delete using (bucke
 
 Upload `rsvp.html` to your repo alongside the others — it needs to sit next to `config.js` since it reuses the same Supabase credentials. No extra setup beyond that.
 
+### One more step: party size + private invites
+
+Guests are now private and per-person/household rather than one open link. This needs a
+small database change — in Supabase → **SQL Editor**, run:
+
+```sql
+alter table guests add column if not exists party_size integer not null default 1;
+update guests set party_size = 2 where plus_one = true and party_size = 1;
+```
+
+That adds a "how many people does this entry cover" number (defaults to 1), and
+carries over anyone previously marked as a plus-one into a party of 2. The old
+`plus_one` column is left in place untouched, just unused going forward.
+
+**How it works now:** each row in the Guests tab — "Sam", "Mr & Mrs Perera", "Mr Ajith
+and family" — has its own **Party size** you set manually (1, 2, 4, whatever's right).
+Tap the 🔗 on any row to copy that person's own private RSVP link, which opens already
+addressed to them by name — no open link, no strangers adding themselves. They just
+confirm and adjust their own party size if needed. The Her side / His side capacity
+bars now count total people (party size summed), not just entries.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

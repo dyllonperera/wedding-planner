@@ -414,21 +414,6 @@
   .donut-legend-row .cat{flex:1; color:var(--ink-soft);}
   .donut-legend-row .amt{font-family:var(--font-mono); font-weight:600; color:var(--ink);}
 
-  .rsvp-share{
-    display:flex; gap:22px; align-items:center; flex-wrap:wrap;
-    background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
-    border-radius:16px; padding:20px 24px; margin-bottom:24px; animation:fadeInUp .6s var(--ease) both;
-  }
-  .rsvp-share-qr img{border-radius:10px; display:block; background:#fff; padding:8px; box-shadow:0 14px 26px -16px rgba(0,0,0,.35);}
-  .rsvp-share-info{flex:1; min-width:200px;}
-  .rsvp-share-title{font-family:var(--font-display); font-weight:600; font-size:1.05rem; margin:0 0 4px; color:var(--ink);}
-  .rsvp-share-desc{font-size:.82rem; color:var(--ink-soft); margin:0 0 12px;}
-  .rsvp-share-url{display:flex; gap:8px;}
-  .rsvp-share-url input{
-    flex:1; font-family:var(--font-mono); font-size:.76rem; padding:9px 10px;
-    border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink);
-  }
-
   .mood-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:14px; margin-top:18px;}
   .mood-item{
     position:relative; border-radius:12px; overflow:hidden; aspect-ratio:1; background:var(--paper-warm);
@@ -442,6 +427,19 @@
     border-radius:50%; width:26px; height:26px; cursor:pointer; opacity:0; transition:opacity .2s ease;
   }
   .mood-item:hover .mood-del{opacity:1;}
+
+  .side-tabs{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  .side-tab{
+    flex:1; min-width:200px; text-align:left; padding:16px 20px; border-radius:14px;
+    border:1.5px solid var(--line); background:color-mix(in srgb, var(--paper-warm) 70%, transparent);
+    cursor:pointer; transition:all .35s var(--ease); font-family:var(--font-body);
+  }
+  .side-tab:hover{transform:translateY(-2px);}
+  .side-tab.active{border-color:var(--accent); box-shadow:0 14px 26px -18px color-mix(in srgb, var(--accent) 50%, transparent);}
+  .side-tab .st-name{font-family:var(--font-display); font-weight:600; font-size:1.02rem; color:var(--ink); margin-bottom:5px;}
+  .side-tab .st-count{font-family:var(--font-mono); font-size:.74rem; color:var(--ink-soft); margin-bottom:9px;}
+  .side-bar{height:6px; border-radius:100px; background:var(--line); overflow:hidden;}
+  .side-bar-fill{height:100%; border-radius:100px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width .6s var(--ease);}
 
   /* ---------- who gate ---------- */
   #whoGate{
@@ -853,7 +851,8 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
 const BUDGET_CATS = [...VENDOR_CATS, 'Rings','Honeymoon / Travel','Contingency'];
 const TASK_CATS = ['Venue','Legal & Paperwork','Attire','Vendors','Guests','Design & Decor','Logistics','Other'];
-const GUEST_SIDES = ['His side','Her side','Family','Friends','Other'];
+const SIDE_LIST = ['Her side', 'His side'];
+const SIDE_CAPACITY = { 'Her side': 125, 'His side': 75 };
 
 const STATUS_LABELS = {
   researching:'Researching', contacted:'Contacted', booked:'Booked',
@@ -886,6 +885,7 @@ const state = {
   currentEvent:'wedding',
   currentSection:'vendors',
   displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
+  guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
@@ -1462,49 +1462,66 @@ function renderTasks(){
 }
 
 function renderGuests(){
-  const rows = state.data[state.currentEvent].guests;
+  const allRows = state.data[state.currentEvent].guests;
+  const rows = allRows.filter(r => (r.side || 'Her side') === state.guestSide);
+  const psize = r => r.party_size || 1;
+
+  const sideStats = SIDE_LIST.map(side => {
+    const list = allRows.filter(r => (r.side || 'Her side') === side);
+    const invitedPeople = list.reduce((s,r) => s + psize(r), 0);
+    const confirmedPeople = list.filter(r => r.rsvp_status === 'yes').reduce((s,r) => s + psize(r), 0);
+    const cap = SIDE_CAPACITY[side];
+    const pct = Math.min(100, Math.round((invitedPeople / cap) * 100));
+    return { side, entries: list.length, invitedPeople, confirmedPeople, cap, pct };
+  });
+
+  const tabsHtml = sideStats.map(s => `
+    <button class="side-tab ${s.side === state.guestSide ? 'active' : ''}" data-side="${esc(s.side)}">
+      <div class="st-name">${esc(s.side)}</div>
+      <div class="st-count">${s.invitedPeople} / ${s.cap} people &middot; ${s.confirmedPeople} confirmed &middot; ${s.entries} ${s.entries===1?'entry':'entries'}</div>
+      <div class="side-bar"><div class="side-bar-fill" style="width:${s.pct}%; ${s.pct >= 100 ? 'background:var(--danger);' : ''}"></div></div>
+    </button>`).join('');
+
   const body = rows.length ? rows.map(r => `
     <tr>
       <td data-label="Name"><input data-table="guests" data-id="${r.id}" data-field="name" value="${esc(r.name)}"></td>
-      <td data-label="Side"><input list="guestSideList" data-table="guests" data-id="${r.id}" data-field="side" value="${esc(r.side||'')}"></td>
+      <td data-label="Side">
+        <select data-table="guests" data-id="${r.id}" data-field="side">${
+          SIDE_LIST.map(s => `<option value="${esc(s)}" ${s===(r.side||'Her side')?'selected':''}>${esc(s)}</option>`).join('')
+        }</select>
+      </td>
       <td data-label="RSVP">
         <select data-table="guests" data-id="${r.id}" data-field="rsvp_status" class="badge ${r.rsvp_status}">${
           Object.entries(RSVP_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.rsvp_status?'selected':''}>${l}</option>`).join('')
         }</select>
       </td>
-      <td data-label="Plus one" style="text-align:center;"><input type="checkbox" data-table="guests" data-id="${r.id}" data-field="plus_one" ${r.plus_one?'checked':''}></td>
+      <td data-label="Party size"><input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;"></td>
       <td data-label="Dietary"><input data-table="guests" data-id="${r.id}" data-field="dietary_notes" value="${esc(r.dietary_notes||'')}"></td>
-      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button></td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">No guests yet — add your first one above.</td></tr>`;
+      <td data-label="" class="actions">
+        <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
+        <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
+      </td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">No one on ${esc(state.guestSide)} yet — add your first guest above.</td></tr>`;
 
-  const headcount = rows.filter(r=>r.rsvp_status==='yes').length + rows.filter(r=>r.rsvp_status==='yes' && r.plus_one).length;
-
-  const rsvpUrl = buildRsvpUrl(state.currentEvent);
-  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(rsvpUrl)}`;
+  const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + psize(r), 0);
 
   return `
-    ${datalist('guestSideList', GUEST_SIDES)}
-    <div class="rsvp-share">
-      <div class="rsvp-share-qr"><img src="${qrSrc}" alt="RSVP QR code" width="140" height="140" loading="lazy"></div>
-      <div class="rsvp-share-info">
-        <p class="rsvp-share-title">Guest RSVP link</p>
-        <p class="rsvp-share-desc">Share this link or QR code — guests RSVP themselves and land straight in this list.</p>
-        <div class="rsvp-share-url">
-          <input readonly value="${rsvpUrl}" id="rsvpUrlInput">
-          <button type="button" class="btn-ghost" id="copyRsvpUrl">Copy</button>
-        </div>
-      </div>
-    </div>
+    <p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 20px; max-width:64ch;">
+      Each guest here gets their own private invite — tap 🔗 on a row to copy a link addressed just to them.
+      No open link, no strangers adding themselves. Set "Party size" above 1 for households — e.g. "Mr &amp; Mrs Perera" = 2,
+      "Mr Ajith and family" = however many are actually coming.
+    </p>
     <div class="budget-summary">
-      <div class="stat-card"><div class="v">${rows.length}</div><div class="l">On the list</div></div>
-      <div class="stat-card"><div class="v">${rows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Confirmed yes</div></div>
-      <div class="stat-card"><div class="v">${rows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
-      <div class="stat-card"><div class="v">${headcount}</div><div class="l">Headcount incl. +1s</div></div>
+      <div class="stat-card"><div class="v">${allRows.length}</div><div class="l">Entries on the list</div></div>
+      <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Entries confirmed</div></div>
+      <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
+      <div class="stat-card"><div class="v">${headcount}</div><div class="l">Confirmed headcount</div></div>
     </div>
-    <button class="add-toggle" data-toggle="guestForm">+ Add guest</button>
+    <div class="side-tabs" id="sideTabs">${tabsHtml}</div>
+    <button class="add-toggle" data-toggle="guestForm">+ Add guest to ${esc(state.guestSide)}</button>
     <form class="add-form" id="guestForm">
-      <div class="field"><label>Name</label><input id="g_name" required></div>
-      <div class="field"><label>Side</label><input list="guestSideList" id="g_side"></div>
+      <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
+      <div class="field"><label>Party size</label><input id="g_party" type="number" min="1" value="1"></div>
       <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
       <div class="field full"><label>Dietary / notes</label><input id="g_notes"></div>
       <div class="submit-row">
@@ -1513,13 +1530,13 @@ function renderGuests(){
       </div>
     </form>
     <table class="data-table">
-      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Plus one</th><th>Dietary / notes</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Dietary / notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
 
-function buildRsvpUrl(eventId){
-  return new URL(`rsvp.html?event=${eventId}`, window.location.href).href;
+function buildRsvpUrl(eventId, guestId){
+  return new URL(`rsvp.html?event=${eventId}&guest=${guestId}`, window.location.href).href;
 }
 
 function renderMoodboard(){
@@ -1615,11 +1632,22 @@ document.getElementById('sectionContent').addEventListener('click', e => {
     if (confirm('Delete this row?')) deleteRow(del.dataset.table, del.dataset.id);
     return;
   }
+  const copyInvite = e.target.closest('[data-action="copy-invite"]');
+  if (copyInvite){
+    const url = buildRsvpUrl(state.currentEvent, copyInvite.dataset.id);
+    navigator.clipboard?.writeText(url)
+      .then(() => toast(`Private link copied for ${copyInvite.dataset.name}`))
+      .catch(() => toast('Could not copy — long-press to copy manually', true));
+    return;
+  }
   const moodDel = e.target.closest('.mood-del');
   if (moodDel){ handleMoodDelete(moodDel.dataset.moodName); return; }
-  if (e.target.closest('#copyRsvpUrl')){
-    const input = document.getElementById('rsvpUrlInput');
-    navigator.clipboard?.writeText(input.value).then(() => toast('Link copied')).catch(() => toast('Could not copy — long-press to copy manually', true));
+  const sideTab = e.target.closest('[data-side]');
+  if (sideTab){
+    state.guestSide = sideTab.dataset.side;
+    localStorage.setItem('wedplanner_guestside', state.guestSide);
+    renderSection();
+    return;
   }
 });
 
@@ -1633,7 +1661,7 @@ document.getElementById('sectionContent').addEventListener('change', e => {
   else if (el.type === 'number') value = el.value === '' ? null : Number(el.value);
   else value = el.value;
   updateRow(table, id, { [field]: value });
-  if (el.type === 'checkbox' && el.checked && ['deposit_paid','completed','plus_one'].includes(field)){
+  if (el.type === 'checkbox' && el.checked && ['deposit_paid','completed'].includes(field)){
     const rect = el.getBoundingClientRect();
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
@@ -1644,7 +1672,7 @@ document.getElementById('sectionContent').addEventListener('change', e => {
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (['status','deposit_paid','completed','rsvp_status','plus_one','actual_amount','planned_amount'].includes(field)){
+  if (['status','deposit_paid','completed','rsvp_status','party_size','actual_amount','planned_amount','side'].includes(field)){
     renderSummary();
     if (['status','deposit_paid'].includes(field)) return;
     renderSection();
@@ -1684,9 +1712,10 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
   } else if (e.target.id === 'guestForm'){
     insertRow('guests', {
       name: document.getElementById('g_name').value,
-      side: document.getElementById('g_side').value,
+      side: state.guestSide,
+      party_size: Number(document.getElementById('g_party').value || 1),
       rsvp_status: document.getElementById('g_rsvp').value,
-      notes: document.getElementById('g_notes').value
+      dietary_notes: document.getElementById('g_notes').value
     });
     e.target.reset(); e.target.classList.remove('open');
   }
@@ -1707,7 +1736,7 @@ function buildPrintSheet(){
   const taskRows = openTasks.map(t => `<tr><td>${esc(t.title)}</td><td>${t.due_date || '—'}</td><td>${esc(t.category||'')}</td></tr>`).join('')
     || '<tr><td colspan="3">Everything is done</td></tr>';
   const guestsYes = d.guests.filter(g => g.rsvp_status === 'yes');
-  const headcount = guestsYes.length + guestsYes.filter(g => g.plus_one).length;
+  const headcount = guestsYes.reduce((s,g) => s + (g.party_size || 1), 0);
 
   document.getElementById('printSheet').innerHTML = `
     <h1>${THEME_COPY[state.currentEvent].title} — Day-Of Run Sheet</h1>
