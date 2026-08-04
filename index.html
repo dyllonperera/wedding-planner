@@ -3,275 +3,291 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Wedding &amp; Homecoming Planner</title>
+<title>Wedding &amp; Homecoming</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
-    --ink:#211F2E;
-    --ink-soft:#6B6459;
-    --paper:#FBF7EE;
-    --paper-warm:#F3EADA;
-    /* wedding — day: ivory, warm gold, rose gold */
-    --gold:#B8935A;
-    --gold-deep:#93713F;
-    --rose-gold:#B9808A;
-    --rose-gold-light:#F5E4E1;
-    --gold-light:#F5ECD9;
-    /* homecoming — night: ivory, navy, burgundy */
-    --navy:#1F2C47;
-    --navy-deep:#141D30;
-    --burgundy:#6E2331;
-    --burgundy-light:#F0E1E3;
-    --navy-light:#E6E9F0;
-    --line:#E1D6C4;
-    --danger:#A8442E;
-    --accent:var(--gold);
-    --accent-secondary:var(--rose-gold);
-    --accent-light:var(--gold-light);
+    /* shared, theme-stable */
+    --ink:#2B2420;
+    --ink-soft:#8A7458;
+    --paper:#FFFCF5;
+    --paper-warm:#FBF1DD;
+    --line:#E9D9B8;
+    --danger:#B23B2E;
     --font-display:'Fraunces', serif;
     --font-body:'Inter', sans-serif;
     --font-mono:'IBM Plex Mono', monospace;
     --ease:cubic-bezier(.22,1,.36,1);
     --ease-snap:cubic-bezier(.34,1.56,.64,1);
-    --dur:.45s;
+    --portal-ease:cubic-bezier(.65,0,.35,1);
+
+    /* wedding (default) — ivory, warm gold, rose gold */
+    --accent:#C79A4B;
+    --accent-deep:#9C7530;
+    --accent2:#C98A94;
+    --accent2-light:#F8E6E4;
+    --hero-top:#FFF6E0;
+    --hero-mid:#FCE9C4;
+    --hero-bottom:#F1D6A0;
+    --hero-text:#3A2A18;
+    --hero-text-soft:#83643C;
   }
+  body[data-theme="homecoming"]{
+    /* homecoming — ivory, navy, burgundy */
+    --accent:#2A3D63;
+    --accent-deep:#141D30;
+    --accent2:#7A2233;
+    --accent2-light:#F0E1E3;
+    --hero-top:#050810;
+    --hero-mid:#0F1930;
+    --hero-bottom:#1B2740;
+    --hero-text:#F3E9CE;
+    --hero-text-soft:#B9A98A;
+  }
+
   *{box-sizing:border-box;}
   html{scroll-behavior:smooth;}
   ::selection{background:var(--accent); color:var(--paper);}
   body{
-    margin:0;
-    min-height:100vh;
-    background:
-      radial-gradient(900px 500px at 12% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
-      radial-gradient(700px 460px at 108% 10%, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 55%),
-      var(--paper);
-    background-attachment:fixed;
-    transition:background var(--dur) var(--ease);
-    color:var(--ink);
-    font-family:var(--font-body);
-    -webkit-font-smoothing:antialiased;
+    margin:0; background:var(--paper); color:var(--ink);
+    font-family:var(--font-body); -webkit-font-smoothing:antialiased;
+    transition:background 1s var(--ease);
   }
-  @keyframes fadeInUp{
-    from{opacity:0; transform:translateY(14px);}
-    to{opacity:1; transform:translateY(0);}
-  }
-  @keyframes floatY{
-    0%,100%{transform:translateY(0) rotate(-4deg);}
-    50%{transform:translateY(-5px) rotate(-4deg);}
-  }
-  @keyframes glowPulse{
-    0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);}
-    50%{box-shadow:0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent);}
-  }
-  @keyframes twinkle{
-    0%,100%{opacity:.15; transform:scale(.7);}
-    50%{opacity:.85; transform:scale(1.15);}
-  }
-  @keyframes shimmerSweep{
-    0%{background-position:-150% 0;}
-    100%{background-position:250% 0;}
-  }
+
+  @keyframes fadeInUp{ from{opacity:0; transform:translateY(16px);} to{opacity:1; transform:translateY(0);} }
+  @keyframes floatBob{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-8px);} }
+  @keyframes twinkle{ 0%,100%{opacity:.2; transform:scale(.7);} 50%{opacity:1; transform:scale(1.2);} }
+  @keyframes shimmerSweep{ 0%{background-position:-150% 0;} 100%{background-position:250% 0;} }
   @keyframes lanternRise{
-    0%{transform:translateY(0) translateX(0); opacity:0;}
-    8%{opacity:.9;}
-    88%{opacity:.85;}
-    100%{transform:translateY(-118vh) translateX(var(--drift,24px)); opacity:0;}
+    0%{transform:translateY(0) translateX(0) rotate(0);}
+    100%{transform:translateY(-140vh) translateX(var(--drift,30px)) rotate(3deg);}
+  }
+  @keyframes petalFall{
+    0%{transform:translateY(-10vh) translateX(0) rotate(0deg); opacity:0;}
+    10%{opacity:.9;}
+    90%{opacity:.85;}
+    100%{transform:translateY(115vh) translateX(var(--drift,40px)) rotate(340deg); opacity:0;}
   }
   @keyframes spinSlow{ to{transform:rotate(360deg);} }
-  @keyframes swayGlow{
-    0%,100%{transform:rotate(-3deg); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--burgundy) 35%, transparent));}
-    50%{transform:rotate(3deg); filter:drop-shadow(0 0 14px color-mix(in srgb, var(--burgundy) 55%, transparent));}
+  @keyframes spinSlowRev{ to{transform:rotate(-360deg);} }
+  @keyframes shootingStar{
+    0%{transform:translate(0,0) rotate(-18deg); opacity:0; width:0;}
+    4%{opacity:1; width:90px;}
+    16%{opacity:0; width:0;}
+    100%{opacity:0;}
+  }
+  @keyframes glowPulse{
+    0%,100%{filter:drop-shadow(0 0 10px color-mix(in srgb, var(--accent) 45%, transparent));}
+    50%{filter:drop-shadow(0 0 26px color-mix(in srgb, var(--accent) 70%, transparent));}
+  }
+  @keyframes shake{ 20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} 100%{transform:translateX(0);} }
+
+  /* ================= HERO WORLD ================= */
+  .hero{
+    position:relative; min-height:82vh; overflow:hidden;
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    text-align:center; padding:80px 20px 64px;
+    background:linear-gradient(180deg, var(--hero-top) 0%, var(--hero-mid) 48%, var(--hero-bottom) 100%);
+    transition:background 1s var(--ease);
+  }
+  .hero-layer{position:absolute; inset:0; overflow:hidden; pointer-events:none;}
+
+  /* -- sun (wedding) -- */
+  .sunGlow{
+    position:absolute; top:-14%; right:-6%; width:52vw; height:52vw; max-width:640px; max-height:640px;
+    border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb, var(--accent) 55%, transparent) 0%, transparent 70%);
+    filter:blur(6px);
+    opacity:0; transition:opacity 1s var(--ease);
+  }
+  .sunRays{
+    position:absolute; top:-10%; right:-4%; width:44vw; height:44vw; max-width:560px; max-height:560px;
+    opacity:0; transition:opacity 1s var(--ease); animation:spinSlow 90s linear infinite;
+  }
+  body[data-theme="wedding"] .sunGlow, body[data-theme="wedding"] .sunRays{opacity:1;}
+
+  /* -- moon + rose window (homecoming) -- */
+  .moonGlow{
+    position:absolute; top:-10%; left:-6%; width:34vw; height:34vw; max-width:420px; max-height:420px;
+    border-radius:50%;
+    background:radial-gradient(circle, color-mix(in srgb, var(--hero-text) 65%, transparent) 0%, transparent 70%);
+    filter:blur(4px); opacity:0; transition:opacity 1s var(--ease);
+  }
+  .roseWindow{
+    position:absolute; top:4%; right:2%; width:46vw; height:46vw; max-width:520px; max-height:520px;
+    opacity:0; transition:opacity 1.2s var(--ease); animation:spinSlowRev 140s linear infinite;
+  }
+  body[data-theme="homecoming"] .moonGlow{opacity:1;}
+  body[data-theme="homecoming"] .roseWindow{opacity:.85;}
+
+  /* -- stars (homecoming) -- */
+  .stars{position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="homecoming"] .stars{opacity:1;}
+  .star{position:absolute; background:var(--hero-text); border-radius:50%; animation:twinkle 3s ease-in-out infinite;}
+  .shootStar{
+    position:absolute; height:1.5px; width:0; background:linear-gradient(90deg, transparent, #fff, transparent);
+    transform-origin:left center; animation:shootingStar 6s ease-in infinite;
   }
 
-  #lanterns{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0; transition:opacity .9s var(--ease);}
-  body.theme-wedding #lanterns{opacity:1;}
+  /* -- lanterns (wedding) -- */
+  .lanterns{position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="wedding"] .lanterns{opacity:1;}
   .lantern{
-    position:absolute; bottom:-70px;
-    width:24px; height:32px; border-radius:48% 48% 44% 44% / 58% 58% 42% 42%;
-    background:radial-gradient(circle at 50% 35%, #FFEFCB, var(--gold) 62%, var(--gold-deep) 100%);
-    box-shadow:0 0 16px 5px color-mix(in srgb, var(--gold) 50%, transparent);
+    position:absolute; bottom:-80px; width:22px; height:30px;
+    border-radius:48% 48% 44% 44% / 58% 58% 42% 42%;
+    background:radial-gradient(circle at 50% 35%, #FFF3D2, var(--accent) 62%, var(--accent-deep) 100%);
+    box-shadow:0 0 18px 6px color-mix(in srgb, var(--accent) 55%, transparent);
     animation:lanternRise linear infinite;
   }
-  .lantern::after{
-    content:''; position:absolute; left:50%; top:-7px; width:1px; height:7px;
-    background:var(--gold-deep); transform:translateX(-50%);
+  .lantern::after{content:''; position:absolute; left:50%; top:-7px; width:1px; height:7px; background:var(--accent-deep); transform:translateX(-50%);}
+
+  /* -- petals (homecoming) -- */
+  .petals{position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="homecoming"] .petals{opacity:1;}
+  .petal{
+    position:absolute; top:-30px; width:11px; height:15px; border-radius:70% 10% 70% 10%;
+    background:linear-gradient(135deg, var(--accent2), color-mix(in srgb, var(--accent2) 60%, #000));
+    animation:petalFall linear infinite;
   }
 
-  .emblem{position:absolute; top:-26px; right:-14px; width:210px; height:210px; opacity:0; pointer-events:none; transition:opacity .8s var(--ease); z-index:0;}
-  .emblem.sun{stroke:var(--gold-deep);}
-  .emblem.rose{stroke:var(--burgundy);}
-  body.theme-wedding .emblem.sun{opacity:.14; animation:spinSlow 70s linear infinite;}
-  body.theme-homecoming .emblem.rose{opacity:.16; animation:swayGlow 5s ease-in-out infinite;}
+  /* -- botanical border (wedding) -- */
+  .vineBorder{position:absolute; left:0; right:0; bottom:-2px; height:70px; opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="wedding"] .vineBorder{opacity:.55;}
 
-  #sparkles{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; transition:opacity .8s var(--ease);}
-  #sparkles span{
-    position:absolute; font-size:.9rem; color:var(--accent-secondary);
-    animation:twinkle 3.4s ease-in-out infinite;
-    filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
-    transition:color .5s var(--ease);
-  }
-  body.theme-wedding #sparkles{opacity:.55;}
-  body.theme-homecoming #sparkles{opacity:1;}
+  /* -- candelabra border (homecoming) -- */
+  .candleBorder{position:absolute; left:0; right:0; bottom:-2px; height:70px; opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="homecoming"] .candleBorder{opacity:.5;}
 
-  header.top{position:relative; overflow:hidden;}
-
-  #app{max-width:980px; margin:0 auto; padding:0 24px 80px; position:relative; z-index:1; animation:fadeInUp var(--dur) var(--ease) both;}
-
-  /* ---------- header ---------- */
-  header.top{padding:36px 0 0;}
+  .hero-inner{position:relative; z-index:2;}
   .eyebrow{
-    font-family:var(--font-mono);
-    font-size:.72rem;
-    letter-spacing:.14em;
-    text-transform:uppercase;
-    color:var(--ink-soft);
-    margin:0 0 6px;
+    font-family:var(--font-mono); font-size:.72rem; letter-spacing:.22em; text-transform:uppercase;
+    color:var(--hero-text-soft); margin:0 0 14px; transition:color 1s var(--ease);
   }
-  h1.title{
-    font-family:var(--font-display);
-    font-weight:500;
-    font-size:2.3rem;
-    margin:0 0 6px;
-    letter-spacing:-.01em;
-    background:linear-gradient(100deg, var(--ink) 30%, var(--accent) 48%, var(--accent-secondary) 56%, var(--ink) 74%);
-    background-size:250% auto;
-    -webkit-background-clip:text; background-clip:text; color:transparent;
-    animation:shimmerSweep 7s linear infinite;
+  .hero h1{
+    font-family:var(--font-display); font-weight:600; font-size:clamp(2.6rem, 7vw, 5.2rem);
+    margin:0; color:var(--hero-text); letter-spacing:-.01em; line-height:1.02;
+    text-shadow:0 2px 40px color-mix(in srgb, var(--accent) 35%, transparent);
+    transition:color 1s var(--ease);
   }
-  .flourish{display:flex; align-items:center; gap:10px; margin:0 0 22px; opacity:.85;}
-  .flourish svg{flex-shrink:0;}
-  .flourish .line{height:1px; flex:1; background:linear-gradient(90deg, var(--accent-secondary), transparent);}
-  .flourish .line.rev{background:linear-gradient(270deg, var(--accent-secondary), transparent);}
-
-  .ribbon-tabs{display:flex; padding-left:4px;}
-  .ribbon{
-    position:relative;
-    border:none;
-    cursor:pointer;
-    padding:14px 26px 20px;
-    margin-right:-8px;
-    font-family:var(--font-display);
-    font-size:1.05rem;
-    font-weight:500;
-    color:var(--paper);
-    clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);
-    transition:transform .5s var(--ease-snap), opacity .3s var(--ease), box-shadow .3s var(--ease);
-    transform:translateY(4px);
-    opacity:.55;
-    overflow:hidden;
-  }
-  .ribbon::after{
-    content:'';
-    position:absolute; inset:0;
-    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.65) 40%, transparent 60%);
-    background-size:250% 100%;
-    background-position:-150% 0;
-    opacity:0;
-    transition:opacity .3s ease;
-  }
-  .ribbon:hover::after, .ribbon.active::after{opacity:1; animation:shimmerSweep 1.8s ease-in-out infinite;}
-  .ribbon.wedding{background:linear-gradient(135deg, var(--gold), var(--rose-gold));}
-  .ribbon.homecoming{background:linear-gradient(135deg, var(--navy), var(--burgundy));}
-  .ribbon.active{transform:translateY(-4px) scale(1.03); opacity:1; box-shadow:0 12px 22px -10px color-mix(in srgb, var(--accent) 70%, transparent);}
-  .ribbon:hover{opacity:.85;}
-
-  /* ---------- event summary ---------- */
-  .summary-card{
-    background:color-mix(in srgb, var(--paper-warm) 75%, transparent);
-    backdrop-filter:blur(14px);
-    -webkit-backdrop-filter:blur(14px);
-    border:1px solid var(--line);
-    border-left:4px solid var(--accent-secondary);
-    border-radius:10px;
-    padding:22px 24px;
-    margin-top:0;
-    display:flex;
-    flex-wrap:wrap;
-    gap:24px;
-    align-items:center;
-    justify-content:space-between;
-    box-shadow:0 18px 40px -24px color-mix(in srgb, var(--accent) 55%, transparent);
-    transition:box-shadow .5s var(--ease), border-color .5s var(--ease);
-  }
-  .date-row{display:flex; align-items:center; gap:16px;}
-  .stamp{
-    width:82px; height:82px; border-radius:50%;
-    border:2px dashed var(--accent);
-    display:flex; flex-direction:column; align-items:center; justify-content:center;
-    animation:floatY 4.5s ease-in-out infinite, glowPulse 2.6s ease-in-out infinite;
-    font-family:var(--font-mono);
-    color:var(--accent);
-    flex-shrink:0;
-    background:var(--paper);
-    transition:border-color .5s var(--ease), color .5s var(--ease);
-  }
-  .stamp .n{font-size:1.5rem; font-weight:600; line-height:1;}
-  .stamp .u{font-size:.55rem; letter-spacing:.08em; text-transform:uppercase; margin-top:2px;}
-  .date-field label{
-    display:block; font-family:var(--font-mono); font-size:.68rem; letter-spacing:.1em;
-    text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;
-  }
-  .date-field input{
-    font-family:var(--font-body); font-size:1rem; border:1px solid var(--line);
-    background:var(--paper); padding:8px 10px; border-radius:2px; color:var(--ink);
+  .hero .tagline{
+    font-family:var(--font-display); font-style:italic; font-weight:500; font-size:clamp(1rem,2.2vw,1.35rem);
+    color:var(--hero-text-soft); margin:16px 0 40px; transition:color 1s var(--ease); min-height:1.6em;
   }
 
-  .stat-strip{display:flex; gap:14px; flex-wrap:wrap;}
-  .stat{
-    background:color-mix(in srgb, var(--paper) 85%, transparent); border:1px solid var(--line); border-radius:8px;
-    padding:10px 16px; min-width:118px;
-    transition:transform .3s var(--ease), box-shadow .3s var(--ease);
+  .portals{display:flex; gap:18px; flex-wrap:wrap; justify-content:center; margin-bottom:52px;}
+  .portal-btn{
+    position:relative; overflow:hidden; cursor:pointer; border:1.5px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 8%, transparent);
+    backdrop-filter:blur(10px); -webkit-backdrop-filter:blur(10px);
+    color:var(--hero-text); font-family:var(--font-display); font-size:1.05rem; font-weight:500;
+    padding:16px 34px; border-radius:100px; display:flex; align-items:center; gap:10px;
+    transition:transform .4s var(--ease-snap), background .4s var(--ease), border-color .4s var(--ease), box-shadow .4s var(--ease);
   }
-  .stat:hover{transform:translateY(-2px); box-shadow:0 10px 20px -14px color-mix(in srgb, var(--accent) 60%, transparent);}
-  .stat .v{font-family:var(--font-mono); font-size:1.15rem; font-weight:600; color:var(--accent); transition:color .5s var(--ease);}
-  .stat .l{font-size:.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+  .portal-btn svg{width:18px; height:18px; flex-shrink:0;}
+  .portal-btn:hover{transform:translateY(-3px);}
+  .portal-btn.active{
+    background:linear-gradient(120deg, var(--accent), var(--accent2));
+    color:#fff; border-color:transparent;
+    box-shadow:0 14px 30px -12px color-mix(in srgb, var(--accent) 70%, transparent);
+    transform:translateY(-2px) scale(1.04);
+  }
 
-  /* ---------- section tabs ---------- */
+  .heroStamp{
+    display:inline-flex; flex-direction:column; align-items:center; justify-content:center;
+    width:128px; height:128px; border-radius:50%;
+    border:1.5px dashed color-mix(in srgb, var(--hero-text) 55%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 6%, transparent);
+    backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);
+    animation:floatBob 5s ease-in-out infinite, glowPulse 3.2s ease-in-out infinite;
+    font-family:var(--font-mono); color:var(--hero-text); margin-bottom:8px;
+  }
+  .heroStamp .n{font-size:2.1rem; font-weight:600; line-height:1;}
+  .heroStamp .u{font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; margin-top:4px; opacity:.8;}
+  .heroDate{margin-top:10px;}
+  .heroDate label{
+    display:block; font-family:var(--font-mono); font-size:.62rem; letter-spacing:.12em; text-transform:uppercase;
+    color:var(--hero-text-soft); margin-bottom:6px;
+  }
+  .heroDate input{
+    font-family:var(--font-body); font-size:.9rem; border:1px solid color-mix(in srgb, var(--hero-text) 35%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 8%, transparent); color:var(--hero-text);
+    padding:7px 10px; border-radius:8px; text-align:center;
+  }
+  .heroDate input::-webkit-calendar-picker-indicator{filter:invert(.5);}
+
+  .scrollCue{
+    position:absolute; bottom:22px; left:50%; transform:translateX(-50%); z-index:2;
+    color:var(--hero-text-soft); animation:floatBob 2.4s ease-in-out infinite; opacity:.75;
+  }
+
+  /* ================= CONTENT ================= */
+  #main-content{max-width:1180px; margin:0 auto; padding:0 24px 90px; position:relative; z-index:1;}
+
+  .stat-row{display:grid; grid-template-columns:repeat(auto-fit, minmax(190px,1fr)); gap:16px; margin-top:-56px; margin-bottom:36px; position:relative; z-index:3;}
+  .stat-card{
+    background:color-mix(in srgb, var(--paper) 92%, transparent);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    border:1px solid var(--line); border-radius:16px; padding:18px 20px;
+    box-shadow:0 24px 44px -30px rgba(0,0,0,.35);
+    transition:transform .35s var(--ease-snap), box-shadow .35s var(--ease);
+    animation:fadeInUp .6s var(--ease) both;
+  }
+  .stat-card:hover{transform:translateY(-4px); box-shadow:0 30px 50px -26px color-mix(in srgb, var(--accent) 45%, transparent);}
+  .stat-card .icon{
+    width:34px; height:34px; border-radius:10px; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(135deg, var(--accent), var(--accent2)); margin-bottom:12px;
+  }
+  .stat-card .icon svg{width:18px; height:18px; stroke:#fff; fill:none;}
+  .stat-card .v{font-family:var(--font-mono); font-size:1.3rem; font-weight:600; color:var(--accent);}
+  .stat-card .l{font-size:.72rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.05em; margin-top:3px;}
+
+  /* ---------- section nav ---------- */
   .section-tabs{
-    display:flex; gap:2px; margin-top:30px; border-bottom:2px solid var(--line);
-    overflow-x:auto; position:relative;
+    display:flex; gap:6px; background:var(--paper-warm); border:1px solid var(--line);
+    border-radius:100px; padding:6px; margin-bottom:32px; position:relative; overflow-x:auto;
+    width:fit-content; max-width:100%;
   }
   .section-tabs button{
-    background:transparent; border:none; cursor:pointer;
-    padding:11px 18px; font-family:var(--font-body); font-weight:600;
-    font-size:.76rem; letter-spacing:.05em; text-transform:uppercase;
-    color:var(--ink-soft); border-bottom:2px solid transparent; margin-bottom:-2px;
-    white-space:nowrap; transition:color .3s var(--ease);
+    position:relative; z-index:2; background:transparent; border:none; cursor:pointer;
+    padding:11px 22px; font-family:var(--font-body); font-weight:600; font-size:.82rem;
+    color:var(--ink-soft); white-space:nowrap; border-radius:100px; display:flex; align-items:center; gap:8px;
+    transition:color .35s var(--ease);
   }
-  .section-tabs button.active{color:var(--accent); border-bottom-color:transparent;}
+  .section-tabs button svg{width:15px; height:15px; stroke:currentColor; fill:none; flex-shrink:0;}
+  .section-tabs button.active{color:#fff;}
   #tabIndicator{
-    position:absolute; bottom:-2px; height:2px; background:linear-gradient(90deg, var(--accent), var(--accent-secondary));
-    transition:left .4s var(--ease-snap), width .4s var(--ease-snap);
-    box-shadow:0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
+    position:absolute; top:6px; bottom:6px; left:6px; border-radius:100px; z-index:1;
+    background:linear-gradient(120deg, var(--accent), var(--accent2));
+    box-shadow:0 8px 18px -8px color-mix(in srgb, var(--accent) 65%, transparent);
+    transition:left .45s var(--ease-snap), width .45s var(--ease-snap), background 1s var(--ease);
   }
 
-  main{padding-top:24px;}
+  main{padding-top:4px;}
 
   /* ---------- add form ---------- */
   .add-toggle{
-    background:var(--ink); color:var(--paper); border:none; border-radius:8px;
-    padding:10px 16px; font-family:var(--font-body); font-weight:600; font-size:.82rem;
-    cursor:pointer; margin-bottom:16px; transition:transform .3s var(--ease-snap), box-shadow .3s var(--ease);
+    background:var(--ink); color:var(--paper); border:none; border-radius:10px;
+    padding:11px 18px; font-family:var(--font-body); font-weight:600; font-size:.82rem;
+    cursor:pointer; margin-bottom:18px; transition:transform .3s var(--ease-snap), box-shadow .3s var(--ease);
   }
-  .add-toggle:hover{transform:translateY(-2px); box-shadow:0 10px 18px -10px rgba(0,0,0,.4);}
+  .add-toggle:hover{transform:translateY(-2px); box-shadow:0 12px 20px -10px rgba(0,0,0,.4);}
   .add-form{
     display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
-    gap:12px; background:color-mix(in srgb, var(--paper-warm) 80%, transparent);
-    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
-    border:1px solid var(--line); border-radius:10px;
-    padding:0 18px; margin-bottom:0;
-    max-height:0; opacity:0; overflow:hidden;
-    transform:translateY(-8px);
+    gap:14px; background:color-mix(in srgb, var(--paper-warm) 85%, transparent);
+    backdrop-filter:blur(14px); -webkit-backdrop-filter:blur(14px);
+    border:1px solid var(--line); border-radius:16px;
+    padding:0 20px; margin-bottom:0;
+    max-height:0; opacity:0; overflow:hidden; transform:translateY(-8px);
     transition:max-height .5s var(--ease), opacity .35s var(--ease), padding .5s var(--ease), margin .5s var(--ease), transform .5s var(--ease);
   }
-  .add-form.open{max-height:520px; opacity:1; padding:18px; margin-bottom:22px; transform:translateY(0);}
+  .add-form.open{max-height:560px; opacity:1; padding:20px; margin-bottom:26px; transform:translateY(0);}
   .add-form .full{grid-column:1/-1;}
-  .field label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:4px;}
+  .field label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:5px;}
   .field input, .field select, .field textarea{
-    width:100%; font-family:var(--font-body); font-size:.9rem; padding:8px 9px;
-    border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--ink);
+    width:100%; font-family:var(--font-body); font-size:.9rem; padding:9px 10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink);
     transition:border-color .25s var(--ease), box-shadow .25s var(--ease);
   }
   .field input:focus, .field select:focus, .field textarea:focus{
@@ -280,55 +296,59 @@
   .add-form .submit-row{grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px;}
   .btn-primary{
     position:relative; overflow:hidden;
-    background:linear-gradient(120deg, var(--accent), var(--accent-secondary));
-    color:var(--paper); border:none; padding:9px 20px;
-    border-radius:8px; font-weight:600; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    background:linear-gradient(120deg, var(--accent), var(--accent2));
+    color:#fff; border:none; padding:10px 22px;
+    border-radius:10px; font-weight:600; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
     transition:transform .3s var(--ease-snap), box-shadow .3s var(--ease);
   }
   .btn-primary::after{
     content:''; position:absolute; inset:0;
-    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.5) 40%, transparent 60%);
+    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.55) 40%, transparent 60%);
     background-size:250% 100%; background-position:-150% 0; opacity:0; transition:opacity .3s ease;
   }
-  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 12px 22px -12px color-mix(in srgb, var(--accent) 70%, transparent);}
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 14px 24px -12px color-mix(in srgb, var(--accent) 70%, transparent);}
   .btn-primary:hover::after{opacity:1; animation:shimmerSweep 1.4s ease-in-out infinite;}
   .btn-ghost{
-    background:transparent; color:var(--ink-soft); border:1px solid var(--line); padding:9px 16px;
-    border-radius:8px; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    background:transparent; color:var(--ink-soft); border:1px solid var(--line); padding:10px 18px;
+    border-radius:10px; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
     transition:border-color .3s var(--ease), color .3s var(--ease);
   }
   .btn-ghost:hover{border-color:var(--accent); color:var(--accent);}
 
   /* ---------- data table ---------- */
+  .table-wrap{
+    background:color-mix(in srgb, var(--paper) 88%, transparent);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    border:1px solid var(--line); border-radius:16px; padding:6px 8px;
+    box-shadow:0 30px 50px -34px rgba(0,0,0,.3);
+  }
   table.data-table{width:100%; border-collapse:collapse; font-size:.87rem;}
   .data-table th{
-    text-align:left; font-family:var(--font-mono); font-size:.66rem; letter-spacing:.08em;
-    text-transform:uppercase; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line);
+    text-align:left; font-family:var(--font-mono); font-size:.64rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-soft); padding:12px 12px 10px; border-bottom:1px solid var(--line);
   }
-  .data-table td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .data-table td{padding:10px 12px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .data-table tbody tr:last-child td{border-bottom:none;}
   .data-table tbody tr{animation:fadeInUp .4s var(--ease) both; transition:background .3s var(--ease);}
-  .data-table tr:hover td{background:color-mix(in srgb, var(--accent) 5%, transparent);}
+  .data-table tr:hover td{background:color-mix(in srgb, var(--accent) 6%, transparent);}
   .data-table input, .data-table select, .data-table textarea{
     border:1px solid transparent; background:transparent; font-family:var(--font-body);
-    font-size:.85rem; width:100%; padding:5px 6px; border-radius:6px; color:var(--ink);
+    font-size:.85rem; width:100%; padding:6px 7px; border-radius:7px; color:var(--ink);
     transition:border-color .25s var(--ease), background .25s var(--ease);
   }
-  .data-table input:hover, .data-table select:hover, .data-table textarea:hover,
+  .data-table input:hover, .data-table select:hover, .data-table textarea:hover{border-color:var(--line); background:var(--paper);}
   .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
-    border-color:var(--line); background:var(--paper);
-  }
-  .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
-    border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+    outline:none; border-color:var(--accent); background:var(--paper); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
   }
   .data-table input[type="number"]{font-family:var(--font-mono);}
   .del-btn{
     background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
-    line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.6;
+    line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.55;
   }
   .del-btn:hover{transform:scale(1.2) rotate(90deg); opacity:1;}
-  .empty-row td{padding:26px 10px; text-align:center; color:var(--ink-soft); font-style:italic;}
+  .empty-row td{padding:34px 10px; text-align:center; color:var(--ink-soft); font-style:italic;}
 
-  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:600; transition:transform .2s var(--ease-snap);}
+  .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:600;}
   .badge.researching{background:#EDEAE1; color:#7A7362;}
   .badge.contacted{background:#E4EAF2; color:#37567F;}
   .badge.booked{background:#E1EBE7; color:#2C4A44;}
@@ -338,153 +358,250 @@
   .badge.yes{background:#DFEEDD; color:#2E6B3E;}
   .badge.no{background:#F0E1E3; color:#8C3B47;}
 
-  .budget-summary{display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap;}
+  .budget-summary{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
+  .budget-summary .stat-card{padding:14px 18px; flex:1; min-width:150px;}
 
   /* ---------- pin gate ---------- */
-  body:not(.unlocked) #app{display:none;}
+  body:not(.unlocked) #main-content, body:not(.unlocked) .hero{display:none;}
   #pinGate{
-    position:fixed; inset:0;
-    background:
-      radial-gradient(900px 500px at 15% -10%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 60%),
-      radial-gradient(700px 460px at 100% 100%, color-mix(in srgb, var(--rose-gold) 14%, transparent), transparent 55%),
-      var(--paper);
-    display:flex; align-items:center; justify-content:center; z-index:50;
+    position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
+    transition:background 1s var(--ease);
   }
   body.unlocked #pinGate{display:none;}
   .pin-card{
-    text-align:center; padding:44px 44px; max-width:340px; width:90%;
-    border:1px solid var(--line); border-radius:14px;
-    background:color-mix(in srgb, var(--paper-warm) 78%, transparent);
-    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
-    box-shadow:0 30px 60px -30px color-mix(in srgb, var(--gold) 45%, transparent);
-    animation:fadeInUp .6s var(--ease) both;
+    text-align:center; padding:46px 44px; max-width:340px; width:90%;
+    border:1px solid color-mix(in srgb, var(--hero-text) 25%, transparent); border-radius:20px;
+    background:color-mix(in srgb, var(--hero-text) 8%, transparent);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 40px 70px -30px rgba(0,0,0,.4);
+    animation:fadeInUp .6s var(--ease) both; position:relative; z-index:2;
   }
-  .pin-card .eyebrow{margin-bottom:8px;}
-  .pin-card h2{
-    font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 22px;
-  }
+  .pin-card .eyebrow{margin-bottom:8px; color:var(--hero-text-soft);}
+  .pin-card h2{font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 22px; color:var(--hero-text);}
   #pinInput{
     width:100%; text-align:center; font-family:var(--font-mono); font-size:1.6rem;
-    letter-spacing:.5em; padding:12px 10px 12px 16px; border:1px solid var(--line);
-    border-radius:8px; background:var(--paper); color:var(--ink); margin-bottom:16px;
+    letter-spacing:.5em; padding:12px 10px 12px 16px; border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    border-radius:10px; background:color-mix(in srgb, var(--hero-text) 8%, transparent); color:var(--hero-text); margin-bottom:16px;
     transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
   }
-  #pinInput:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 3px color-mix(in srgb, var(--gold) 20%, transparent);}
+  #pinInput:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);}
   .pin-card.shake{animation:shake .35s;}
-  @keyframes shake{
-    20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} 100%{transform:translateX(0);}
+  #pinError{color:#E8877C; font-size:.8rem; min-height:18px; margin-bottom:10px;}
+  .pinToggle{display:flex; gap:10px; justify-content:center; margin-bottom:26px;}
+  .pinToggle button{
+    background:transparent; border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    color:var(--hero-text-soft); padding:7px 16px; border-radius:100px; font-size:.72rem; cursor:pointer;
+    font-family:var(--font-body); font-weight:600; transition:all .3s var(--ease);
   }
-  #pinError{color:var(--danger); font-size:.8rem; min-height:18px; margin-bottom:10px;}
-  .lock-link{
-    background:none; border:none; color:var(--ink-soft); font-size:.72rem; cursor:pointer;
-    text-decoration:underline; font-family:var(--font-body); padding:0; transition:color .2s ease;
+  .pinToggle button.active{background:var(--accent); border-color:transparent; color:#fff;}
+
+  /* ---------- lock / sound controls ---------- */
+  .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px;}
+  .icon-btn{
+    width:38px; height:38px; border-radius:50%; border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 10%, transparent); backdrop-filter:blur(10px);
+    color:var(--hero-text); cursor:pointer; display:flex; align-items:center; justify-content:center;
+    transition:all .3s var(--ease);
   }
-  .lock-link:hover{color:var(--accent);}
+  .icon-btn:hover{background:var(--accent); border-color:transparent; color:#fff; transform:translateY(-2px);}
+  .icon-btn svg{width:16px; height:16px;}
+  body.unlocked .corner-controls{position:absolute; top:20px;}
 
   /* ---------- toast ---------- */
   #toast{
-    position:fixed; bottom:20px; right:20px; background:var(--ink); color:var(--paper);
-    padding:11px 18px; border-radius:2px; font-size:.85rem; opacity:0; transform:translateY(8px);
-    transition:all .25s ease; pointer-events:none; max-width:320px;
+    position:fixed; bottom:24px; right:24px; background:var(--ink); color:var(--paper);
+    padding:12px 20px; border-radius:10px; font-size:.85rem; opacity:0; transform:translateY(8px);
+    transition:all .3s var(--ease); pointer-events:none; max-width:320px; z-index:70;
+    box-shadow:0 20px 40px -20px rgba(0,0,0,.5);
   }
   #toast.show{opacity:1; transform:translateY(0);}
   #toast.error{background:var(--danger);}
 
-  /* ---------- responsive table -> cards ---------- */
+  /* ---------- portal transition ---------- */
+  #portalOverlay{
+    position:fixed; inset:0; z-index:90; pointer-events:none;
+    background:radial-gradient(circle at var(--ox,50%) var(--oy,50%), var(--p2, #F1D6A0), var(--p1, #C79A4B) 70%);
+    clip-path:circle(0% at var(--ox,50%) var(--oy,50%));
+  }
+  #portalOverlay.covering{
+    clip-path:circle(150% at var(--ox,50%) var(--oy,50%));
+    transition:clip-path .6s var(--portal-ease);
+  }
+  #portalOverlay.revealing{
+    clip-path:circle(0% at var(--ox,50%) var(--oy,50%));
+    transition:clip-path .6s var(--portal-ease);
+  }
+
+  /* ---------- responsive ---------- */
   @media (max-width:720px){
+    .hero{min-height:74vh; padding:100px 16px 56px;}
+    .stat-row{margin-top:-42px;}
     .data-table thead{display:none;}
     .data-table, .data-table tbody, .data-table tr, .data-table td{display:block; width:100%;}
-    .data-table tr{border:1px solid var(--line); border-radius:3px; margin-bottom:12px; padding:8px 4px;}
-    .data-table td{border-bottom:none; display:flex; align-items:center; gap:10px; padding:6px 10px;}
+    .data-table tr{border:1px solid var(--line); border-radius:12px; margin-bottom:12px; padding:8px 4px;}
+    .data-table td{border-bottom:none; display:flex; align-items:center; gap:10px; padding:7px 10px;}
     .data-table td::before{
       content:attr(data-label); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase;
       letter-spacing:.06em; color:var(--ink-soft); width:88px; flex-shrink:0;
     }
     .data-table td.actions{justify-content:flex-end;}
-    .summary-card{padding:18px;}
   }
 </style>
 </head>
-<body class="theme-wedding">
-<div id="lanterns">
-  <span class="lantern" style="left:6%; animation-duration:14s; animation-delay:0s; --drift:18px;"></span>
-  <span class="lantern" style="left:18%; animation-duration:17s; animation-delay:3s; --drift:-22px; transform:scale(.8);"></span>
-  <span class="lantern" style="left:34%; animation-duration:12.5s; animation-delay:6s; --drift:14px; transform:scale(1.1);"></span>
-  <span class="lantern" style="left:58%; animation-duration:16s; animation-delay:1.5s; --drift:-16px;"></span>
-  <span class="lantern" style="left:76%; animation-duration:13s; animation-delay:4.5s; --drift:20px; transform:scale(.85);"></span>
-  <span class="lantern" style="left:90%; animation-duration:18s; animation-delay:8s; --drift:-18px; transform:scale(1.05);"></span>
+<body class="theme-boot" data-theme="wedding">
+
+<div id="portalOverlay"></div>
+
+<div class="corner-controls">
+  <button class="icon-btn" id="soundToggle" title="Toggle sound" aria-label="Toggle sound">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path id="soundWaves" d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></svg>
+  </button>
+  <button class="icon-btn" id="lockBtn" title="Lock" aria-label="Lock">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+  </button>
 </div>
-<div id="sparkles">
-  <span style="top:8%; left:6%; animation-delay:.2s;">✦</span>
-  <span style="top:18%; left:88%; animation-delay:1.1s; font-size:.7rem;">✦</span>
-  <span style="top:42%; left:3%; animation-delay:2s; font-size:.65rem;">✧</span>
-  <span style="top:65%; left:94%; animation-delay:.6s;">✦</span>
-  <span style="top:80%; left:12%; animation-delay:1.7s; font-size:.7rem;">✧</span>
-  <span style="top:30%; left:50%; animation-delay:2.6s; font-size:.6rem;">✦</span>
-  <span style="top:90%; left:60%; animation-delay:1.3s;">✧</span>
-</div>
+
 <div id="pinGate">
+  <div class="hero-layer stars">
+    <div class="star" style="top:12%; left:10%; width:2px; height:2px; animation-delay:.2s;"></div>
+    <div class="star" style="top:22%; left:80%; width:2px; height:2px; animation-delay:1s;"></div>
+    <div class="star" style="top:60%; left:20%; width:1.5px; height:1.5px; animation-delay:1.6s;"></div>
+    <div class="star" style="top:75%; left:70%; width:2px; height:2px; animation-delay:.6s;"></div>
+    <div class="star" style="top:40%; left:50%; width:1.5px; height:1.5px; animation-delay:2.1s;"></div>
+  </div>
   <form class="pin-card" id="pinForm">
-    <p class="eyebrow">Planning ledger</p>
+    <p class="eyebrow">Choose your world</p>
+    <div class="pinToggle" id="pinPreviewToggle">
+      <button type="button" class="active" data-preview="wedding">Wedding</button>
+      <button type="button" data-preview="homecoming">Homecoming</button>
+    </div>
     <h2>Enter your PIN</h2>
     <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" autofocus>
     <div id="pinError"></div>
     <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
   </form>
 </div>
-<div id="app">
-  <header class="top">
-    <svg class="emblem sun" viewBox="0 0 200 200" fill="none" stroke-width="1.6">
-      <circle cx="100" cy="100" r="30"/>
-      <g>
-        <path d="M100 40 Q108 20 100 4 Q92 20 100 40Z"/>
-        <path d="M100 160 Q108 180 100 196 Q92 180 100 160Z"/>
-        <path d="M40 100 Q20 108 4 100 Q20 92 40 100Z"/>
-        <path d="M160 100 Q180 108 196 100 Q180 92 160 100Z"/>
-        <path d="M58 58 Q40 44 26 30 Q40 48 58 58Z"/>
-        <path d="M142 142 Q160 156 174 170 Q160 152 142 142Z"/>
-        <path d="M142 58 Q160 44 174 30 Q160 48 142 58Z"/>
-        <path d="M58 142 Q40 156 26 170 Q40 152 58 142Z"/>
-      </g>
-      <circle cx="100" cy="100" r="52" stroke-dasharray="3 7"/>
-    </svg>
-    <svg class="emblem rose" viewBox="0 0 200 200" fill="none" stroke-width="1.6">
-      <path d="M100 150 C100 120 100 90 100 70" stroke-linecap="round"/>
-      <path d="M100 130 C88 136 76 132 70 122" stroke-linecap="round"/>
-      <path d="M100 142 C112 148 124 144 130 134" stroke-linecap="round"/>
-      <circle cx="100" cy="52" r="6"/>
-      <path d="M100 52 C82 52 68 40 68 24 C86 24 100 34 100 52Z"/>
-      <path d="M100 52 C118 52 132 40 132 24 C114 24 100 34 100 52Z"/>
-      <path d="M100 46 C86 42 78 28 82 12 C98 16 106 30 100 46Z"/>
-      <path d="M100 46 C114 42 122 28 118 12 C102 16 94 30 100 46Z"/>
-      <circle cx="100" cy="38" r="16"/>
-    </svg>
-    <div style="position:relative; z-index:1;">
-    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
-      <p class="eyebrow">Planning ledger</p>
-      <button class="lock-link" id="lockBtn">Lock</button>
-    </div>
-    <h1 class="title">Wedding &amp; Homecoming</h1>
-    <div class="flourish">
-      <span class="line"></span>
-      <svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill="var(--accent)"/></svg>
-      <span class="line rev"></span>
-    </div>
-    <nav class="ribbon-tabs" id="eventTabs">
-      <button class="ribbon wedding active" data-event="wedding">Wedding</button>
-      <button class="ribbon homecoming" data-event="homecoming">Homecoming</button>
-    </nav>
-    </div>
-  </header>
 
-  <section class="summary-card" id="summaryCard"></section>
+<section class="hero" id="heroSection">
+  <div class="hero-layer">
+    <div class="sunGlow"></div>
+    <div class="moonGlow"></div>
+  </div>
+  <svg class="hero-layer sunRays" viewBox="0 0 200 200" fill="none" stroke="var(--accent-deep)" stroke-width="1.4" stroke-linecap="round">
+    <circle cx="100" cy="100" r="34"/>
+    <circle cx="100" cy="100" r="56" stroke-dasharray="2 8"/>
+    <g stroke="var(--accent)">
+      <path d="M100 40 Q110 16 100 0"/><path d="M100 160 Q110 184 100 200"/>
+      <path d="M40 100 Q16 110 0 100"/><path d="M160 100 Q184 110 200 100"/>
+      <path d="M56 56 Q34 40 18 22"/><path d="M144 144 Q166 160 182 178"/>
+      <path d="M144 56 Q166 40 182 22"/><path d="M56 144 Q34 160 18 178"/>
+    </g>
+  </svg>
+  <svg class="hero-layer roseWindow" viewBox="0 0 200 200" fill="none" stroke="var(--accent2)" stroke-width="1.3">
+    <circle cx="100" cy="100" r="95" stroke="var(--accent)" stroke-width="2"/>
+    <circle cx="100" cy="100" r="78"/>
+    <circle cx="100" cy="100" r="30" stroke="var(--accent)"/>
+    <g>
+      <path d="M100 100 L100 5"/><path d="M100 100 L100 195"/><path d="M100 100 L5 100"/><path d="M100 100 L195 100"/>
+      <path d="M100 100 L33 33"/><path d="M100 100 L167 167"/><path d="M100 100 L33 167"/><path d="M100 100 L167 33"/>
+    </g>
+    <path d="M100 88 C90 92 84 84 88 74 C92 84 100 82 100 88Z" fill="var(--accent2)" stroke="none" opacity=".9"/>
+    <path d="M100 88 C110 92 116 84 112 74 C108 84 100 82 100 88Z" fill="var(--accent2)" stroke="none" opacity=".9"/>
+    <circle cx="100" cy="100" r="10" fill="var(--accent)" stroke="none" opacity=".85"/>
+  </svg>
+  <div class="hero-layer stars" id="starsLayer">
+    <div class="star" style="top:8%; left:6%; width:2px; height:2px; animation-delay:.2s;"></div>
+    <div class="star" style="top:14%; left:88%; width:2.5px; height:2.5px; animation-delay:1.1s;"></div>
+    <div class="star" style="top:26%; left:22%; width:1.5px; height:1.5px; animation-delay:1.8s;"></div>
+    <div class="star" style="top:32%; left:64%; width:2px; height:2px; animation-delay:.5s;"></div>
+    <div class="star" style="top:45%; left:8%; width:1.5px; height:1.5px; animation-delay:2.3s;"></div>
+    <div class="star" style="top:52%; left:92%; width:2px; height:2px; animation-delay:.9s;"></div>
+    <div class="star" style="top:18%; left:45%; width:2px; height:2px; animation-delay:1.5s;"></div>
+    <div class="star" style="top:60%; left:35%; width:1.5px; height:1.5px; animation-delay:2.7s;"></div>
+    <div class="star" style="top:38%; left:78%; width:2px; height:2px; animation-delay:.3s;"></div>
+    <div class="star" style="top:9%; left:60%; width:1.5px; height:1.5px; animation-delay:1.9s;"></div>
+    <div class="shootStar" style="top:20%; left:60%; animation-delay:2s;"></div>
+    <div class="shootStar" style="top:38%; left:15%; animation-delay:7s;"></div>
+  </div>
+  <div class="hero-layer lanterns" id="lanternsLayer">
+    <span class="lantern" style="left:5%; animation-duration:15s; animation-delay:0s; --drift:20px;"></span>
+    <span class="lantern" style="left:16%; animation-duration:19s; animation-delay:3.5s; --drift:-24px; transform:scale(.8);"></span>
+    <span class="lantern" style="left:30%; animation-duration:13s; animation-delay:7s; --drift:16px; transform:scale(1.15);"></span>
+    <span class="lantern" style="left:47%; animation-duration:17s; animation-delay:1.5s; --drift:-14px;"></span>
+    <span class="lantern" style="left:62%; animation-duration:14.5s; animation-delay:5s; --drift:22px; transform:scale(.9);"></span>
+    <span class="lantern" style="left:76%; animation-duration:18s; animation-delay:9s; --drift:-18px; transform:scale(1.05);"></span>
+    <span class="lantern" style="left:88%; animation-duration:16s; animation-delay:2.5s; --drift:14px; transform:scale(.85);"></span>
+  </div>
+  <div class="hero-layer petals" id="petalsLayer">
+    <span class="petal" style="left:8%; animation-duration:11s; animation-delay:0s; --drift:30px;"></span>
+    <span class="petal" style="left:20%; animation-duration:14s; animation-delay:2s; --drift:-26px;"></span>
+    <span class="petal" style="left:34%; animation-duration:9s; animation-delay:4s; --drift:20px;"></span>
+    <span class="petal" style="left:50%; animation-duration:13s; animation-delay:1s; --drift:-30px;"></span>
+    <span class="petal" style="left:64%; animation-duration:10s; animation-delay:5s; --drift:24px;"></span>
+    <span class="petal" style="left:78%; animation-duration:12s; animation-delay:3s; --drift:-18px;"></span>
+    <span class="petal" style="left:90%; animation-duration:15s; animation-delay:6s; --drift:22px;"></span>
+  </div>
+  <svg class="hero-layer vineBorder" viewBox="0 0 1200 70" preserveAspectRatio="none" fill="none" stroke="var(--accent-deep)" stroke-width="1.4">
+    <path d="M0 20 Q60 0 120 20 T240 20 T360 20 T480 20 T600 20 T720 20 T840 20 T960 20 T1080 20 T1200 20"/>
+    <g fill="var(--accent2)" stroke="none" opacity=".8">
+      <circle cx="60" cy="10" r="5"/><circle cx="300" cy="8" r="4"/><circle cx="540" cy="12" r="5"/>
+      <circle cx="780" cy="8" r="4"/><circle cx="1020" cy="10" r="5"/>
+    </g>
+  </svg>
+  <svg class="hero-layer candleBorder" viewBox="0 0 1200 70" preserveAspectRatio="none" fill="none" stroke="var(--accent)" stroke-width="1.2">
+    <path d="M0 40 Q30 10 60 40 Q90 10 120 40 Q150 10 180 40 Q210 10 240 40 Q270 10 300 40 Q330 10 360 40 Q390 10 420 40 Q450 10 480 40 Q510 10 540 40 Q570 10 600 40 Q630 10 660 40 Q690 10 720 40 Q750 10 780 40 Q810 10 840 40 Q870 10 900 40 Q930 10 960 40 Q990 10 1020 40 Q1050 10 1080 40 Q1110 10 1140 40 Q1170 10 1200 40"/>
+  </svg>
+
+  <div class="hero-inner">
+    <p class="eyebrow">Our planning ledger</p>
+    <h1 id="heroTitle">Wedding</h1>
+    <p class="tagline" id="heroTagline">Golden hour, lantern light, and everything in bloom.</p>
+
+    <div class="portals" id="eventTabs">
+      <button class="portal-btn active" data-event="wedding">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>
+        Wedding
+      </button>
+      <button class="portal-btn" data-event="homecoming">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 12.8A9 9 0 1 1 11.2 3 7 7 0 0 0 21 12.8Z"/></svg>
+        Homecoming
+      </button>
+    </div>
+
+    <div class="heroStamp" id="heroStamp"><div class="n">—</div><div class="u">set a date</div></div>
+    <div class="heroDate">
+      <label id="heroDateLabel">Wedding date</label>
+      <input type="date" id="eventDateInput">
+    </div>
+  </div>
+
+  <div class="scrollCue">
+    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12l7 7 7-7"/></svg>
+  </div>
+</section>
+
+<div id="main-content">
+  <div class="stat-row" id="statRow"></div>
 
   <nav class="section-tabs" id="sectionTabs">
-    <button data-section="vendors" class="active">Vendors</button>
-    <button data-section="budget">Budget</button>
-    <button data-section="tasks">Checklist</button>
-    <button data-section="guests">Guests</button>
     <span id="tabIndicator"></span>
+    <button data-section="vendors" class="active">
+      <svg viewBox="0 0 24 24"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18M9 13a3 3 0 0 1-6 0M15 13a3 3 0 0 1-6 0M21 13a3 3 0 0 1-6 0"/></svg>
+      Vendors
+    </button>
+    <button data-section="budget">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M9 9h4a2 2 0 0 1 0 4H9m0 0h4a2 2 0 0 1 0 4H9M12 6v2M12 16v2"/></svg>
+      Budget
+    </button>
+    <button data-section="tasks">
+      <svg viewBox="0 0 24 24"><path d="M9 11l3 3L22 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg>
+      Checklist
+    </button>
+    <button data-section="guests">
+      <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+      Guests
+    </button>
   </nav>
 
   <main id="sectionContent"></main>
@@ -508,6 +625,27 @@ const STATUS_LABELS = {
 };
 const RSVP_LABELS = { pending:'Pending', yes:'Yes', no:'No' };
 
+const THEME_COPY = {
+  wedding:{
+    title:'Wedding', dateLabel:'Wedding date',
+    taglines:[
+      'Golden hour, lantern light, and everything in bloom.',
+      'Every lantern lit is one step closer.',
+      'Warm light, warmer promises.'
+    ],
+    p1:'#C79A4B', p2:'#F1D6A0'
+  },
+  homecoming:{
+    title:'Homecoming', dateLabel:'Homecoming date',
+    taglines:[
+      'Candlelight, stars, and a night to remember.',
+      'Under the stained glass and a thousand candles.',
+      'A midnight ballroom, made for us.'
+    ],
+    p1:'#1F2C47', p2:'#7A2233'
+  }
+};
+
 const state = {
   currentEvent:'wedding',
   currentSection:'vendors',
@@ -527,22 +665,76 @@ function toast(msg, isError){
 
 function burstSparkles(x, y){
   const glyphs = ['✦','✧','❋','✳'];
-  for (let i = 0; i < 7; i++){
+  for (let i = 0; i < 8; i++){
     const s = document.createElement('span');
     s.textContent = glyphs[i % glyphs.length];
-    const angle = (Math.PI * 2 * i) / 7 + Math.random() * 0.4;
-    const dist = 34 + Math.random() * 26;
-    s.style.cssText = `position:fixed; left:${x}px; top:${y}px; z-index:60; pointer-events:none;
-      font-size:${10 + Math.random()*8}px; color:var(--accent-secondary);
+    const angle = (Math.PI * 2 * i) / 8 + Math.random() * 0.4;
+    const dist = 36 + Math.random() * 28;
+    s.style.cssText = `position:fixed; left:${x}px; top:${y}px; z-index:80; pointer-events:none;
+      font-size:${10 + Math.random()*8}px; color:var(--accent2);
       filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 70%, transparent));
-      transition:transform .7s cubic-bezier(.22,1,.36,1), opacity .7s ease; opacity:1; transform:translate(0,0) scale(1);`;
+      transition:transform .75s cubic-bezier(.22,1,.36,1), opacity .75s ease; opacity:1; transform:translate(0,0) scale(1);`;
     document.body.appendChild(s);
     requestAnimationFrame(() => {
-      s.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 12}px) scale(.3)`;
+      s.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 14}px) scale(.3)`;
       s.style.opacity = '0';
     });
-    setTimeout(() => s.remove(), 750);
+    setTimeout(() => s.remove(), 800);
   }
+}
+
+/* ---------------- sound (Web Audio, no external files) ---------------- */
+let audioCtx = null;
+let soundOn = localStorage.getItem('wedplanner_sound') !== '0';
+function ctx(){ if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)(); return audioCtx; }
+function playChime(kind){
+  if (!soundOn) return;
+  try{
+    const ac = ctx();
+    const now = ac.currentTime;
+    const notes = kind === 'whoosh' ? [392, 587.33] : kind === 'unlock' ? [523.25, 659.25, 783.99] : [659.25, 987.77];
+    notes.forEach((freq, i) => {
+      const osc = ac.createOscillator();
+      const gain = ac.createGain();
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      const t = now + i * 0.09;
+      gain.gain.setValueAtTime(0, t);
+      gain.gain.linearRampToValueAtTime(0.09, t + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.0001, t + 0.9);
+      osc.connect(gain).connect(ac.destination);
+      osc.start(t); osc.stop(t + 0.95);
+    });
+  } catch(e){ /* audio not available, fail silently */ }
+}
+function updateSoundIcon(){
+  document.getElementById('soundWaves').style.opacity = soundOn ? '1' : '.25';
+}
+document.getElementById('soundToggle').addEventListener('click', () => {
+  soundOn = !soundOn;
+  localStorage.setItem('wedplanner_sound', soundOn ? '1' : '0');
+  updateSoundIcon();
+  if (soundOn) playChime('sparkle');
+});
+updateSoundIcon();
+
+/* ---------------- portal transition ---------------- */
+function portalSwitch(x, y, toTheme, applyFn){
+  const overlay = document.getElementById('portalOverlay');
+  const copy = THEME_COPY[toTheme];
+  overlay.style.setProperty('--ox', x + 'px');
+  overlay.style.setProperty('--oy', y + 'px');
+  overlay.style.setProperty('--p1', copy.p1);
+  overlay.style.setProperty('--p2', copy.p2);
+  overlay.classList.remove('revealing');
+  void overlay.offsetWidth;
+  overlay.classList.add('covering');
+  playChime('whoosh');
+  setTimeout(() => {
+    applyFn();
+    overlay.classList.remove('covering');
+    overlay.classList.add('revealing');
+  }, 560);
 }
 
 function datalist(id, options){
@@ -594,56 +786,10 @@ async function updateEventDate(dateVal){
   renderSummary();
 }
 
-/* ---------------- render: header / summary ---------------- */
-function renderSummary(){
-  const ev = state.events[state.currentEvent];
-  const isWedding = state.currentEvent === 'wedding';
-  document.body.classList.toggle('theme-wedding', isWedding);
-  document.body.classList.toggle('theme-homecoming', !isWedding);
-  document.documentElement.style.setProperty('--accent', isWedding ? 'var(--gold)' : 'var(--navy)');
-  document.documentElement.style.setProperty('--accent-secondary', isWedding ? 'var(--rose-gold)' : 'var(--burgundy)');
-  document.documentElement.style.setProperty('--accent-light', isWedding ? 'var(--gold-light)' : 'var(--navy-light)');
-
-  let stampHtml, stampTarget = null, stampSuffix = '';
-  if (ev.event_date){
-    const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
-    stampTarget = Math.abs(days);
-    stampSuffix = days >= 0 ? 'days to go' : 'days since';
-    stampHtml = `<div class="stamp"><div class="n" id="stampNum">0</div><div class="u">${stampSuffix}</div></div>`;
-  } else {
-    stampHtml = `<div class="stamp"><div class="u" style="font-size:.6rem;">set a<br>date</div></div>`;
-  }
-
-  const d = state.data[state.currentEvent];
-  const vendorsBooked = d.vendors.filter(v => ['booked','paid_deposit','paid_full'].includes(v.status)).length;
-  const plannedSum = d.budget_items.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
-  const actualSum = d.budget_items.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
-  const tasksDone = d.tasks.filter(t=>t.completed).length;
-  const guestsYes = d.guests.filter(g=>g.rsvp_status==='yes').length;
-
-  document.getElementById('summaryCard').innerHTML = `
-    <div class="date-row">
-      ${stampHtml}
-      <div class="date-field">
-        <label>${ev.name} date</label>
-        <input type="date" id="eventDateInput" value="${ev.event_date || ''}">
-      </div>
-    </div>
-    <div class="stat-strip">
-      <div class="stat"><div class="v">${vendorsBooked}/${d.vendors.length}</div><div class="l">Vendors booked</div></div>
-      <div class="stat"><div class="v">${AUD(actualSum)}</div><div class="l">of ${AUD(plannedSum)} spent</div></div>
-      <div class="stat"><div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
-      <div class="stat"><div class="v">${guestsYes}/${d.guests.length}</div><div class="l">Guests confirmed</div></div>
-    </div>`;
-
-  document.getElementById('eventDateInput').addEventListener('change', e => updateEventDate(e.target.value));
-  if (stampTarget !== null) countUp(document.getElementById('stampNum'), stampTarget);
-}
-function renderStats(){ renderSummary(); }
-
+/* ---------------- render: hero / stats ---------------- */
 function countUp(el, target){
   if (!el) return;
-  const dur = 700, start = performance.now();
+  const dur = 800, start = performance.now();
   function tick(now){
     const p = Math.min(1, (now - start) / dur);
     const eased = 1 - Math.pow(1 - p, 3);
@@ -653,13 +799,52 @@ function countUp(el, target){
   requestAnimationFrame(tick);
 }
 
+function renderSummary(){
+  const ev = state.events[state.currentEvent];
+  const copy = THEME_COPY[state.currentEvent];
+  document.getElementById('heroTitle').textContent = copy.title;
+  document.getElementById('heroTagline').textContent = copy.taglines[Math.floor(Math.random()*copy.taglines.length)];
+  document.getElementById('heroDateLabel').textContent = copy.dateLabel;
+  document.getElementById('eventDateInput').value = ev.event_date || '';
+
+  const stampEl = document.getElementById('heroStamp');
+  if (ev.event_date){
+    const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    const target = Math.abs(days);
+    stampEl.innerHTML = `<div class="n" id="stampNum">0</div><div class="u">${days >= 0 ? 'days to go' : 'days since'}</div>`;
+    countUp(document.getElementById('stampNum'), target);
+  } else {
+    stampEl.innerHTML = `<div class="u" style="font-size:.62rem;">set a<br>date</div>`;
+  }
+
+  const d = state.data[state.currentEvent];
+  const vendorsBooked = d.vendors.filter(v => ['booked','paid_deposit','paid_full'].includes(v.status)).length;
+  const plannedSum = d.budget_items.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
+  const actualSum = d.budget_items.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
+  const tasksDone = d.tasks.filter(t=>t.completed).length;
+  const guestsYes = d.guests.filter(g=>g.rsvp_status==='yes').length;
+
+  document.getElementById('statRow').innerHTML = `
+    <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18"/></svg></div>
+      <div class="v">${vendorsBooked}/${d.vendors.length}</div><div class="l">Vendors booked</div></div>
+    <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a2 2 0 0 1 0 4H9"/></svg></div>
+      <div class="v">${AUD(actualSum)}</div><div class="l">of ${AUD(plannedSum)} spent</div></div>
+    <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg></div>
+      <div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
+    <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></div>
+      <div class="v">${guestsYes}/${d.guests.length}</div><div class="l">Guests confirmed</div></div>`;
+}
+function renderStats(){ renderSummary(); }
+
 /* ---------------- render: sections ---------------- */
 function renderSection(){
   const el = document.getElementById('sectionContent');
-  if (state.currentSection === 'vendors') el.innerHTML = renderVendors();
-  else if (state.currentSection === 'budget') el.innerHTML = renderBudget();
-  else if (state.currentSection === 'tasks') el.innerHTML = renderTasks();
-  else el.innerHTML = renderGuests();
+  let html;
+  if (state.currentSection === 'vendors') html = renderVendors();
+  else if (state.currentSection === 'budget') html = renderBudget();
+  else if (state.currentSection === 'tasks') html = renderTasks();
+  else html = renderGuests();
+  el.innerHTML = `<div class="table-wrap">${html}</div>`;
 }
 
 function renderVendors(){
@@ -721,9 +906,9 @@ function renderBudget(){
   return `
     ${datalist('budgetCatList', BUDGET_CATS)}
     <div class="budget-summary">
-      <div class="stat"><div class="v">${AUD(plannedSum)}</div><div class="l">Planned total</div></div>
-      <div class="stat"><div class="v">${AUD(actualSum)}</div><div class="l">Actual so far</div></div>
-      <div class="stat"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${AUD(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
+      <div class="stat-card"><div class="v">${AUD(plannedSum)}</div><div class="l">Planned total</div></div>
+      <div class="stat-card"><div class="v">${AUD(actualSum)}</div><div class="l">Actual so far</div></div>
+      <div class="stat-card"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${AUD(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
     </div>
     <button class="add-toggle" data-toggle="budgetForm">+ Add budget line</button>
     <form class="add-form" id="budgetForm">
@@ -802,10 +987,10 @@ function renderGuests(){
   return `
     ${datalist('guestSideList', GUEST_SIDES)}
     <div class="budget-summary">
-      <div class="stat"><div class="v">${rows.length}</div><div class="l">On the list</div></div>
-      <div class="stat"><div class="v">${rows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Confirmed yes</div></div>
-      <div class="stat"><div class="v">${rows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
-      <div class="stat"><div class="v">${headcount}</div><div class="l">Headcount incl. +1s</div></div>
+      <div class="stat-card"><div class="v">${rows.length}</div><div class="l">On the list</div></div>
+      <div class="stat-card"><div class="v">${rows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Confirmed yes</div></div>
+      <div class="stat-card"><div class="v">${rows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
+      <div class="stat-card"><div class="v">${headcount}</div><div class="l">Headcount incl. +1s</div></div>
     </div>
     <button class="add-toggle" data-toggle="guestForm">+ Add guest</button>
     <form class="add-form" id="guestForm">
@@ -829,24 +1014,28 @@ function esc(s){ return String(s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt
 /* ---------------- events / delegation ---------------- */
 document.getElementById('eventTabs').addEventListener('click', e => {
   const btn = e.target.closest('[data-event]');
-  if (!btn) return;
-  state.currentEvent = btn.dataset.event;
-  document.querySelectorAll('#eventTabs .ribbon').forEach(b => b.classList.toggle('active', b === btn));
-  renderSummary();
-  renderSection();
+  if (!btn || btn.classList.contains('active')) return;
+  const target = btn.dataset.event;
+  const rect = btn.getBoundingClientRect();
+  document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b === btn));
+  portalSwitch(rect.left + rect.width / 2, rect.top + rect.height / 2, target, () => {
+    state.currentEvent = target;
+    document.body.dataset.theme = target;
+    renderSummary();
+    renderSection();
+  });
 });
 
 document.getElementById('sectionTabs').addEventListener('click', e => {
   const btn = e.target.closest('[data-section]');
   if (!btn) return;
   state.currentSection = btn.dataset.section;
-  document.querySelectorAll('#sectionTabs button').forEach(b => b.classList.toggle('active', b === btn));
+  document.querySelectorAll('#sectionTabs button[data-section]').forEach(b => b.classList.toggle('active', b === btn));
   moveTabIndicator(btn);
   renderSection();
 });
 
 function moveTabIndicator(btn){
-  const nav = document.getElementById('sectionTabs');
   const indicator = document.getElementById('tabIndicator');
   if (!btn || !indicator) return;
   indicator.style.left = btn.offsetLeft + 'px';
@@ -878,15 +1067,17 @@ document.getElementById('sectionContent').addEventListener('change', e => {
   if (el.type === 'checkbox' && el.checked && ['deposit_paid','completed','plus_one'].includes(field)){
     const rect = el.getBoundingClientRect();
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    playChime('sparkle');
   }
   if (el.tagName === 'SELECT') el.className = 'badge ' + value;
   if (el.tagName === 'SELECT' && field === 'rsvp_status' && value === 'yes'){
     const rect = el.getBoundingClientRect();
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+    playChime('sparkle');
   }
   if (['status','deposit_paid','completed','rsvp_status','plus_one','actual_amount','planned_amount'].includes(field)){
     renderSummary();
-    if (['status','deposit_paid'].includes(field)) return; // avoid full rerender wiping focus on quick edits
+    if (['status','deposit_paid'].includes(field)) return;
     renderSection();
   }
 });
@@ -932,11 +1123,35 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
   }
 });
 
+document.getElementById('eventDateInput').addEventListener('change', e => updateEventDate(e.target.value));
+
+/* ---------------- parallax ---------------- */
+if (window.matchMedia('(hover: hover)').matches){
+  window.addEventListener('mousemove', e => {
+    const x = (e.clientX / window.innerWidth - 0.5) * 2;
+    const y = (e.clientY / window.innerHeight - 0.5) * 2;
+    document.querySelectorAll('.sunRays, .roseWindow').forEach(el => {
+      el.style.transform = `translate(${x*10}px, ${y*10}px)`;
+    });
+    document.querySelectorAll('.sunGlow, .moonGlow').forEach(el => {
+      el.style.transform = `translate(${x*-14}px, ${y*-14}px)`;
+    });
+  });
+}
+
+/* ---------------- pin preview toggle ---------------- */
+document.getElementById('pinPreviewToggle').addEventListener('click', e => {
+  const btn = e.target.closest('[data-preview]');
+  if (!btn) return;
+  document.querySelectorAll('#pinPreviewToggle button').forEach(b => b.classList.toggle('active', b === btn));
+  document.body.dataset.theme = btn.dataset.preview;
+});
+
 /* ---------------- init ---------------- */
 async function init(){
   const { data: evRows, error } = await supabaseClient.from('events').select('*');
   if (error){
-    document.getElementById('summaryCard').innerHTML = `<p style="color:var(--danger)">Couldn't connect to Supabase — check config.js has your real URL and anon key, and that you ran schema.sql. (${error.message})</p>`;
+    document.getElementById('sectionContent').innerHTML = `<p style="color:var(--danger); padding:20px;">Couldn't connect to Supabase — check config.js has your real URL and anon key, and that you ran schema.sql. (${error.message})</p>`;
     return;
   }
   evRows.forEach(r => state.events[r.id] = r);
@@ -951,11 +1166,13 @@ async function init(){
   renderSection();
   moveTabIndicator(document.querySelector('#sectionTabs button.active'));
 }
+
 const UNLOCK_KEY = 'wedplanner_unlocked';
 
 function unlock(){
   localStorage.setItem(UNLOCK_KEY, '1');
   document.body.classList.add('unlocked');
+  playChime('unlock');
   init();
 }
 
@@ -964,6 +1181,8 @@ document.getElementById('pinForm').addEventListener('submit', e => {
   const input = document.getElementById('pinInput');
   const card = document.querySelector('.pin-card');
   if (input.value.trim() === String(APP_PIN)){
+    state.currentEvent = document.body.dataset.theme || 'wedding';
+    document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b.dataset.event === state.currentEvent));
     unlock();
   } else {
     document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
