@@ -373,6 +373,7 @@
     outline:none; border-color:var(--accent); background:var(--paper); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
   }
   .data-table input[type="number"]{font-family:var(--font-mono);}
+  .data-table select.badge{min-width:132px; padding:6px 10px;}
   .del-btn{
     background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
     line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.55;
@@ -441,6 +442,39 @@
     border-radius:50%; width:26px; height:26px; cursor:pointer; opacity:0; transition:opacity .2s ease;
   }
   .mood-item:hover .mood-del{opacity:1;}
+
+  /* ---------- who gate ---------- */
+  #whoGate{
+    position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
+    background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
+    transition:opacity .6s var(--ease), visibility .6s;
+  }
+  #whoGate.hide{opacity:0; pointer-events:none; visibility:hidden;}
+  .who-card{
+    text-align:center; padding:48px 42px; max-width:400px; width:90%;
+    border:1px solid color-mix(in srgb, var(--hero-text) 25%, transparent); border-radius:20px;
+    background:color-mix(in srgb, var(--hero-text) 8%, transparent);
+    backdrop-filter:blur(18px); -webkit-backdrop-filter:blur(18px);
+    box-shadow:0 40px 70px -30px rgba(0,0,0,.4);
+    animation:fadeInUp .6s var(--ease) both; position:relative; z-index:2;
+  }
+  .who-card .eyebrow{color:var(--hero-text-soft); margin-bottom:8px;}
+  .who-card h2{font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 28px; color:var(--hero-text);}
+  .who-choices{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
+  .who-btn{
+    flex:1; min-width:135px; padding:24px 16px; border-radius:16px;
+    border:1.5px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 6%, transparent);
+    color:var(--hero-text); font-family:var(--font-display); font-size:1.15rem; font-weight:600;
+    cursor:pointer; transition:transform .35s var(--ease-snap), background .35s var(--ease), box-shadow .35s var(--ease), opacity .35s var(--ease);
+  }
+  .who-btn:hover{transform:translateY(-4px);}
+  .who-btn.picked{
+    background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff; border-color:transparent;
+    box-shadow:0 16px 30px -12px color-mix(in srgb, var(--accent) 70%, transparent);
+    transform:scale(1.07);
+  }
+  .who-btn.fade-out{opacity:0; transform:scale(.85); pointer-events:none;}
 
   /* ---------- pin gate ---------- */
   body:not(.unlocked) #main-content, body:not(.unlocked) .hero{display:none;}
@@ -519,6 +553,7 @@
   .icon-btn:hover{background:var(--accent); border-color:transparent; color:#fff; transform:translateY(-2px);}
   .icon-btn svg{width:16px; height:16px;}
   body.unlocked .corner-controls{position:absolute; top:20px;}
+  body:not(.unlocked) .corner-controls, body:not(.unlocked) .fx-caption, body:not(.unlocked) #presenceDock{display:none;}
 
   /* ---------- toast ---------- */
   #toast{
@@ -564,6 +599,13 @@
   /* ---------- responsive ---------- */
   @media (max-width:720px){
     .hero{min-height:74vh; padding:150px 16px 56px;}
+    .corner-controls{top:12px; right:12px; gap:6px;}
+    .icon-btn{width:32px; height:32px;}
+    .icon-btn svg{width:14px; height:14px;}
+    .currency-pill button{padding:6px 9px; font-size:.62rem;}
+    .fx-caption{top:50px; right:12px; font-size:.58rem; max-width:140px;}
+    #presenceDock{top:12px; left:12px;}
+    .presence-chip{font-size:.66rem; padding:6px 10px;}
     .stat-row{margin-top:-42px;}
     .data-table thead{display:none;}
     .data-table, .data-table tbody, .data-table tr, .data-table td{display:block; width:100%;}
@@ -595,6 +637,17 @@
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
 <div id="presenceDock"></div>
+
+<div id="whoGate">
+  <div class="who-card">
+    <p class="eyebrow">Before we begin</p>
+    <h2>Who's this?</h2>
+    <div class="who-choices" id="whoChoices">
+      <button class="who-btn" data-who="Nithara">Nithara</button>
+      <button class="who-btn" data-who="Dyllon">Dyllon</button>
+    </div>
+  </div>
+</div>
 
 <div id="pinGate">
   <div class="hero-layer stars">
@@ -770,7 +823,7 @@
       Mood Board
     </button>
   </nav>
-  <button class="btn-ghost" id="printSheetBtn" style="margin:-14px 0 24px;">🖨 Print day-of run sheet</button>
+  <button class="btn-ghost" id="printSheetBtn" style="margin:16px 0 24px;">🖨 Print day-of run sheet</button>
 
   <main id="sectionContent"></main>
 </div>
@@ -1072,7 +1125,7 @@ function checkMilestones(eventId){
     const daysLeft = Math.floor((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
     [100, 50, 30, 7, 1, 0].forEach(mark => {
       const id = `days-${mark}`;
-      if (daysLeft === mark && !hasAchieved(eventId, id)){
+      if (daysLeft <= mark && !hasAchieved(eventId, id)){
         found.push({ id,
           title: mark === 0 ? "It's the day!" : `${mark} Day${mark === 1 ? '' : 's'} To Go!`,
           msg: mark === 0 ? "Today's the day — breathe, and enjoy it." : 'The countdown just hit a milestone.'
@@ -1137,6 +1190,10 @@ async function updateEventDate(dateVal){
   const { error } = await supabaseClient.from('events').update({ event_date: dateVal || null }).eq('id', eventId);
   if (error){ toast(error.message, true); return; }
   state.events[eventId].event_date = dateVal || null;
+  if (dateVal){
+    const daysLeft = Math.ceil((new Date(dateVal + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    [100, 50, 30, 7, 1, 0].forEach(mark => { if (daysLeft < mark) markAchieved(eventId, `days-${mark}`); });
+  }
   renderSummary();
 }
 
@@ -1156,8 +1213,10 @@ function countUp(el, target){
 let clockTimer = null;
 function startCountdownClock(targetDate){
   clearInterval(clockTimer);
+  let lastDays = null;
   function tick(){
     const hmsEl = document.getElementById('stampHms');
+    const numEl = document.getElementById('stampNum');
     if (!hmsEl){ clearInterval(clockTimer); return; }
     const diff = targetDate - new Date();
     if (diff <= 0){
@@ -1170,6 +1229,11 @@ function startCountdownClock(targetDate){
     const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
     const s = String(totalSeconds % 60).padStart(2, '0');
     hmsEl.textContent = `${h}:${m}:${s}`;
+    const daysLeft = Math.ceil(diff / 86400000);
+    if (numEl && daysLeft !== lastDays){
+      numEl.textContent = daysLeft;
+      lastDays = daysLeft;
+    }
   }
   tick();
   clockTimer = setInterval(tick, 1000);
@@ -1193,7 +1257,7 @@ function renderSummary(){
     const now = new Date();
     if (target - now > 0){
       stampEl.innerHTML = `${glyph(isWedding)}<div class="n" id="stampNum">0</div><div class="hms" id="stampHms">--:--:--</div><div class="u">days to go</div>`;
-      countUp(document.getElementById('stampNum'), Math.floor((target - now) / 86400000) + 1);
+      countUp(document.getElementById('stampNum'), Math.ceil((target - now) / 86400000));
       startCountdownClock(target);
     } else {
       clearInterval(clockTimer);
@@ -1682,12 +1746,33 @@ document.getElementById('pinPreviewToggle').addEventListener('click', e => {
 
 /* ---------------- live presence ---------------- */
 let presenceChannel = null;
-function ensureWhoAmI(cb){
-  let name = localStorage.getItem('wedplanner_who');
-  if (name){ cb(name); return; }
-  name = (prompt("What's your name? (so you two can see when you're both planning at once)") || 'Guest').trim().slice(0, 24) || 'Guest';
-  localStorage.setItem('wedplanner_who', name);
-  cb(name);
+function initWhoGate(){
+  const whoGate = document.getElementById('whoGate');
+  const existing = localStorage.getItem('wedplanner_who');
+  if (existing){
+    whoGate.classList.add('hide');
+    afterWhoChosen(existing);
+    return;
+  }
+  document.querySelectorAll('.who-btn').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const name = btn.dataset.who;
+      document.querySelectorAll('.who-btn').forEach(b => b.classList.add(b === btn ? 'picked' : 'fade-out'));
+      localStorage.setItem('wedplanner_who', name);
+      playChime('sparkle');
+      setTimeout(() => {
+        whoGate.classList.add('hide');
+        afterWhoChosen(name);
+      }, 550);
+    });
+  });
+}
+function afterWhoChosen(name){
+  if (localStorage.getItem(UNLOCK_KEY) === '1'){
+    document.body.classList.add('unlocked');
+    init();
+    initPresence(name);
+  }
 }
 function initPresence(myName){
   presenceChannel = supabaseClient.channel('wedplanner-presence', {
@@ -1707,7 +1792,12 @@ function renderPresence(){
   if (!dock) return;
   const myName = localStorage.getItem('wedplanner_who');
   const people = Object.values(presenceChannel.presenceState()).flat();
-  const others = people.filter(p => p.name !== myName);
+  const byName = new Map();
+  people.filter(p => p.name !== myName).forEach(p => {
+    const existing = byName.get(p.name);
+    if (!existing || p.at > existing.at) byName.set(p.name, p);
+  });
+  const others = [...byName.values()];
   if (!others.length){ dock.style.display = 'none'; dock.innerHTML = ''; return; }
   dock.style.display = 'flex';
   dock.innerHTML = others.map(p => `<div class="presence-chip"><span class="presence-dot"></span>${esc(p.name)} is here${p.event ? ' &middot; ' + THEME_COPY[p.event].title : ''}</div>`).join('');
@@ -1740,7 +1830,7 @@ function unlock(){
   document.body.classList.add('unlocked');
   playChime('unlock');
   init();
-  ensureWhoAmI(initPresence);
+  if (!presenceChannel) initPresence(localStorage.getItem('wedplanner_who') || 'Guest');
 }
 
 document.getElementById('pinForm').addEventListener('submit', e => {
@@ -1768,11 +1858,7 @@ document.getElementById('lockBtn').addEventListener('click', () => {
 
 window.addEventListener('resize', () => moveTabIndicator(document.querySelector('#sectionTabs button.active')));
 
-if (localStorage.getItem(UNLOCK_KEY) === '1'){
-  document.body.classList.add('unlocked');
-  init();
-  ensureWhoAmI(initPresence);
-}
+initWhoGate();
 </script>
 </body>
 </html>
