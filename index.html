@@ -1,0 +1,744 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Wedding &amp; Homecoming Planner</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,500&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#211F2E;
+    --ink-soft:#6B6459;
+    --paper:#FBF7EE;
+    --paper-warm:#F3EADA;
+    /* wedding — day: ivory, warm gold, rose gold */
+    --gold:#B8935A;
+    --gold-deep:#93713F;
+    --rose-gold:#B9808A;
+    --rose-gold-light:#F5E4E1;
+    --gold-light:#F5ECD9;
+    /* homecoming — night: ivory, navy, burgundy */
+    --navy:#1F2C47;
+    --navy-deep:#141D30;
+    --burgundy:#6E2331;
+    --burgundy-light:#F0E1E3;
+    --navy-light:#E6E9F0;
+    --line:#E1D6C4;
+    --danger:#A8442E;
+    --accent:var(--gold);
+    --accent-secondary:var(--rose-gold);
+    --accent-light:var(--gold-light);
+    --font-display:'Fraunces', serif;
+    --font-body:'Inter', sans-serif;
+    --font-mono:'IBM Plex Mono', monospace;
+  }
+  *{box-sizing:border-box;}
+  body{
+    margin:0;
+    background:var(--paper);
+    color:var(--ink);
+    font-family:var(--font-body);
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{max-width:980px; margin:0 auto; padding:0 24px 80px;}
+
+  /* ---------- header ---------- */
+  header.top{padding:36px 0 0;}
+  .eyebrow{
+    font-family:var(--font-mono);
+    font-size:.72rem;
+    letter-spacing:.14em;
+    text-transform:uppercase;
+    color:var(--ink-soft);
+    margin:0 0 6px;
+  }
+  h1.title{
+    font-family:var(--font-display);
+    font-weight:500;
+    font-size:2.1rem;
+    margin:0 0 20px;
+    letter-spacing:-.01em;
+  }
+
+  .ribbon-tabs{display:flex; padding-left:4px;}
+  .ribbon{
+    position:relative;
+    border:none;
+    cursor:pointer;
+    padding:14px 26px 20px;
+    margin-right:-8px;
+    font-family:var(--font-display);
+    font-size:1.05rem;
+    font-weight:500;
+    color:var(--paper);
+    clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);
+    transition:transform .18s ease, opacity .18s ease;
+    transform:translateY(4px);
+    opacity:.55;
+  }
+  .ribbon.wedding{background:linear-gradient(135deg, var(--gold), var(--rose-gold));}
+  .ribbon.homecoming{background:linear-gradient(135deg, var(--navy), var(--burgundy));}
+  .ribbon.active{transform:translateY(-4px); opacity:1; box-shadow:0 10px 18px -8px rgba(0,0,0,.35);}
+  .ribbon:hover{opacity:.85;}
+
+  /* ---------- event summary ---------- */
+  .summary-card{
+    background:var(--paper-warm);
+    border:1px solid var(--line);
+    border-left:4px solid var(--accent-secondary);
+    border-radius:2px;
+    padding:22px 24px;
+    margin-top:0;
+    display:flex;
+    flex-wrap:wrap;
+    gap:24px;
+    align-items:center;
+    justify-content:space-between;
+  }
+  .date-row{display:flex; align-items:center; gap:16px;}
+  .stamp{
+    width:82px; height:82px; border-radius:50%;
+    border:2px dashed var(--accent);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    transform:rotate(-4deg);
+    font-family:var(--font-mono);
+    color:var(--accent);
+    flex-shrink:0;
+    background:var(--paper);
+  }
+  .stamp .n{font-size:1.5rem; font-weight:600; line-height:1;}
+  .stamp .u{font-size:.55rem; letter-spacing:.08em; text-transform:uppercase; margin-top:2px;}
+  .date-field label{
+    display:block; font-family:var(--font-mono); font-size:.68rem; letter-spacing:.1em;
+    text-transform:uppercase; color:var(--ink-soft); margin-bottom:4px;
+  }
+  .date-field input{
+    font-family:var(--font-body); font-size:1rem; border:1px solid var(--line);
+    background:var(--paper); padding:8px 10px; border-radius:2px; color:var(--ink);
+  }
+
+  .stat-strip{display:flex; gap:14px; flex-wrap:wrap;}
+  .stat{
+    background:var(--paper); border:1px solid var(--line); border-radius:2px;
+    padding:10px 16px; min-width:118px;
+  }
+  .stat .v{font-family:var(--font-mono); font-size:1.15rem; font-weight:600; color:var(--accent);}
+  .stat .l{font-size:.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
+
+  /* ---------- section tabs ---------- */
+  .section-tabs{
+    display:flex; gap:2px; margin-top:30px; border-bottom:2px solid var(--line);
+    overflow-x:auto;
+  }
+  .section-tabs button{
+    background:transparent; border:none; cursor:pointer;
+    padding:11px 18px; font-family:var(--font-body); font-weight:600;
+    font-size:.76rem; letter-spacing:.05em; text-transform:uppercase;
+    color:var(--ink-soft); border-bottom:2px solid transparent; margin-bottom:-2px;
+    white-space:nowrap;
+  }
+  .section-tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+
+  main{padding-top:24px;}
+
+  /* ---------- add form ---------- */
+  .add-toggle{
+    background:var(--ink); color:var(--paper); border:none; border-radius:2px;
+    padding:10px 16px; font-family:var(--font-body); font-weight:600; font-size:.82rem;
+    cursor:pointer; margin-bottom:16px;
+  }
+  .add-form{
+    display:none; grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+    gap:12px; background:var(--paper-warm); border:1px solid var(--line);
+    padding:18px; border-radius:2px; margin-bottom:22px;
+  }
+  .add-form.open{display:grid;}
+  .add-form .full{grid-column:1/-1;}
+  .field label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:4px;}
+  .field input, .field select, .field textarea{
+    width:100%; font-family:var(--font-body); font-size:.9rem; padding:8px 9px;
+    border:1px solid var(--line); border-radius:2px; background:var(--paper); color:var(--ink);
+  }
+  .add-form .submit-row{grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px;}
+  .btn-primary{
+    background:var(--accent); color:var(--paper); border:none; padding:9px 20px;
+    border-radius:2px; font-weight:600; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+  }
+  .btn-ghost{
+    background:transparent; color:var(--ink-soft); border:1px solid var(--line); padding:9px 16px;
+    border-radius:2px; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+  }
+
+  /* ---------- data table ---------- */
+  table.data-table{width:100%; border-collapse:collapse; font-size:.87rem;}
+  .data-table th{
+    text-align:left; font-family:var(--font-mono); font-size:.66rem; letter-spacing:.08em;
+    text-transform:uppercase; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line);
+  }
+  .data-table td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
+  .data-table tr:hover td{background:rgba(0,0,0,.02);}
+  .data-table input, .data-table select, .data-table textarea{
+    border:1px solid transparent; background:transparent; font-family:var(--font-body);
+    font-size:.85rem; width:100%; padding:5px 6px; border-radius:2px; color:var(--ink);
+  }
+  .data-table input:hover, .data-table select:hover, .data-table textarea:hover,
+  .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
+    border-color:var(--line); background:var(--paper);
+  }
+  .data-table input[type="number"]{font-family:var(--font-mono);}
+  .del-btn{
+    background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
+    line-height:1; padding:4px 6px;
+  }
+  .empty-row td{padding:26px 10px; text-align:center; color:var(--ink-soft); font-style:italic;}
+
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:600;}
+  .badge.researching{background:#EDEAE1; color:#7A7362;}
+  .badge.contacted{background:#E4EAF2; color:#37567F;}
+  .badge.booked{background:#E1EBE7; color:#2C4A44;}
+  .badge.paid_deposit{background:#F4EAD3; color:#8C6D3F;}
+  .badge.paid_full{background:#DFEEDD; color:#2E6B3E;}
+  .badge.pending{background:#EDEAE1; color:#7A7362;}
+  .badge.yes{background:#DFEEDD; color:#2E6B3E;}
+  .badge.no{background:#F0E1E3; color:#8C3B47;}
+
+  .budget-summary{display:flex; gap:16px; margin-bottom:18px; flex-wrap:wrap;}
+
+  /* ---------- pin gate ---------- */
+  body:not(.unlocked) #app{display:none;}
+  #pinGate{
+    position:fixed; inset:0; background:var(--paper);
+    display:flex; align-items:center; justify-content:center; z-index:50;
+  }
+  body.unlocked #pinGate{display:none;}
+  .pin-card{
+    text-align:center; padding:40px 44px; max-width:340px; width:90%;
+    border:1px solid var(--line); border-radius:2px; background:var(--paper-warm);
+  }
+  .pin-card .eyebrow{margin-bottom:8px;}
+  .pin-card h2{
+    font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 22px;
+  }
+  #pinInput{
+    width:100%; text-align:center; font-family:var(--font-mono); font-size:1.6rem;
+    letter-spacing:.5em; padding:12px 10px 12px 16px; border:1px solid var(--line);
+    border-radius:2px; background:var(--paper); color:var(--ink); margin-bottom:16px;
+  }
+  #pinInput:focus{outline:none; border-color:var(--accent);}
+  .pin-card.shake{animation:shake .35s;}
+  @keyframes shake{
+    20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} 100%{transform:translateX(0);}
+  }
+  #pinError{color:var(--danger); font-size:.8rem; min-height:18px; margin-bottom:10px;}
+  .lock-link{
+    background:none; border:none; color:var(--ink-soft); font-size:.72rem; cursor:pointer;
+    text-decoration:underline; font-family:var(--font-body); padding:0;
+  }
+
+  /* ---------- toast ---------- */
+  #toast{
+    position:fixed; bottom:20px; right:20px; background:var(--ink); color:var(--paper);
+    padding:11px 18px; border-radius:2px; font-size:.85rem; opacity:0; transform:translateY(8px);
+    transition:all .25s ease; pointer-events:none; max-width:320px;
+  }
+  #toast.show{opacity:1; transform:translateY(0);}
+  #toast.error{background:var(--danger);}
+
+  /* ---------- responsive table -> cards ---------- */
+  @media (max-width:720px){
+    .data-table thead{display:none;}
+    .data-table, .data-table tbody, .data-table tr, .data-table td{display:block; width:100%;}
+    .data-table tr{border:1px solid var(--line); border-radius:3px; margin-bottom:12px; padding:8px 4px;}
+    .data-table td{border-bottom:none; display:flex; align-items:center; gap:10px; padding:6px 10px;}
+    .data-table td::before{
+      content:attr(data-label); font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase;
+      letter-spacing:.06em; color:var(--ink-soft); width:88px; flex-shrink:0;
+    }
+    .data-table td.actions{justify-content:flex-end;}
+    .summary-card{padding:18px;}
+  }
+</style>
+</head>
+<body>
+<div id="pinGate">
+  <form class="pin-card" id="pinForm">
+    <p class="eyebrow">Planning ledger</p>
+    <h2>Enter your PIN</h2>
+    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" autofocus>
+    <div id="pinError"></div>
+    <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
+  </form>
+</div>
+<div id="app">
+  <header class="top">
+    <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+      <p class="eyebrow">Planning ledger</p>
+      <button class="lock-link" id="lockBtn">Lock</button>
+    </div>
+    <h1 class="title">Wedding &amp; Homecoming</h1>
+    <nav class="ribbon-tabs" id="eventTabs">
+      <button class="ribbon wedding active" data-event="wedding">Wedding</button>
+      <button class="ribbon homecoming" data-event="homecoming">Homecoming</button>
+    </nav>
+  </header>
+
+  <section class="summary-card" id="summaryCard"></section>
+
+  <nav class="section-tabs" id="sectionTabs">
+    <button data-section="vendors" class="active">Vendors</button>
+    <button data-section="budget">Budget</button>
+    <button data-section="tasks">Checklist</button>
+    <button data-section="guests">Guests</button>
+  </nav>
+
+  <main id="sectionContent"></main>
+</div>
+
+<div id="toast"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="config.js"></script>
+<script>
+const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
+const BUDGET_CATS = [...VENDOR_CATS, 'Rings','Honeymoon / Travel','Contingency'];
+const TASK_CATS = ['Venue','Legal & Paperwork','Attire','Vendors','Guests','Design & Decor','Logistics','Other'];
+const GUEST_SIDES = ['His side','Her side','Family','Friends','Other'];
+
+const STATUS_LABELS = {
+  researching:'Researching', contacted:'Contacted', booked:'Booked',
+  paid_deposit:'Deposit paid', paid_full:'Paid in full'
+};
+const RSVP_LABELS = { pending:'Pending', yes:'Yes', no:'No' };
+
+const state = {
+  currentEvent:'wedding',
+  currentSection:'vendors',
+  events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
+  data:{ wedding:{vendors:[],budget_items:[],tasks:[],guests:[]}, homecoming:{vendors:[],budget_items:[],tasks:[],guests:[]} }
+};
+
+const AUD = n => n === null || n === undefined || n === '' ? '—' : new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(n);
+
+function toast(msg, isError){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = isError ? 'show error' : 'show';
+  clearTimeout(t._timer);
+  t._timer = setTimeout(()=> t.className='', 2600);
+}
+
+function datalist(id, options){
+  return `<datalist id="${id}">${options.map(o=>`<option value="${o}">`).join('')}</datalist>`;
+}
+
+/* ---------------- data access ---------------- */
+async function fetchTable(table, eventId){
+  const { data, error } = await supabaseClient.from(table).select('*').eq('event_id', eventId).order('created_at');
+  if (error){ toast(error.message, true); return []; }
+  return data;
+}
+
+async function refreshCurrentTable(table){
+  state.data[state.currentEvent][table] = await fetchTable(table, state.currentEvent);
+  renderStats();
+  renderSection();
+}
+
+async function insertRow(table, payload){
+  const { error } = await supabaseClient.from(table).insert([{ ...payload, event_id: state.currentEvent }]);
+  if (error){ toast(error.message, true); return false; }
+  toast('Added');
+  await refreshCurrentTable(table);
+  return true;
+}
+
+async function updateRow(table, id, payload){
+  const { error } = await supabaseClient.from(table).update(payload).eq('id', id);
+  if (error){ toast(error.message, true); return; }
+  const list = state.data[state.currentEvent][table];
+  const row = list.find(r => r.id === id);
+  if (row) Object.assign(row, payload);
+  renderStats();
+}
+
+async function deleteRow(table, id){
+  const { error } = await supabaseClient.from(table).delete().eq('id', id);
+  if (error){ toast(error.message, true); return; }
+  toast('Deleted');
+  await refreshCurrentTable(table);
+}
+
+async function updateEventDate(dateVal){
+  const eventId = state.currentEvent;
+  const { error } = await supabaseClient.from('events').update({ event_date: dateVal || null }).eq('id', eventId);
+  if (error){ toast(error.message, true); return; }
+  state.events[eventId].event_date = dateVal || null;
+  renderSummary();
+}
+
+/* ---------------- render: header / summary ---------------- */
+function renderSummary(){
+  const ev = state.events[state.currentEvent];
+  const isWedding = state.currentEvent === 'wedding';
+  document.documentElement.style.setProperty('--accent', isWedding ? 'var(--gold)' : 'var(--navy)');
+  document.documentElement.style.setProperty('--accent-secondary', isWedding ? 'var(--rose-gold)' : 'var(--burgundy)');
+  document.documentElement.style.setProperty('--accent-light', isWedding ? 'var(--gold-light)' : 'var(--navy-light)');
+
+  let stampHtml;
+  if (ev.event_date){
+    const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    stampHtml = days >= 0
+      ? `<div class="stamp"><div class="n">${days}</div><div class="u">days to go</div></div>`
+      : `<div class="stamp"><div class="n">${Math.abs(days)}</div><div class="u">days since</div></div>`;
+  } else {
+    stampHtml = `<div class="stamp"><div class="u" style="font-size:.6rem;">set a<br>date</div></div>`;
+  }
+
+  const d = state.data[state.currentEvent];
+  const vendorsBooked = d.vendors.filter(v => ['booked','paid_deposit','paid_full'].includes(v.status)).length;
+  const plannedSum = d.budget_items.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
+  const actualSum = d.budget_items.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
+  const tasksDone = d.tasks.filter(t=>t.completed).length;
+  const guestsYes = d.guests.filter(g=>g.rsvp_status==='yes').length;
+
+  document.getElementById('summaryCard').innerHTML = `
+    <div class="date-row">
+      ${stampHtml}
+      <div class="date-field">
+        <label>${ev.name} date</label>
+        <input type="date" id="eventDateInput" value="${ev.event_date || ''}">
+      </div>
+    </div>
+    <div class="stat-strip">
+      <div class="stat"><div class="v">${vendorsBooked}/${d.vendors.length}</div><div class="l">Vendors booked</div></div>
+      <div class="stat"><div class="v">${AUD(actualSum)}</div><div class="l">of ${AUD(plannedSum)} spent</div></div>
+      <div class="stat"><div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
+      <div class="stat"><div class="v">${guestsYes}/${d.guests.length}</div><div class="l">Guests confirmed</div></div>
+    </div>`;
+
+  document.getElementById('eventDateInput').addEventListener('change', e => updateEventDate(e.target.value));
+}
+function renderStats(){ renderSummary(); }
+
+/* ---------------- render: sections ---------------- */
+function renderSection(){
+  const el = document.getElementById('sectionContent');
+  if (state.currentSection === 'vendors') el.innerHTML = renderVendors();
+  else if (state.currentSection === 'budget') el.innerHTML = renderBudget();
+  else if (state.currentSection === 'tasks') el.innerHTML = renderTasks();
+  else el.innerHTML = renderGuests();
+}
+
+function renderVendors(){
+  const rows = state.data[state.currentEvent].vendors;
+  const statusOptions = Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
+  const body = rows.length ? rows.map(r => `
+    <tr>
+      <td data-label="Category"><input list="vendorCatList" data-table="vendors" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
+      <td data-label="Name"><input data-table="vendors" data-id="${r.id}" data-field="name" value="${esc(r.name)}"></td>
+      <td data-label="Contact"><input data-table="vendors" data-id="${r.id}" data-field="contact_phone" value="${esc(r.contact_phone||'')}" placeholder="phone / email"></td>
+      <td data-label="Status">
+        <select data-table="vendors" data-id="${r.id}" data-field="status" class="badge ${r.status}">${
+          Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.status?'selected':''}>${l}</option>`).join('')
+        }</select>
+      </td>
+      <td data-label="Price"><input type="number" data-table="vendors" data-id="${r.id}" data-field="price" value="${r.price ?? ''}" placeholder="0"></td>
+      <td data-label="Deposit paid" style="text-align:center;"><input type="checkbox" data-table="vendors" data-id="${r.id}" data-field="deposit_paid" ${r.deposit_paid?'checked':''}></td>
+      <td data-label="Notes"><input data-table="vendors" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
+      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="8">No vendors yet for this event — add your first one above.</td></tr>`;
+
+  return `
+    ${datalist('vendorCatList', VENDOR_CATS)}
+    <button class="add-toggle" data-toggle="vendorForm">+ Add vendor</button>
+    <form class="add-form" id="vendorForm">
+      <div class="field"><label>Category</label><input list="vendorCatList" id="v_category" required></div>
+      <div class="field"><label>Vendor name</label><input id="v_name" required></div>
+      <div class="field"><label>Phone / email</label><input id="v_contact"></div>
+      <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
+      <div class="field"><label>Price (AUD)</label><input id="v_price" type="number"></div>
+      <div class="field"><label>Deposit (AUD)</label><input id="v_deposit" type="number"></div>
+      <div class="field full"><label>Notes</label><input id="v_notes"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="vendorForm">Cancel</button>
+        <button type="submit" class="btn-primary">Save vendor</button>
+      </div>
+    </form>
+    <table class="data-table">
+      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Price</th><th>Deposit paid</th><th>Notes</th><th></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function renderBudget(){
+  const rows = state.data[state.currentEvent].budget_items;
+  const plannedSum = rows.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
+  const actualSum = rows.reduce((s,b)=> s + (Number(b.actual_amount)||0), 0);
+  const body = rows.length ? rows.map(r => `
+    <tr>
+      <td data-label="Category"><input list="budgetCatList" data-table="budget_items" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
+      <td data-label="Item"><input data-table="budget_items" data-id="${r.id}" data-field="item_name" value="${esc(r.item_name)}"></td>
+      <td data-label="Planned"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="planned_amount" value="${r.planned_amount ?? 0}"></td>
+      <td data-label="Actual"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="actual_amount" value="${r.actual_amount ?? ''}" placeholder="0"></td>
+      <td data-label="Diff" style="font-family:var(--font-mono); color:${(r.actual_amount||0) > (r.planned_amount||0) ? 'var(--danger)' : 'var(--ink-soft)'};">${AUD((r.planned_amount||0) - (r.actual_amount||0))}</td>
+      <td data-label="Notes"><input data-table="budget_items" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
+      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="budget_items" data-id="${r.id}">✕</button></td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="7">No budget lines yet — add your first one above.</td></tr>`;
+
+  return `
+    ${datalist('budgetCatList', BUDGET_CATS)}
+    <div class="budget-summary">
+      <div class="stat"><div class="v">${AUD(plannedSum)}</div><div class="l">Planned total</div></div>
+      <div class="stat"><div class="v">${AUD(actualSum)}</div><div class="l">Actual so far</div></div>
+      <div class="stat"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${AUD(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
+    </div>
+    <button class="add-toggle" data-toggle="budgetForm">+ Add budget line</button>
+    <form class="add-form" id="budgetForm">
+      <div class="field"><label>Category</label><input list="budgetCatList" id="b_category" required></div>
+      <div class="field"><label>Item</label><input id="b_item" required></div>
+      <div class="field"><label>Planned (AUD)</label><input id="b_planned" type="number" required></div>
+      <div class="field"><label>Actual (AUD)</label><input id="b_actual" type="number"></div>
+      <div class="field full"><label>Notes</label><input id="b_notes"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="budgetForm">Cancel</button>
+        <button type="submit" class="btn-primary">Save line</button>
+      </div>
+    </form>
+    <table class="data-table">
+      <thead><tr><th>Category</th><th>Item</th><th>Planned</th><th>Actual</th><th>Diff</th><th>Notes</th><th></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function renderTasks(){
+  const rows = [...state.data[state.currentEvent].tasks].sort((a,b)=>{
+    if (a.completed !== b.completed) return a.completed ? 1 : -1;
+    return (a.due_date||'9999') < (b.due_date||'9999') ? -1 : 1;
+  });
+  const today = new Date().toDateString();
+  const body = rows.length ? rows.map(r => {
+    const overdue = r.due_date && !r.completed && new Date(r.due_date+'T00:00:00') < new Date(today);
+    return `
+    <tr style="${r.completed ? 'opacity:.5;' : ''}">
+      <td data-label="Done" style="text-align:center;"><input type="checkbox" data-table="tasks" data-id="${r.id}" data-field="completed" ${r.completed?'checked':''}></td>
+      <td data-label="Task"><input data-table="tasks" data-id="${r.id}" data-field="title" value="${esc(r.title)}"></td>
+      <td data-label="Category"><input list="taskCatList" data-table="tasks" data-id="${r.id}" data-field="category" value="${esc(r.category||'')}"></td>
+      <td data-label="Due"><input type="date" data-table="tasks" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}"></td>
+      <td data-label="Notes"><input data-table="tasks" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
+      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="tasks" data-id="${r.id}">✕</button></td>
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="6">Nothing on the checklist yet — add your first task above.</td></tr>`;
+
+  return `
+    ${datalist('taskCatList', TASK_CATS)}
+    <button class="add-toggle" data-toggle="taskForm">+ Add task</button>
+    <form class="add-form" id="taskForm">
+      <div class="field full"><label>Task</label><input id="t_title" required></div>
+      <div class="field"><label>Category</label><input list="taskCatList" id="t_category"></div>
+      <div class="field"><label>Due date</label><input id="t_due" type="date"></div>
+      <div class="field full"><label>Notes</label><input id="t_notes"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="taskForm">Cancel</button>
+        <button type="submit" class="btn-primary">Save task</button>
+      </div>
+    </form>
+    <table class="data-table">
+      <thead><tr><th>Done</th><th>Task</th><th>Category</th><th>Due</th><th>Notes</th><th></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function renderGuests(){
+  const rows = state.data[state.currentEvent].guests;
+  const body = rows.length ? rows.map(r => `
+    <tr>
+      <td data-label="Name"><input data-table="guests" data-id="${r.id}" data-field="name" value="${esc(r.name)}"></td>
+      <td data-label="Side"><input list="guestSideList" data-table="guests" data-id="${r.id}" data-field="side" value="${esc(r.side||'')}"></td>
+      <td data-label="RSVP">
+        <select data-table="guests" data-id="${r.id}" data-field="rsvp_status" class="badge ${r.rsvp_status}">${
+          Object.entries(RSVP_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.rsvp_status?'selected':''}>${l}</option>`).join('')
+        }</select>
+      </td>
+      <td data-label="Plus one" style="text-align:center;"><input type="checkbox" data-table="guests" data-id="${r.id}" data-field="plus_one" ${r.plus_one?'checked':''}></td>
+      <td data-label="Dietary"><input data-table="guests" data-id="${r.id}" data-field="dietary_notes" value="${esc(r.dietary_notes||'')}"></td>
+      <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button></td>
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">No guests yet — add your first one above.</td></tr>`;
+
+  const headcount = rows.filter(r=>r.rsvp_status==='yes').length + rows.filter(r=>r.rsvp_status==='yes' && r.plus_one).length;
+
+  return `
+    ${datalist('guestSideList', GUEST_SIDES)}
+    <div class="budget-summary">
+      <div class="stat"><div class="v">${rows.length}</div><div class="l">On the list</div></div>
+      <div class="stat"><div class="v">${rows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Confirmed yes</div></div>
+      <div class="stat"><div class="v">${rows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
+      <div class="stat"><div class="v">${headcount}</div><div class="l">Headcount incl. +1s</div></div>
+    </div>
+    <button class="add-toggle" data-toggle="guestForm">+ Add guest</button>
+    <form class="add-form" id="guestForm">
+      <div class="field"><label>Name</label><input id="g_name" required></div>
+      <div class="field"><label>Side</label><input list="guestSideList" id="g_side"></div>
+      <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+      <div class="field full"><label>Dietary / notes</label><input id="g_notes"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="guestForm">Cancel</button>
+        <button type="submit" class="btn-primary">Save guest</button>
+      </div>
+    </form>
+    <table class="data-table">
+      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Plus one</th><th>Dietary / notes</th><th></th></tr></thead>
+      <tbody>${body}</tbody>
+    </table>`;
+}
+
+function esc(s){ return String(s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
+
+/* ---------------- events / delegation ---------------- */
+document.getElementById('eventTabs').addEventListener('click', e => {
+  const btn = e.target.closest('[data-event]');
+  if (!btn) return;
+  state.currentEvent = btn.dataset.event;
+  document.querySelectorAll('#eventTabs .ribbon').forEach(b => b.classList.toggle('active', b === btn));
+  renderSummary();
+  renderSection();
+});
+
+document.getElementById('sectionTabs').addEventListener('click', e => {
+  const btn = e.target.closest('[data-section]');
+  if (!btn) return;
+  state.currentSection = btn.dataset.section;
+  document.querySelectorAll('#sectionTabs button').forEach(b => b.classList.toggle('active', b === btn));
+  renderSection();
+});
+
+document.getElementById('sectionContent').addEventListener('click', e => {
+  const toggle = e.target.closest('[data-toggle]');
+  if (toggle){
+    const form = document.getElementById(toggle.dataset.toggle);
+    form.classList.toggle('open');
+    return;
+  }
+  const del = e.target.closest('[data-action="delete"]');
+  if (del){
+    if (confirm('Delete this row?')) deleteRow(del.dataset.table, del.dataset.id);
+  }
+});
+
+document.getElementById('sectionContent').addEventListener('change', e => {
+  const el = e.target.closest('[data-field]');
+  if (!el) return;
+  const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
+  let value;
+  if (el.type === 'checkbox') value = el.checked;
+  else if (el.type === 'number') value = el.value === '' ? null : Number(el.value);
+  else value = el.value;
+  updateRow(table, id, { [field]: value });
+  if (el.tagName === 'SELECT') el.className = 'badge ' + value;
+  if (['status','deposit_paid','completed','rsvp_status','plus_one','actual_amount','planned_amount'].includes(field)){
+    renderSummary();
+    if (['status','deposit_paid'].includes(field)) return; // avoid full rerender wiping focus on quick edits
+    renderSection();
+  }
+});
+
+document.getElementById('sectionContent').addEventListener('submit', e => {
+  e.preventDefault();
+  if (e.target.id === 'vendorForm'){
+    insertRow('vendors', {
+      category: document.getElementById('v_category').value,
+      name: document.getElementById('v_name').value,
+      contact_phone: document.getElementById('v_contact').value,
+      status: document.getElementById('v_status').value,
+      price: document.getElementById('v_price').value ? Number(document.getElementById('v_price').value) : null,
+      deposit_amount: document.getElementById('v_deposit').value ? Number(document.getElementById('v_deposit').value) : null,
+      notes: document.getElementById('v_notes').value
+    });
+    e.target.reset(); e.target.classList.remove('open');
+  } else if (e.target.id === 'budgetForm'){
+    insertRow('budget_items', {
+      category: document.getElementById('b_category').value,
+      item_name: document.getElementById('b_item').value,
+      planned_amount: Number(document.getElementById('b_planned').value || 0),
+      actual_amount: document.getElementById('b_actual').value ? Number(document.getElementById('b_actual').value) : null,
+      notes: document.getElementById('b_notes').value
+    });
+    e.target.reset(); e.target.classList.remove('open');
+  } else if (e.target.id === 'taskForm'){
+    insertRow('tasks', {
+      title: document.getElementById('t_title').value,
+      category: document.getElementById('t_category').value,
+      due_date: document.getElementById('t_due').value || null,
+      notes: document.getElementById('t_notes').value
+    });
+    e.target.reset(); e.target.classList.remove('open');
+  } else if (e.target.id === 'guestForm'){
+    insertRow('guests', {
+      name: document.getElementById('g_name').value,
+      side: document.getElementById('g_side').value,
+      rsvp_status: document.getElementById('g_rsvp').value,
+      notes: document.getElementById('g_notes').value
+    });
+    e.target.reset(); e.target.classList.remove('open');
+  }
+});
+
+/* ---------------- init ---------------- */
+async function init(){
+  const { data: evRows, error } = await supabaseClient.from('events').select('*');
+  if (error){
+    document.getElementById('summaryCard').innerHTML = `<p style="color:var(--danger)">Couldn't connect to Supabase — check config.js has your real URL and anon key, and that you ran schema.sql. (${error.message})</p>`;
+    return;
+  }
+  evRows.forEach(r => state.events[r.id] = r);
+
+  for (const ev of ['wedding','homecoming']){
+    const [vendors, budget_items, tasks, guests] = await Promise.all([
+      fetchTable('vendors', ev), fetchTable('budget_items', ev), fetchTable('tasks', ev), fetchTable('guests', ev)
+    ]);
+    state.data[ev] = { vendors, budget_items, tasks, guests };
+  }
+  renderSummary();
+  renderSection();
+}
+
+/* ---------------- pin gate ---------------- */
+const UNLOCK_KEY = 'wedplanner_unlocked';
+
+function unlock(){
+  localStorage.setItem(UNLOCK_KEY, '1');
+  document.body.classList.add('unlocked');
+  init();
+}
+
+document.getElementById('pinForm').addEventListener('submit', e => {
+  e.preventDefault();
+  const input = document.getElementById('pinInput');
+  const card = document.querySelector('.pin-card');
+  if (input.value.trim() === String(APP_PIN)){
+    unlock();
+  } else {
+    document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
+    card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
+    input.value = '';
+    input.focus();
+  }
+});
+
+document.getElementById('lockBtn').addEventListener('click', () => {
+  localStorage.removeItem(UNLOCK_KEY);
+  document.body.classList.remove('unlocked');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinInput').focus();
+});
+
+if (localStorage.getItem(UNLOCK_KEY) === '1'){
+  document.body.classList.add('unlocked');
+  init();
+}
+</script>
+</body>
+</html>
