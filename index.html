@@ -33,16 +33,91 @@
     --font-display:'Fraunces', serif;
     --font-body:'Inter', sans-serif;
     --font-mono:'IBM Plex Mono', monospace;
+    --ease:cubic-bezier(.22,1,.36,1);
+    --ease-snap:cubic-bezier(.34,1.56,.64,1);
+    --dur:.45s;
   }
   *{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  ::selection{background:var(--accent); color:var(--paper);}
   body{
     margin:0;
-    background:var(--paper);
+    min-height:100vh;
+    background:
+      radial-gradient(900px 500px at 12% -10%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 60%),
+      radial-gradient(700px 460px at 108% 10%, color-mix(in srgb, var(--accent-secondary) 12%, transparent), transparent 55%),
+      var(--paper);
+    background-attachment:fixed;
+    transition:background var(--dur) var(--ease);
     color:var(--ink);
     font-family:var(--font-body);
     -webkit-font-smoothing:antialiased;
   }
-  #app{max-width:980px; margin:0 auto; padding:0 24px 80px;}
+  @keyframes fadeInUp{
+    from{opacity:0; transform:translateY(14px);}
+    to{opacity:1; transform:translateY(0);}
+  }
+  @keyframes floatY{
+    0%,100%{transform:translateY(0) rotate(-4deg);}
+    50%{transform:translateY(-5px) rotate(-4deg);}
+  }
+  @keyframes glowPulse{
+    0%,100%{box-shadow:0 0 0 0 color-mix(in srgb, var(--accent) 35%, transparent);}
+    50%{box-shadow:0 0 0 8px color-mix(in srgb, var(--accent) 0%, transparent);}
+  }
+  @keyframes twinkle{
+    0%,100%{opacity:.15; transform:scale(.7);}
+    50%{opacity:.85; transform:scale(1.15);}
+  }
+  @keyframes shimmerSweep{
+    0%{background-position:-150% 0;}
+    100%{background-position:250% 0;}
+  }
+  @keyframes lanternRise{
+    0%{transform:translateY(0) translateX(0); opacity:0;}
+    8%{opacity:.9;}
+    88%{opacity:.85;}
+    100%{transform:translateY(-118vh) translateX(var(--drift,24px)); opacity:0;}
+  }
+  @keyframes spinSlow{ to{transform:rotate(360deg);} }
+  @keyframes swayGlow{
+    0%,100%{transform:rotate(-3deg); filter:drop-shadow(0 0 6px color-mix(in srgb, var(--burgundy) 35%, transparent));}
+    50%{transform:rotate(3deg); filter:drop-shadow(0 0 14px color-mix(in srgb, var(--burgundy) 55%, transparent));}
+  }
+
+  #lanterns{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; opacity:0; transition:opacity .9s var(--ease);}
+  body.theme-wedding #lanterns{opacity:1;}
+  .lantern{
+    position:absolute; bottom:-70px;
+    width:24px; height:32px; border-radius:48% 48% 44% 44% / 58% 58% 42% 42%;
+    background:radial-gradient(circle at 50% 35%, #FFEFCB, var(--gold) 62%, var(--gold-deep) 100%);
+    box-shadow:0 0 16px 5px color-mix(in srgb, var(--gold) 50%, transparent);
+    animation:lanternRise linear infinite;
+  }
+  .lantern::after{
+    content:''; position:absolute; left:50%; top:-7px; width:1px; height:7px;
+    background:var(--gold-deep); transform:translateX(-50%);
+  }
+
+  .emblem{position:absolute; top:-26px; right:-14px; width:210px; height:210px; opacity:0; pointer-events:none; transition:opacity .8s var(--ease); z-index:0;}
+  .emblem.sun{stroke:var(--gold-deep);}
+  .emblem.rose{stroke:var(--burgundy);}
+  body.theme-wedding .emblem.sun{opacity:.14; animation:spinSlow 70s linear infinite;}
+  body.theme-homecoming .emblem.rose{opacity:.16; animation:swayGlow 5s ease-in-out infinite;}
+
+  #sparkles{position:fixed; inset:0; pointer-events:none; z-index:0; overflow:hidden; transition:opacity .8s var(--ease);}
+  #sparkles span{
+    position:absolute; font-size:.9rem; color:var(--accent-secondary);
+    animation:twinkle 3.4s ease-in-out infinite;
+    filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 60%, transparent));
+    transition:color .5s var(--ease);
+  }
+  body.theme-wedding #sparkles{opacity:.55;}
+  body.theme-homecoming #sparkles{opacity:1;}
+
+  header.top{position:relative; overflow:hidden;}
+
+  #app{max-width:980px; margin:0 auto; padding:0 24px 80px; position:relative; z-index:1; animation:fadeInUp var(--dur) var(--ease) both;}
 
   /* ---------- header ---------- */
   header.top{padding:36px 0 0;}
@@ -57,10 +132,18 @@
   h1.title{
     font-family:var(--font-display);
     font-weight:500;
-    font-size:2.1rem;
-    margin:0 0 20px;
+    font-size:2.3rem;
+    margin:0 0 6px;
     letter-spacing:-.01em;
+    background:linear-gradient(100deg, var(--ink) 30%, var(--accent) 48%, var(--accent-secondary) 56%, var(--ink) 74%);
+    background-size:250% auto;
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    animation:shimmerSweep 7s linear infinite;
   }
+  .flourish{display:flex; align-items:center; gap:10px; margin:0 0 22px; opacity:.85;}
+  .flourish svg{flex-shrink:0;}
+  .flourish .line{height:1px; flex:1; background:linear-gradient(90deg, var(--accent-secondary), transparent);}
+  .flourish .line.rev{background:linear-gradient(270deg, var(--accent-secondary), transparent);}
 
   .ribbon-tabs{display:flex; padding-left:4px;}
   .ribbon{
@@ -74,21 +157,34 @@
     font-weight:500;
     color:var(--paper);
     clip-path:polygon(0 0,100% 0,100% 74%,50% 100%,0 74%);
-    transition:transform .18s ease, opacity .18s ease;
+    transition:transform .5s var(--ease-snap), opacity .3s var(--ease), box-shadow .3s var(--ease);
     transform:translateY(4px);
     opacity:.55;
+    overflow:hidden;
   }
+  .ribbon::after{
+    content:'';
+    position:absolute; inset:0;
+    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.65) 40%, transparent 60%);
+    background-size:250% 100%;
+    background-position:-150% 0;
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  .ribbon:hover::after, .ribbon.active::after{opacity:1; animation:shimmerSweep 1.8s ease-in-out infinite;}
   .ribbon.wedding{background:linear-gradient(135deg, var(--gold), var(--rose-gold));}
   .ribbon.homecoming{background:linear-gradient(135deg, var(--navy), var(--burgundy));}
-  .ribbon.active{transform:translateY(-4px); opacity:1; box-shadow:0 10px 18px -8px rgba(0,0,0,.35);}
+  .ribbon.active{transform:translateY(-4px) scale(1.03); opacity:1; box-shadow:0 12px 22px -10px color-mix(in srgb, var(--accent) 70%, transparent);}
   .ribbon:hover{opacity:.85;}
 
   /* ---------- event summary ---------- */
   .summary-card{
-    background:var(--paper-warm);
+    background:color-mix(in srgb, var(--paper-warm) 75%, transparent);
+    backdrop-filter:blur(14px);
+    -webkit-backdrop-filter:blur(14px);
     border:1px solid var(--line);
     border-left:4px solid var(--accent-secondary);
-    border-radius:2px;
+    border-radius:10px;
     padding:22px 24px;
     margin-top:0;
     display:flex;
@@ -96,17 +192,20 @@
     gap:24px;
     align-items:center;
     justify-content:space-between;
+    box-shadow:0 18px 40px -24px color-mix(in srgb, var(--accent) 55%, transparent);
+    transition:box-shadow .5s var(--ease), border-color .5s var(--ease);
   }
   .date-row{display:flex; align-items:center; gap:16px;}
   .stamp{
     width:82px; height:82px; border-radius:50%;
     border:2px dashed var(--accent);
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    transform:rotate(-4deg);
+    animation:floatY 4.5s ease-in-out infinite, glowPulse 2.6s ease-in-out infinite;
     font-family:var(--font-mono);
     color:var(--accent);
     flex-shrink:0;
     background:var(--paper);
+    transition:border-color .5s var(--ease), color .5s var(--ease);
   }
   .stamp .n{font-size:1.5rem; font-weight:600; line-height:1;}
   .stamp .u{font-size:.55rem; letter-spacing:.08em; text-transform:uppercase; margin-top:2px;}
@@ -121,55 +220,84 @@
 
   .stat-strip{display:flex; gap:14px; flex-wrap:wrap;}
   .stat{
-    background:var(--paper); border:1px solid var(--line); border-radius:2px;
+    background:color-mix(in srgb, var(--paper) 85%, transparent); border:1px solid var(--line); border-radius:8px;
     padding:10px 16px; min-width:118px;
+    transition:transform .3s var(--ease), box-shadow .3s var(--ease);
   }
-  .stat .v{font-family:var(--font-mono); font-size:1.15rem; font-weight:600; color:var(--accent);}
+  .stat:hover{transform:translateY(-2px); box-shadow:0 10px 20px -14px color-mix(in srgb, var(--accent) 60%, transparent);}
+  .stat .v{font-family:var(--font-mono); font-size:1.15rem; font-weight:600; color:var(--accent); transition:color .5s var(--ease);}
   .stat .l{font-size:.68rem; color:var(--ink-soft); text-transform:uppercase; letter-spacing:.06em; margin-top:2px;}
 
   /* ---------- section tabs ---------- */
   .section-tabs{
     display:flex; gap:2px; margin-top:30px; border-bottom:2px solid var(--line);
-    overflow-x:auto;
+    overflow-x:auto; position:relative;
   }
   .section-tabs button{
     background:transparent; border:none; cursor:pointer;
     padding:11px 18px; font-family:var(--font-body); font-weight:600;
     font-size:.76rem; letter-spacing:.05em; text-transform:uppercase;
     color:var(--ink-soft); border-bottom:2px solid transparent; margin-bottom:-2px;
-    white-space:nowrap;
+    white-space:nowrap; transition:color .3s var(--ease);
   }
-  .section-tabs button.active{color:var(--accent); border-bottom-color:var(--accent);}
+  .section-tabs button.active{color:var(--accent); border-bottom-color:transparent;}
+  #tabIndicator{
+    position:absolute; bottom:-2px; height:2px; background:linear-gradient(90deg, var(--accent), var(--accent-secondary));
+    transition:left .4s var(--ease-snap), width .4s var(--ease-snap);
+    box-shadow:0 0 8px color-mix(in srgb, var(--accent) 70%, transparent);
+  }
 
   main{padding-top:24px;}
 
   /* ---------- add form ---------- */
   .add-toggle{
-    background:var(--ink); color:var(--paper); border:none; border-radius:2px;
+    background:var(--ink); color:var(--paper); border:none; border-radius:8px;
     padding:10px 16px; font-family:var(--font-body); font-weight:600; font-size:.82rem;
-    cursor:pointer; margin-bottom:16px;
+    cursor:pointer; margin-bottom:16px; transition:transform .3s var(--ease-snap), box-shadow .3s var(--ease);
   }
+  .add-toggle:hover{transform:translateY(-2px); box-shadow:0 10px 18px -10px rgba(0,0,0,.4);}
   .add-form{
-    display:none; grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
-    gap:12px; background:var(--paper-warm); border:1px solid var(--line);
-    padding:18px; border-radius:2px; margin-bottom:22px;
+    display:grid; grid-template-columns:repeat(auto-fit, minmax(160px,1fr));
+    gap:12px; background:color-mix(in srgb, var(--paper-warm) 80%, transparent);
+    backdrop-filter:blur(12px); -webkit-backdrop-filter:blur(12px);
+    border:1px solid var(--line); border-radius:10px;
+    padding:0 18px; margin-bottom:0;
+    max-height:0; opacity:0; overflow:hidden;
+    transform:translateY(-8px);
+    transition:max-height .5s var(--ease), opacity .35s var(--ease), padding .5s var(--ease), margin .5s var(--ease), transform .5s var(--ease);
   }
-  .add-form.open{display:grid;}
+  .add-form.open{max-height:520px; opacity:1; padding:18px; margin-bottom:22px; transform:translateY(0);}
   .add-form .full{grid-column:1/-1;}
   .field label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:4px;}
   .field input, .field select, .field textarea{
     width:100%; font-family:var(--font-body); font-size:.9rem; padding:8px 9px;
-    border:1px solid var(--line); border-radius:2px; background:var(--paper); color:var(--ink);
+    border:1px solid var(--line); border-radius:6px; background:var(--paper); color:var(--ink);
+    transition:border-color .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .field input:focus, .field select:focus, .field textarea:focus{
+    outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);
   }
   .add-form .submit-row{grid-column:1/-1; display:flex; justify-content:flex-end; gap:10px;}
   .btn-primary{
-    background:var(--accent); color:var(--paper); border:none; padding:9px 20px;
-    border-radius:2px; font-weight:600; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    position:relative; overflow:hidden;
+    background:linear-gradient(120deg, var(--accent), var(--accent-secondary));
+    color:var(--paper); border:none; padding:9px 20px;
+    border-radius:8px; font-weight:600; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    transition:transform .3s var(--ease-snap), box-shadow .3s var(--ease);
   }
+  .btn-primary::after{
+    content:''; position:absolute; inset:0;
+    background:linear-gradient(115deg, transparent 20%, rgba(255,255,255,.5) 40%, transparent 60%);
+    background-size:250% 100%; background-position:-150% 0; opacity:0; transition:opacity .3s ease;
+  }
+  .btn-primary:hover{transform:translateY(-2px); box-shadow:0 12px 22px -12px color-mix(in srgb, var(--accent) 70%, transparent);}
+  .btn-primary:hover::after{opacity:1; animation:shimmerSweep 1.4s ease-in-out infinite;}
   .btn-ghost{
     background:transparent; color:var(--ink-soft); border:1px solid var(--line); padding:9px 16px;
-    border-radius:2px; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    border-radius:8px; font-size:.82rem; cursor:pointer; font-family:var(--font-body);
+    transition:border-color .3s var(--ease), color .3s var(--ease);
   }
+  .btn-ghost:hover{border-color:var(--accent); color:var(--accent);}
 
   /* ---------- data table ---------- */
   table.data-table{width:100%; border-collapse:collapse; font-size:.87rem;}
@@ -178,23 +306,29 @@
     text-transform:uppercase; color:var(--ink-soft); padding:8px 10px; border-bottom:1px solid var(--line);
   }
   .data-table td{padding:9px 10px; border-bottom:1px solid var(--line); vertical-align:middle;}
-  .data-table tr:hover td{background:rgba(0,0,0,.02);}
+  .data-table tbody tr{animation:fadeInUp .4s var(--ease) both; transition:background .3s var(--ease);}
+  .data-table tr:hover td{background:color-mix(in srgb, var(--accent) 5%, transparent);}
   .data-table input, .data-table select, .data-table textarea{
     border:1px solid transparent; background:transparent; font-family:var(--font-body);
-    font-size:.85rem; width:100%; padding:5px 6px; border-radius:2px; color:var(--ink);
+    font-size:.85rem; width:100%; padding:5px 6px; border-radius:6px; color:var(--ink);
+    transition:border-color .25s var(--ease), background .25s var(--ease);
   }
   .data-table input:hover, .data-table select:hover, .data-table textarea:hover,
   .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
     border-color:var(--line); background:var(--paper);
   }
+  .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
+    border-color:var(--accent); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
+  }
   .data-table input[type="number"]{font-family:var(--font-mono);}
   .del-btn{
     background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
-    line-height:1; padding:4px 6px;
+    line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.6;
   }
+  .del-btn:hover{transform:scale(1.2) rotate(90deg); opacity:1;}
   .empty-row td{padding:26px 10px; text-align:center; color:var(--ink-soft); font-style:italic;}
 
-  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:600;}
+  .badge{display:inline-block; padding:2px 8px; border-radius:20px; font-size:.72rem; font-weight:600; transition:transform .2s var(--ease-snap);}
   .badge.researching{background:#EDEAE1; color:#7A7362;}
   .badge.contacted{background:#E4EAF2; color:#37567F;}
   .badge.booked{background:#E1EBE7; color:#2C4A44;}
@@ -209,13 +343,21 @@
   /* ---------- pin gate ---------- */
   body:not(.unlocked) #app{display:none;}
   #pinGate{
-    position:fixed; inset:0; background:var(--paper);
+    position:fixed; inset:0;
+    background:
+      radial-gradient(900px 500px at 15% -10%, color-mix(in srgb, var(--gold) 14%, transparent), transparent 60%),
+      radial-gradient(700px 460px at 100% 100%, color-mix(in srgb, var(--rose-gold) 14%, transparent), transparent 55%),
+      var(--paper);
     display:flex; align-items:center; justify-content:center; z-index:50;
   }
   body.unlocked #pinGate{display:none;}
   .pin-card{
-    text-align:center; padding:40px 44px; max-width:340px; width:90%;
-    border:1px solid var(--line); border-radius:2px; background:var(--paper-warm);
+    text-align:center; padding:44px 44px; max-width:340px; width:90%;
+    border:1px solid var(--line); border-radius:14px;
+    background:color-mix(in srgb, var(--paper-warm) 78%, transparent);
+    backdrop-filter:blur(16px); -webkit-backdrop-filter:blur(16px);
+    box-shadow:0 30px 60px -30px color-mix(in srgb, var(--gold) 45%, transparent);
+    animation:fadeInUp .6s var(--ease) both;
   }
   .pin-card .eyebrow{margin-bottom:8px;}
   .pin-card h2{
@@ -224,9 +366,10 @@
   #pinInput{
     width:100%; text-align:center; font-family:var(--font-mono); font-size:1.6rem;
     letter-spacing:.5em; padding:12px 10px 12px 16px; border:1px solid var(--line);
-    border-radius:2px; background:var(--paper); color:var(--ink); margin-bottom:16px;
+    border-radius:8px; background:var(--paper); color:var(--ink); margin-bottom:16px;
+    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
   }
-  #pinInput:focus{outline:none; border-color:var(--accent);}
+  #pinInput:focus{outline:none; border-color:var(--gold); box-shadow:0 0 0 3px color-mix(in srgb, var(--gold) 20%, transparent);}
   .pin-card.shake{animation:shake .35s;}
   @keyframes shake{
     20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} 100%{transform:translateX(0);}
@@ -234,8 +377,9 @@
   #pinError{color:var(--danger); font-size:.8rem; min-height:18px; margin-bottom:10px;}
   .lock-link{
     background:none; border:none; color:var(--ink-soft); font-size:.72rem; cursor:pointer;
-    text-decoration:underline; font-family:var(--font-body); padding:0;
+    text-decoration:underline; font-family:var(--font-body); padding:0; transition:color .2s ease;
   }
+  .lock-link:hover{color:var(--accent);}
 
   /* ---------- toast ---------- */
   #toast{
@@ -261,7 +405,24 @@
   }
 </style>
 </head>
-<body>
+<body class="theme-wedding">
+<div id="lanterns">
+  <span class="lantern" style="left:6%; animation-duration:14s; animation-delay:0s; --drift:18px;"></span>
+  <span class="lantern" style="left:18%; animation-duration:17s; animation-delay:3s; --drift:-22px; transform:scale(.8);"></span>
+  <span class="lantern" style="left:34%; animation-duration:12.5s; animation-delay:6s; --drift:14px; transform:scale(1.1);"></span>
+  <span class="lantern" style="left:58%; animation-duration:16s; animation-delay:1.5s; --drift:-16px;"></span>
+  <span class="lantern" style="left:76%; animation-duration:13s; animation-delay:4.5s; --drift:20px; transform:scale(.85);"></span>
+  <span class="lantern" style="left:90%; animation-duration:18s; animation-delay:8s; --drift:-18px; transform:scale(1.05);"></span>
+</div>
+<div id="sparkles">
+  <span style="top:8%; left:6%; animation-delay:.2s;">✦</span>
+  <span style="top:18%; left:88%; animation-delay:1.1s; font-size:.7rem;">✦</span>
+  <span style="top:42%; left:3%; animation-delay:2s; font-size:.65rem;">✧</span>
+  <span style="top:65%; left:94%; animation-delay:.6s;">✦</span>
+  <span style="top:80%; left:12%; animation-delay:1.7s; font-size:.7rem;">✧</span>
+  <span style="top:30%; left:50%; animation-delay:2.6s; font-size:.6rem;">✦</span>
+  <span style="top:90%; left:60%; animation-delay:1.3s;">✧</span>
+</div>
 <div id="pinGate">
   <form class="pin-card" id="pinForm">
     <p class="eyebrow">Planning ledger</p>
@@ -273,15 +434,47 @@
 </div>
 <div id="app">
   <header class="top">
+    <svg class="emblem sun" viewBox="0 0 200 200" fill="none" stroke-width="1.6">
+      <circle cx="100" cy="100" r="30"/>
+      <g>
+        <path d="M100 40 Q108 20 100 4 Q92 20 100 40Z"/>
+        <path d="M100 160 Q108 180 100 196 Q92 180 100 160Z"/>
+        <path d="M40 100 Q20 108 4 100 Q20 92 40 100Z"/>
+        <path d="M160 100 Q180 108 196 100 Q180 92 160 100Z"/>
+        <path d="M58 58 Q40 44 26 30 Q40 48 58 58Z"/>
+        <path d="M142 142 Q160 156 174 170 Q160 152 142 142Z"/>
+        <path d="M142 58 Q160 44 174 30 Q160 48 142 58Z"/>
+        <path d="M58 142 Q40 156 26 170 Q40 152 58 142Z"/>
+      </g>
+      <circle cx="100" cy="100" r="52" stroke-dasharray="3 7"/>
+    </svg>
+    <svg class="emblem rose" viewBox="0 0 200 200" fill="none" stroke-width="1.6">
+      <path d="M100 150 C100 120 100 90 100 70" stroke-linecap="round"/>
+      <path d="M100 130 C88 136 76 132 70 122" stroke-linecap="round"/>
+      <path d="M100 142 C112 148 124 144 130 134" stroke-linecap="round"/>
+      <circle cx="100" cy="52" r="6"/>
+      <path d="M100 52 C82 52 68 40 68 24 C86 24 100 34 100 52Z"/>
+      <path d="M100 52 C118 52 132 40 132 24 C114 24 100 34 100 52Z"/>
+      <path d="M100 46 C86 42 78 28 82 12 C98 16 106 30 100 46Z"/>
+      <path d="M100 46 C114 42 122 28 118 12 C102 16 94 30 100 46Z"/>
+      <circle cx="100" cy="38" r="16"/>
+    </svg>
+    <div style="position:relative; z-index:1;">
     <div style="display:flex; justify-content:space-between; align-items:flex-start;">
       <p class="eyebrow">Planning ledger</p>
       <button class="lock-link" id="lockBtn">Lock</button>
     </div>
     <h1 class="title">Wedding &amp; Homecoming</h1>
+    <div class="flourish">
+      <span class="line"></span>
+      <svg width="16" height="16" viewBox="0 0 16 16"><path d="M8 0 L9.5 6.5 L16 8 L9.5 9.5 L8 16 L6.5 9.5 L0 8 L6.5 6.5 Z" fill="var(--accent)"/></svg>
+      <span class="line rev"></span>
+    </div>
     <nav class="ribbon-tabs" id="eventTabs">
       <button class="ribbon wedding active" data-event="wedding">Wedding</button>
       <button class="ribbon homecoming" data-event="homecoming">Homecoming</button>
     </nav>
+    </div>
   </header>
 
   <section class="summary-card" id="summaryCard"></section>
@@ -291,6 +484,7 @@
     <button data-section="budget">Budget</button>
     <button data-section="tasks">Checklist</button>
     <button data-section="guests">Guests</button>
+    <span id="tabIndicator"></span>
   </nav>
 
   <main id="sectionContent"></main>
@@ -329,6 +523,26 @@ function toast(msg, isError){
   t.className = isError ? 'show error' : 'show';
   clearTimeout(t._timer);
   t._timer = setTimeout(()=> t.className='', 2600);
+}
+
+function burstSparkles(x, y){
+  const glyphs = ['✦','✧','❋','✳'];
+  for (let i = 0; i < 7; i++){
+    const s = document.createElement('span');
+    s.textContent = glyphs[i % glyphs.length];
+    const angle = (Math.PI * 2 * i) / 7 + Math.random() * 0.4;
+    const dist = 34 + Math.random() * 26;
+    s.style.cssText = `position:fixed; left:${x}px; top:${y}px; z-index:60; pointer-events:none;
+      font-size:${10 + Math.random()*8}px; color:var(--accent-secondary);
+      filter:drop-shadow(0 0 4px color-mix(in srgb, var(--accent) 70%, transparent));
+      transition:transform .7s cubic-bezier(.22,1,.36,1), opacity .7s ease; opacity:1; transform:translate(0,0) scale(1);`;
+    document.body.appendChild(s);
+    requestAnimationFrame(() => {
+      s.style.transform = `translate(${Math.cos(angle)*dist}px, ${Math.sin(angle)*dist - 12}px) scale(.3)`;
+      s.style.opacity = '0';
+    });
+    setTimeout(() => s.remove(), 750);
+  }
 }
 
 function datalist(id, options){
@@ -384,16 +598,18 @@ async function updateEventDate(dateVal){
 function renderSummary(){
   const ev = state.events[state.currentEvent];
   const isWedding = state.currentEvent === 'wedding';
+  document.body.classList.toggle('theme-wedding', isWedding);
+  document.body.classList.toggle('theme-homecoming', !isWedding);
   document.documentElement.style.setProperty('--accent', isWedding ? 'var(--gold)' : 'var(--navy)');
   document.documentElement.style.setProperty('--accent-secondary', isWedding ? 'var(--rose-gold)' : 'var(--burgundy)');
   document.documentElement.style.setProperty('--accent-light', isWedding ? 'var(--gold-light)' : 'var(--navy-light)');
 
-  let stampHtml;
+  let stampHtml, stampTarget = null, stampSuffix = '';
   if (ev.event_date){
     const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
-    stampHtml = days >= 0
-      ? `<div class="stamp"><div class="n">${days}</div><div class="u">days to go</div></div>`
-      : `<div class="stamp"><div class="n">${Math.abs(days)}</div><div class="u">days since</div></div>`;
+    stampTarget = Math.abs(days);
+    stampSuffix = days >= 0 ? 'days to go' : 'days since';
+    stampHtml = `<div class="stamp"><div class="n" id="stampNum">0</div><div class="u">${stampSuffix}</div></div>`;
   } else {
     stampHtml = `<div class="stamp"><div class="u" style="font-size:.6rem;">set a<br>date</div></div>`;
   }
@@ -421,8 +637,21 @@ function renderSummary(){
     </div>`;
 
   document.getElementById('eventDateInput').addEventListener('change', e => updateEventDate(e.target.value));
+  if (stampTarget !== null) countUp(document.getElementById('stampNum'), stampTarget);
 }
 function renderStats(){ renderSummary(); }
+
+function countUp(el, target){
+  if (!el) return;
+  const dur = 700, start = performance.now();
+  function tick(now){
+    const p = Math.min(1, (now - start) / dur);
+    const eased = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(eased * target);
+    if (p < 1) requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+}
 
 /* ---------------- render: sections ---------------- */
 function renderSection(){
@@ -612,8 +841,17 @@ document.getElementById('sectionTabs').addEventListener('click', e => {
   if (!btn) return;
   state.currentSection = btn.dataset.section;
   document.querySelectorAll('#sectionTabs button').forEach(b => b.classList.toggle('active', b === btn));
+  moveTabIndicator(btn);
   renderSection();
 });
+
+function moveTabIndicator(btn){
+  const nav = document.getElementById('sectionTabs');
+  const indicator = document.getElementById('tabIndicator');
+  if (!btn || !indicator) return;
+  indicator.style.left = btn.offsetLeft + 'px';
+  indicator.style.width = btn.offsetWidth + 'px';
+}
 
 document.getElementById('sectionContent').addEventListener('click', e => {
   const toggle = e.target.closest('[data-toggle]');
@@ -637,7 +875,15 @@ document.getElementById('sectionContent').addEventListener('change', e => {
   else if (el.type === 'number') value = el.value === '' ? null : Number(el.value);
   else value = el.value;
   updateRow(table, id, { [field]: value });
+  if (el.type === 'checkbox' && el.checked && ['deposit_paid','completed','plus_one'].includes(field)){
+    const rect = el.getBoundingClientRect();
+    burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }
   if (el.tagName === 'SELECT') el.className = 'badge ' + value;
+  if (el.tagName === 'SELECT' && field === 'rsvp_status' && value === 'yes'){
+    const rect = el.getBoundingClientRect();
+    burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
+  }
   if (['status','deposit_paid','completed','rsvp_status','plus_one','actual_amount','planned_amount'].includes(field)){
     renderSummary();
     if (['status','deposit_paid'].includes(field)) return; // avoid full rerender wiping focus on quick edits
@@ -703,9 +949,8 @@ async function init(){
   }
   renderSummary();
   renderSection();
+  moveTabIndicator(document.querySelector('#sectionTabs button.active'));
 }
-
-/* ---------------- pin gate ---------------- */
 const UNLOCK_KEY = 'wedplanner_unlocked';
 
 function unlock(){
@@ -734,6 +979,8 @@ document.getElementById('lockBtn').addEventListener('click', () => {
   document.getElementById('pinInput').value = '';
   document.getElementById('pinInput').focus();
 });
+
+window.addEventListener('resize', () => moveTabIndicator(document.querySelector('#sectionTabs button.active')));
 
 if (localStorage.getItem(UNLOCK_KEY) === '1'){
   document.body.classList.add('unlocked');
