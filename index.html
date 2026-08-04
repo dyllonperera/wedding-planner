@@ -96,6 +96,24 @@
 
   .stampGlyph{width:16px; height:16px; margin-bottom:2px; opacity:.85;}
 
+  #achievementModal{
+    position:fixed; inset:0; z-index:95; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,6,.4); opacity:0; pointer-events:none; transition:opacity .4s var(--ease);
+    perspective:1200px; padding:20px;
+  }
+  #achievementModal.show{opacity:1; pointer-events:auto;}
+  .ach-card{
+    background:linear-gradient(160deg, var(--paper), var(--paper-warm));
+    border:1px solid var(--line); border-radius:20px; padding:40px 46px; max-width:360px; text-align:center;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.55);
+    transform:rotateY(-95deg); transform-origin:left center;
+    transition:transform .65s var(--ease-snap); cursor:pointer;
+  }
+  #achievementModal.show .ach-card{transform:rotateY(0deg);}
+  .ach-card .ach-icon{width:42px; height:42px; margin:0 auto 14px; color:var(--accent);}
+  .ach-title{font-family:var(--font-display); font-size:1.4rem; font-weight:600; color:var(--ink); margin:0 0 8px;}
+  .ach-msg{font-size:.88rem; color:var(--ink-soft); margin:0;}
+
   /* ================= HERO WORLD ================= */
   .hero{
     position:relative; min-height:82vh; overflow:hidden;
@@ -216,6 +234,8 @@
     font-family:var(--font-mono); color:var(--hero-text); margin-bottom:8px;
   }
   .heroStamp .n{font-size:2.1rem; font-weight:600; line-height:1;}
+  .heroStamp .n{font-variant-numeric:tabular-nums;}
+  .heroStamp .hms{font-family:var(--font-mono); font-size:.6rem; letter-spacing:.03em; margin-top:2px; opacity:.85; font-variant-numeric:tabular-nums;}
   .heroStamp .u{font-size:.62rem; letter-spacing:.1em; text-transform:uppercase; margin-top:4px; opacity:.8;}
   .heroDate{margin-top:10px;}
   .heroDate label{
@@ -373,6 +393,55 @@
   .budget-summary{display:flex; gap:14px; margin-bottom:20px; flex-wrap:wrap;}
   .budget-summary .stat-card{padding:14px 18px; flex:1; min-width:150px;}
 
+  .donut-wrap{
+    display:flex; gap:28px; align-items:center; flex-wrap:wrap; margin-bottom:24px;
+    background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
+    border-radius:16px; padding:22px 24px; animation:fadeInUp .6s var(--ease) both;
+  }
+  .donut{width:150px; height:150px; border-radius:50%; position:relative; flex-shrink:0; animation:donutSpinIn .9s var(--ease-snap) both;}
+  @keyframes donutSpinIn{ from{opacity:0; transform:rotate(-90deg) scale(.7);} to{opacity:1; transform:rotate(0) scale(1);} }
+  .donut-hole{
+    position:absolute; inset:20px; border-radius:50%; background:var(--paper);
+    display:flex; flex-direction:column; align-items:center; justify-content:center;
+    box-shadow:inset 0 2px 10px rgba(0,0,0,.08);
+  }
+  .dh-total{font-family:var(--font-mono); font-weight:600; font-size:.92rem; color:var(--ink);}
+  .dh-label{font-size:.6rem; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); margin-top:2px;}
+  .donut-legend{display:flex; flex-direction:column; gap:9px; flex:1; min-width:180px;}
+  .donut-legend-row{display:flex; align-items:center; gap:9px; font-size:.82rem;}
+  .donut-legend-row .dot{width:10px; height:10px; border-radius:50%; flex-shrink:0;}
+  .donut-legend-row .cat{flex:1; color:var(--ink-soft);}
+  .donut-legend-row .amt{font-family:var(--font-mono); font-weight:600; color:var(--ink);}
+
+  .rsvp-share{
+    display:flex; gap:22px; align-items:center; flex-wrap:wrap;
+    background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
+    border-radius:16px; padding:20px 24px; margin-bottom:24px; animation:fadeInUp .6s var(--ease) both;
+  }
+  .rsvp-share-qr img{border-radius:10px; display:block; background:#fff; padding:8px; box-shadow:0 14px 26px -16px rgba(0,0,0,.35);}
+  .rsvp-share-info{flex:1; min-width:200px;}
+  .rsvp-share-title{font-family:var(--font-display); font-weight:600; font-size:1.05rem; margin:0 0 4px; color:var(--ink);}
+  .rsvp-share-desc{font-size:.82rem; color:var(--ink-soft); margin:0 0 12px;}
+  .rsvp-share-url{display:flex; gap:8px;}
+  .rsvp-share-url input{
+    flex:1; font-family:var(--font-mono); font-size:.76rem; padding:9px 10px;
+    border:1px solid var(--line); border-radius:8px; background:var(--paper); color:var(--ink);
+  }
+
+  .mood-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(150px,1fr)); gap:14px; margin-top:18px;}
+  .mood-item{
+    position:relative; border-radius:12px; overflow:hidden; aspect-ratio:1; background:var(--paper-warm);
+    animation:fadeInUp .4s var(--ease) both; box-shadow:0 14px 26px -18px rgba(0,0,0,.3);
+    transition:transform .3s var(--ease-snap);
+  }
+  .mood-item:hover{transform:scale(1.03) rotate(-.6deg);}
+  .mood-item img{width:100%; height:100%; object-fit:cover; display:block;}
+  .mood-del{
+    position:absolute; top:6px; right:6px; background:rgba(0,0,0,.55); color:#fff; border:none;
+    border-radius:50%; width:26px; height:26px; cursor:pointer; opacity:0; transition:opacity .2s ease;
+  }
+  .mood-item:hover .mood-del{opacity:1;}
+
   /* ---------- pin gate ---------- */
   body:not(.unlocked) #main-content, body:not(.unlocked) .hero{display:none;}
   #pinGate{
@@ -410,6 +479,16 @@
 
   /* ---------- lock / sound controls ---------- */
   .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px; align-items:flex-start;}
+  #presenceDock{position:fixed; top:18px; left:20px; z-index:40; display:none; flex-direction:column; gap:6px;}
+  body.unlocked #presenceDock{position:absolute; top:20px;}
+  .presence-chip{
+    display:flex; align-items:center; gap:7px;
+    background:color-mix(in srgb, var(--hero-text) 10%, transparent);
+    border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    backdrop-filter:blur(10px); color:var(--hero-text); font-size:.72rem; font-weight:600;
+    padding:7px 13px; border-radius:100px; font-family:var(--font-body); transition:color 1s var(--ease);
+  }
+  .presence-dot{width:7px; height:7px; border-radius:50%; background:#4ADE80; box-shadow:0 0 6px #4ADE80; animation:twinkle 2s ease-in-out infinite; flex-shrink:0;}
   .currency-pill{
     display:flex; background:color-mix(in srgb, var(--hero-text) 10%, transparent);
     border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
@@ -466,6 +545,22 @@
     transition:clip-path .6s var(--portal-ease);
   }
 
+  #printSheet{display:none;}
+  @media print{
+    body *{visibility:hidden;}
+    #printSheet, #printSheet *{visibility:visible;}
+    #printSheet{
+      display:block !important; position:absolute; top:0; left:0; width:100%;
+      padding:30px; color:#000; background:#fff;
+    }
+    #printSheet h1{font-family:var(--font-display); font-size:1.6rem; margin:0 0 4px;}
+    #printSheet .print-date{color:#555; margin:0 0 26px; font-family:var(--font-body);}
+    #printSheet h2{font-family:var(--font-display); font-size:1.05rem; margin:24px 0 8px; border-bottom:1px solid #ccc; padding-bottom:5px;}
+    #printSheet table{width:100%; border-collapse:collapse; font-size:.82rem; font-family:var(--font-body);}
+    #printSheet th, #printSheet td{border:1px solid #ccc; padding:6px 8px; text-align:left;}
+    #printSheet p{font-family:var(--font-body); font-size:.88rem;}
+  }
+
   /* ---------- responsive ---------- */
   @media (max-width:720px){
     .hero{min-height:74vh; padding:150px 16px 56px;}
@@ -499,6 +594,7 @@
   </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
+<div id="presenceDock"></div>
 
 <div id="pinGate">
   <div class="hero-layer stars">
@@ -669,12 +765,26 @@
       <svg viewBox="0 0 24 24"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8ZM23 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
       Guests
     </button>
+    <button data-section="moodboard">
+      <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-4 4-3-3-4 4"/></svg>
+      Mood Board
+    </button>
   </nav>
+  <button class="btn-ghost" id="printSheetBtn" style="margin:-14px 0 24px;">🖨 Print day-of run sheet</button>
 
   <main id="sectionContent"></main>
 </div>
 
+<div id="printSheet"></div>
+
 <div id="toast"></div>
+<div id="achievementModal">
+  <div class="ach-card">
+    <svg class="ach-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.6 6.2L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.4-.8Z"/></svg>
+    <p class="ach-title" id="achTitle">Title</p>
+    <p class="ach-msg" id="achMsg">Message</p>
+  </div>
+</div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 <script src="config.js"></script>
@@ -720,7 +830,7 @@ const state = {
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
-  data:{ wedding:{vendors:[],budget_items:[],tasks:[],guests:[]}, homecoming:{vendors:[],budget_items:[],tasks:[],guests:[]} }
+  data:{ wedding:{vendors:[],budget_items:[],tasks:[],guests:[],moodboard:[]}, homecoming:{vendors:[],budget_items:[],tasks:[],guests:[],moodboard:[]} }
 };
 
 /* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
@@ -884,6 +994,107 @@ function datalist(id, options){
   return `<datalist id="${id}">${options.map(o=>`<option value="${o}">`).join('')}</datalist>`;
 }
 
+/* ---------------- confetti ---------------- */
+function fireConfetti(){
+  const canvas = document.createElement('canvas');
+  canvas.style.cssText = 'position:fixed; inset:0; z-index:94; pointer-events:none;';
+  canvas.width = window.innerWidth; canvas.height = window.innerHeight;
+  document.body.appendChild(canvas);
+  const cx = canvas.getContext('2d');
+  const cs = getComputedStyle(document.body);
+  const colors = [cs.getPropertyValue('--accent').trim() || '#C79A4B', cs.getPropertyValue('--accent2').trim() || '#C98A94', '#FFFFFF'];
+  const particles = Array.from({length: 150}, () => ({
+    x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.4,
+    vx: (Math.random() - 0.5) * 3.2, vy: 2 + Math.random() * 3,
+    size: 5 + Math.random() * 5, color: colors[Math.floor(Math.random() * colors.length)],
+    rot: Math.random() * 360, vr: (Math.random() - 0.5) * 10, shape: Math.random() < 0.5 ? 'rect' : 'circle'
+  }));
+  let frame = 0;
+  function anim(){
+    frame++;
+    cx.clearRect(0, 0, canvas.width, canvas.height);
+    particles.forEach(p => {
+      p.x += p.vx; p.y += p.vy; p.vy += 0.035; p.rot += p.vr;
+      cx.save(); cx.translate(p.x, p.y); cx.rotate(p.rot * Math.PI / 180);
+      cx.fillStyle = p.color;
+      if (p.shape === 'rect') cx.fillRect(-p.size / 2, -p.size / 4, p.size, p.size / 2);
+      else { cx.beginPath(); cx.arc(0, 0, p.size / 2, 0, Math.PI * 2); cx.fill(); }
+      cx.restore();
+    });
+    if (frame < 210) requestAnimationFrame(anim);
+    else canvas.remove();
+  }
+  anim();
+}
+
+/* ---------------- milestones + achievements ---------------- */
+const msKey = eventId => `wedplanner_ms_${eventId}`;
+function getAchieved(eventId){ try{ return JSON.parse(localStorage.getItem(msKey(eventId)) || '[]'); } catch(e){ return []; } }
+function hasAchieved(eventId, id){ return getAchieved(eventId).includes(id); }
+function markAchieved(eventId, id){
+  const a = getAchieved(eventId);
+  if (!a.includes(id)){ a.push(id); localStorage.setItem(msKey(eventId), JSON.stringify(a)); }
+}
+
+let achQueue = [];
+let achShowing = false;
+function queueAchievement(a){
+  achQueue.push(a);
+  if (!achShowing) showNextAchievement();
+}
+function showNextAchievement(){
+  const a = achQueue.shift();
+  if (!a){ achShowing = false; return; }
+  achShowing = true;
+  document.getElementById('achTitle').textContent = a.title;
+  document.getElementById('achMsg').textContent = a.msg;
+  const modal = document.getElementById('achievementModal');
+  modal.classList.add('show');
+  fireConfetti();
+  playChime('unlock');
+  clearTimeout(modal._timer);
+  modal._timer = setTimeout(() => dismissAchievement(), 3400);
+}
+function dismissAchievement(){
+  const modal = document.getElementById('achievementModal');
+  clearTimeout(modal._timer);
+  modal.classList.remove('show');
+  setTimeout(showNextAchievement, 450);
+}
+document.getElementById('achievementModal').addEventListener('click', dismissAchievement);
+
+function checkMilestones(eventId){
+  const ev = state.events[eventId];
+  const d = state.data[eventId];
+  const found = [];
+
+  if (ev.event_date){
+    const daysLeft = Math.floor((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
+    [100, 50, 30, 7, 1, 0].forEach(mark => {
+      const id = `days-${mark}`;
+      if (daysLeft === mark && !hasAchieved(eventId, id)){
+        found.push({ id,
+          title: mark === 0 ? "It's the day!" : `${mark} Day${mark === 1 ? '' : 's'} To Go!`,
+          msg: mark === 0 ? "Today's the day — breathe, and enjoy it." : 'The countdown just hit a milestone.'
+        });
+      }
+    });
+  }
+
+  const pct = (arr, pred) => arr.length ? arr.filter(pred).length / arr.length : 0;
+  const checks = [
+    { key:'vendors', pred:v=>['booked','paid_deposit','paid_full'].includes(v.status), id:'vendors-100', title:'Every Vendor Booked!', msg:'The lineup is locked in.' },
+    { key:'tasks', pred:t=>t.completed, id:'tasks-100', title:'Checklist Complete!', msg:'Nothing left to do but wait.' },
+    { key:'guests', pred:g=>g.rsvp_status==='yes', id:'guests-100', title:"Everyone's Confirmed!", msg:'The guest list is set.' }
+  ];
+  checks.forEach(c => {
+    const arr = d[c.key];
+    if (arr.length && pct(arr, c.pred) === 1 && !hasAchieved(eventId, c.id)) found.push(c);
+  });
+
+  found.forEach(a => { markAchieved(eventId, a.id); queueAchievement(a); });
+}
+
 /* ---------------- data access ---------------- */
 async function fetchTable(table, eventId){
   const { data, error } = await supabaseClient.from(table).select('*').eq('event_id', eventId).order('created_at');
@@ -942,6 +1153,28 @@ function countUp(el, target){
   requestAnimationFrame(tick);
 }
 
+let clockTimer = null;
+function startCountdownClock(targetDate){
+  clearInterval(clockTimer);
+  function tick(){
+    const hmsEl = document.getElementById('stampHms');
+    if (!hmsEl){ clearInterval(clockTimer); return; }
+    const diff = targetDate - new Date();
+    if (diff <= 0){
+      clearInterval(clockTimer);
+      renderSummary();
+      return;
+    }
+    const totalSeconds = Math.floor(diff / 1000);
+    const h = String(Math.floor((totalSeconds % 86400) / 3600)).padStart(2, '0');
+    const m = String(Math.floor((totalSeconds % 3600) / 60)).padStart(2, '0');
+    const s = String(totalSeconds % 60).padStart(2, '0');
+    hmsEl.textContent = `${h}:${m}:${s}`;
+  }
+  tick();
+  clockTimer = setInterval(tick, 1000);
+}
+
 function renderSummary(){
   const ev = state.events[state.currentEvent];
   const isWedding = state.currentEvent === 'wedding';
@@ -956,11 +1189,20 @@ function renderSummary(){
     ? `<svg class="stampGlyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>`
     : `<svg class="stampGlyph" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21c0-5-4-6-4-10a4 4 0 0 1 8 0c0 4-4 5-4 10Z"/></svg>`;
   if (ev.event_date){
-    const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
-    const target = Math.abs(days);
-    stampEl.innerHTML = `${glyph(isWedding)}<div class="n" id="stampNum">0</div><div class="u">${days >= 0 ? 'days to go' : 'days since'}</div>`;
-    countUp(document.getElementById('stampNum'), target);
+    const target = new Date(ev.event_date + 'T00:00:00');
+    const now = new Date();
+    if (target - now > 0){
+      stampEl.innerHTML = `${glyph(isWedding)}<div class="n" id="stampNum">0</div><div class="hms" id="stampHms">--:--:--</div><div class="u">days to go</div>`;
+      countUp(document.getElementById('stampNum'), Math.floor((target - now) / 86400000) + 1);
+      startCountdownClock(target);
+    } else {
+      clearInterval(clockTimer);
+      const daysSince = Math.floor((now - target) / 86400000);
+      stampEl.innerHTML = `${glyph(isWedding)}<div class="n" id="stampNum">0</div><div class="u">days since</div>`;
+      countUp(document.getElementById('stampNum'), daysSince);
+    }
   } else {
+    clearInterval(clockTimer);
     stampEl.innerHTML = `${glyph(isWedding)}<div class="u" style="font-size:.62rem;">set a<br>date</div>`;
   }
 
@@ -980,6 +1222,7 @@ function renderSummary(){
       <div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></div>
       <div class="v">${guestsYes}/${d.guests.length}</div><div class="l">Guests confirmed</div></div>`;
+  checkMilestones(state.currentEvent);
 }
 function renderStats(){ renderSummary(); }
 
@@ -990,7 +1233,8 @@ function renderSection(){
   if (state.currentSection === 'vendors') html = renderVendors();
   else if (state.currentSection === 'budget') html = renderBudget();
   else if (state.currentSection === 'tasks') html = renderTasks();
-  else html = renderGuests();
+  else if (state.currentSection === 'guests') html = renderGuests();
+  else html = renderMoodboard();
   el.innerHTML = `<div class="table-wrap">${html}</div>`;
 }
 
@@ -1035,6 +1279,39 @@ function renderVendors(){
     </table>`;
 }
 
+function renderDonut(items){
+  const totals = {};
+  items.forEach(b => { const cat = b.category || 'Other'; totals[cat] = (totals[cat] || 0) + (Number(b.planned_amount) || 0); });
+  let entries = Object.entries(totals).filter(([,v]) => v > 0).sort((a,b) => b[1] - a[1]);
+  if (entries.length > 6){
+    const top = entries.slice(0, 5);
+    const otherSum = entries.slice(5).reduce((s,[,v]) => s + v, 0);
+    entries = [...top, ['Other', otherSum]];
+  }
+  const total = entries.reduce((s,[,v]) => s + v, 0);
+  if (!total) return `<p style="color:var(--ink-soft); font-size:.85rem; padding:4px 2px 20px;">Add planned amounts to see the spend breakdown.</p>`;
+  const palette = ['var(--accent)','var(--accent2)','color-mix(in srgb, var(--accent) 55%, var(--accent2))','color-mix(in srgb, var(--accent) 78%, white)','color-mix(in srgb, var(--accent2) 65%, white)','#BFB6A6'];
+  let cum = 0;
+  const stops = entries.map(([,v], i) => {
+    const startPct = (cum / total) * 100; cum += v;
+    const endPct = (cum / total) * 100;
+    return `${palette[i % palette.length]} ${startPct}% ${endPct}%`;
+  }).join(', ');
+  const legend = entries.map(([cat,v], i) => `
+    <div class="donut-legend-row">
+      <span class="dot" style="background:${palette[i % palette.length]}"></span>
+      <span class="cat">${esc(cat)}</span>
+      <span class="amt">${fmtMoney(v)}</span>
+    </div>`).join('');
+  return `
+    <div class="donut-wrap">
+      <div class="donut" style="background:conic-gradient(${stops});">
+        <div class="donut-hole"><div class="dh-total">${fmtMoney(total)}</div><div class="dh-label">planned</div></div>
+      </div>
+      <div class="donut-legend">${legend}</div>
+    </div>`;
+}
+
 function renderBudget(){
   const rows = state.data[state.currentEvent].budget_items;
   const plannedSum = rows.reduce((s,b)=> s + (Number(b.planned_amount)||0), 0);
@@ -1052,6 +1329,7 @@ function renderBudget(){
 
   return `
     ${datalist('budgetCatList', BUDGET_CATS)}
+    ${renderDonut(rows)}
     <div class="budget-summary">
       <div class="stat-card"><div class="v">${fmtMoney(plannedSum)}</div><div class="l">Planned total</div></div>
       <div class="stat-card"><div class="v">${fmtMoney(actualSum)}</div><div class="l">Actual so far</div></div>
@@ -1131,8 +1409,22 @@ function renderGuests(){
 
   const headcount = rows.filter(r=>r.rsvp_status==='yes').length + rows.filter(r=>r.rsvp_status==='yes' && r.plus_one).length;
 
+  const rsvpUrl = buildRsvpUrl(state.currentEvent);
+  const qrSrc = `https://api.qrserver.com/v1/create-qr-code/?size=180x180&margin=8&data=${encodeURIComponent(rsvpUrl)}`;
+
   return `
     ${datalist('guestSideList', GUEST_SIDES)}
+    <div class="rsvp-share">
+      <div class="rsvp-share-qr"><img src="${qrSrc}" alt="RSVP QR code" width="140" height="140" loading="lazy"></div>
+      <div class="rsvp-share-info">
+        <p class="rsvp-share-title">Guest RSVP link</p>
+        <p class="rsvp-share-desc">Share this link or QR code — guests RSVP themselves and land straight in this list.</p>
+        <div class="rsvp-share-url">
+          <input readonly value="${rsvpUrl}" id="rsvpUrlInput">
+          <button type="button" class="btn-ghost" id="copyRsvpUrl">Copy</button>
+        </div>
+      </div>
+    </div>
     <div class="budget-summary">
       <div class="stat-card"><div class="v">${rows.length}</div><div class="l">On the list</div></div>
       <div class="stat-card"><div class="v">${rows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Confirmed yes</div></div>
@@ -1156,6 +1448,57 @@ function renderGuests(){
     </table>`;
 }
 
+function buildRsvpUrl(eventId){
+  return new URL(`rsvp.html?event=${eventId}`, window.location.href).href;
+}
+
+function renderMoodboard(){
+  const items = state.data[state.currentEvent].moodboard || [];
+  const grid = items.length ? items.map(img => `
+    <div class="mood-item">
+      <img src="${img.url}" alt="" loading="lazy">
+      <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
+    </div>`).join('') : `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:40px 0;">No inspiration photos yet — add your first one.</p>`;
+  return `
+    <label class="add-toggle" for="moodFileInput" style="display:inline-block; cursor:pointer;">+ Add photo</label>
+    <input type="file" id="moodFileInput" accept="image/*" style="display:none;" multiple>
+    <div class="mood-grid">${grid}</div>`;
+}
+
+async function fetchMoodboard(eventId){
+  try{
+    const { data, error } = await supabaseClient.storage.from('moodboard').list(eventId, { sortBy: { column: 'created_at', order: 'desc' } });
+    if (error || !data) return [];
+    return data.filter(f => f.name !== '.emptyFolderPlaceholder').map(f => ({
+      name: f.name,
+      url: supabaseClient.storage.from('moodboard').getPublicUrl(`${eventId}/${f.name}`).data.publicUrl
+    }));
+  } catch(e){ return []; }
+}
+
+async function handleMoodUpload(files){
+  if (!files || !files.length) return;
+  toast('Uploading…');
+  for (const file of files){
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const path = `${state.currentEvent}/${Date.now()}-${safeName}`;
+    const { error } = await supabaseClient.storage.from('moodboard').upload(path, file);
+    if (error){ toast(error.message, true); }
+  }
+  state.data[state.currentEvent].moodboard = await fetchMoodboard(state.currentEvent);
+  renderSection();
+  toast('Photo added');
+}
+
+async function handleMoodDelete(name){
+  if (!confirm('Remove this photo?')) return;
+  const { error } = await supabaseClient.storage.from('moodboard').remove([`${state.currentEvent}/${name}`]);
+  if (error){ toast(error.message, true); return; }
+  state.data[state.currentEvent].moodboard = await fetchMoodboard(state.currentEvent);
+  renderSection();
+  toast('Removed');
+}
+
 function esc(s){ return String(s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
 /* ---------------- events / delegation ---------------- */
@@ -1170,6 +1513,7 @@ document.getElementById('eventTabs').addEventListener('click', e => {
     document.body.dataset.theme = target;
     renderSummary();
     renderSection();
+    if (presenceChannel) presenceChannel.track({ name: localStorage.getItem('wedplanner_who'), event: target, at: Date.now() });
   });
 });
 
@@ -1199,10 +1543,18 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   const del = e.target.closest('[data-action="delete"]');
   if (del){
     if (confirm('Delete this row?')) deleteRow(del.dataset.table, del.dataset.id);
+    return;
+  }
+  const moodDel = e.target.closest('.mood-del');
+  if (moodDel){ handleMoodDelete(moodDel.dataset.moodName); return; }
+  if (e.target.closest('#copyRsvpUrl')){
+    const input = document.getElementById('rsvpUrlInput');
+    navigator.clipboard?.writeText(input.value).then(() => toast('Link copied')).catch(() => toast('Could not copy — long-press to copy manually', true));
   }
 });
 
 document.getElementById('sectionContent').addEventListener('change', e => {
+  if (e.target.id === 'moodFileInput'){ handleMoodUpload(e.target.files); return; }
   const el = e.target.closest('[data-field]');
   if (!el) return;
   const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
@@ -1272,6 +1624,36 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
 
 document.getElementById('eventDateInput').addEventListener('change', e => updateEventDate(e.target.value));
 
+/* ---------------- print run sheet ---------------- */
+function buildPrintSheet(){
+  const ev = state.events[state.currentEvent];
+  const d = state.data[state.currentEvent];
+  const dateStr = ev.event_date
+    ? new Date(ev.event_date + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'long', year:'numeric', month:'long', day:'numeric' })
+    : 'Date not yet set';
+  const vendorRows = d.vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td>${esc(v.contact_phone||'')}</td><td>${STATUS_LABELS[v.status]||v.status}</td></tr>`).join('')
+    || '<tr><td colspan="4">No vendors added</td></tr>';
+  const openTasks = d.tasks.filter(t => !t.completed).sort((a,b) => (a.due_date||'9999') < (b.due_date||'9999') ? -1 : 1);
+  const taskRows = openTasks.map(t => `<tr><td>${esc(t.title)}</td><td>${t.due_date || '—'}</td><td>${esc(t.category||'')}</td></tr>`).join('')
+    || '<tr><td colspan="3">Everything is done</td></tr>';
+  const guestsYes = d.guests.filter(g => g.rsvp_status === 'yes');
+  const headcount = guestsYes.length + guestsYes.filter(g => g.plus_one).length;
+
+  document.getElementById('printSheet').innerHTML = `
+    <h1>${THEME_COPY[state.currentEvent].title} — Day-Of Run Sheet</h1>
+    <p class="print-date">${dateStr}</p>
+    <h2>Vendors</h2>
+    <table><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th></tr></thead><tbody>${vendorRows}</tbody></table>
+    <h2>Open Tasks</h2>
+    <table><thead><tr><th>Task</th><th>Due</th><th>Category</th></tr></thead><tbody>${taskRows}</tbody></table>
+    <h2>Guests</h2>
+    <p>${guestsYes.length} confirmed &middot; ${headcount} total headcount including plus-ones</p>`;
+}
+document.getElementById('printSheetBtn').addEventListener('click', () => {
+  buildPrintSheet();
+  setTimeout(() => window.print(), 80);
+});
+
 /* ---------------- parallax ---------------- */
 if (window.matchMedia('(hover: hover)').matches){
   window.addEventListener('mousemove', e => {
@@ -1298,6 +1680,39 @@ document.getElementById('pinPreviewToggle').addEventListener('click', e => {
   document.body.dataset.theme = btn.dataset.preview;
 });
 
+/* ---------------- live presence ---------------- */
+let presenceChannel = null;
+function ensureWhoAmI(cb){
+  let name = localStorage.getItem('wedplanner_who');
+  if (name){ cb(name); return; }
+  name = (prompt("What's your name? (so you two can see when you're both planning at once)") || 'Guest').trim().slice(0, 24) || 'Guest';
+  localStorage.setItem('wedplanner_who', name);
+  cb(name);
+}
+function initPresence(myName){
+  presenceChannel = supabaseClient.channel('wedplanner-presence', {
+    config: { presence: { key: myName + '-' + Math.random().toString(36).slice(2, 7) } }
+  });
+  presenceChannel
+    .on('presence', { event: 'sync' }, renderPresence)
+    .subscribe(async status => {
+      if (status === 'SUBSCRIBED'){
+        await presenceChannel.track({ name: myName, event: state.currentEvent, at: Date.now() });
+      }
+    });
+}
+function renderPresence(){
+  if (!presenceChannel) return;
+  const dock = document.getElementById('presenceDock');
+  if (!dock) return;
+  const myName = localStorage.getItem('wedplanner_who');
+  const people = Object.values(presenceChannel.presenceState()).flat();
+  const others = people.filter(p => p.name !== myName);
+  if (!others.length){ dock.style.display = 'none'; dock.innerHTML = ''; return; }
+  dock.style.display = 'flex';
+  dock.innerHTML = others.map(p => `<div class="presence-chip"><span class="presence-dot"></span>${esc(p.name)} is here${p.event ? ' &middot; ' + THEME_COPY[p.event].title : ''}</div>`).join('');
+}
+
 /* ---------------- init ---------------- */
 async function init(){
   const { data: evRows, error } = await supabaseClient.from('events').select('*');
@@ -1308,10 +1723,10 @@ async function init(){
   evRows.forEach(r => state.events[r.id] = r);
 
   for (const ev of ['wedding','homecoming']){
-    const [vendors, budget_items, tasks, guests] = await Promise.all([
-      fetchTable('vendors', ev), fetchTable('budget_items', ev), fetchTable('tasks', ev), fetchTable('guests', ev)
+    const [vendors, budget_items, tasks, guests, moodboard] = await Promise.all([
+      fetchTable('vendors', ev), fetchTable('budget_items', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodboard(ev)
     ]);
-    state.data[ev] = { vendors, budget_items, tasks, guests };
+    state.data[ev] = { vendors, budget_items, tasks, guests, moodboard };
   }
   renderSummary();
   renderSection();
@@ -1325,6 +1740,7 @@ function unlock(){
   document.body.classList.add('unlocked');
   playChime('unlock');
   init();
+  ensureWhoAmI(initPresence);
 }
 
 document.getElementById('pinForm').addEventListener('submit', e => {
@@ -1355,6 +1771,7 @@ window.addEventListener('resize', () => moveTabIndicator(document.querySelector(
 if (localStorage.getItem(UNLOCK_KEY) === '1'){
   document.body.classList.add('unlocked');
   init();
+  ensureWhoAmI(initPresence);
 }
 </script>
 </body>

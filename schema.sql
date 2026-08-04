@@ -83,3 +83,15 @@ create policy "anon full access" on vendors for all using (true) with check (tru
 create policy "anon full access" on budget_items for all using (true) with check (true);
 create policy "anon full access" on tasks for all using (true) with check (true);
 create policy "anon full access" on guests for all using (true) with check (true);
+
+-- ============================================================
+-- Mood board photo storage
+-- Run this too if you want the Mood Board tab to work.
+-- ============================================================
+insert into storage.buckets (id, name, public)
+values ('moodboard', 'moodboard', true)
+on conflict (id) do nothing;
+
+create policy "moodboard anon read" on storage.objects for select using (bucket_id = 'moodboard');
+create policy "moodboard anon upload" on storage.objects for insert with check (bucket_id = 'moodboard');
+create policy "moodboard anon delete" on storage.objects for delete using (bucket_id = 'moodboard');
