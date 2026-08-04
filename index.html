@@ -83,12 +83,24 @@
     50%{filter:drop-shadow(0 0 26px color-mix(in srgb, var(--accent) 70%, transparent));}
   }
   @keyframes shake{ 20%,60%{transform:translateX(-8px);} 40%,80%{transform:translateX(8px);} 100%{transform:translateX(0);} }
+  @keyframes candleFlicker{
+    0%,100%{opacity:1; transform:scaleY(1);} 45%{opacity:.75; transform:scaleY(.9);} 60%{opacity:1; transform:scaleY(1.08);}
+  }
+  @keyframes swing{ 0%,100%{transform:rotate(-1.5deg);} 50%{transform:rotate(1.5deg);} }
+
+  .garland{position:absolute; top:6px; left:50%; transform:translateX(-50%); width:min(560px,86vw); opacity:0; transition:opacity 1s var(--ease);}
+  body[data-theme="wedding"] .garland{opacity:.9;}
+  .chandelier{position:absolute; top:-4px; left:50%; transform:translateX(-50%); width:150px; opacity:0; transition:opacity 1s var(--ease); animation:swing 6s ease-in-out infinite; transform-origin:top center;}
+  body[data-theme="homecoming"] .chandelier{opacity:.92;}
+  .chandelier .flame{animation:candleFlicker 2.4s ease-in-out infinite;}
+
+  .stampGlyph{width:16px; height:16px; margin-bottom:2px; opacity:.85;}
 
   /* ================= HERO WORLD ================= */
   .hero{
     position:relative; min-height:82vh; overflow:hidden;
     display:flex; flex-direction:column; align-items:center; justify-content:center;
-    text-align:center; padding:80px 20px 64px;
+    text-align:center; padding:132px 20px 64px;
     background:linear-gradient(180deg, var(--hero-top) 0%, var(--hero-mid) 48%, var(--hero-bottom) 100%);
     transition:background 1s var(--ease);
   }
@@ -397,7 +409,28 @@
   .pinToggle button.active{background:var(--accent); border-color:transparent; color:#fff;}
 
   /* ---------- lock / sound controls ---------- */
-  .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px;}
+  .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px; align-items:flex-start;}
+  .currency-pill{
+    display:flex; background:color-mix(in srgb, var(--hero-text) 10%, transparent);
+    border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
+    backdrop-filter:blur(10px); border-radius:100px; padding:3px; gap:2px;
+  }
+  .currency-pill button{
+    border:none; background:transparent; color:var(--hero-text); font-family:var(--font-mono);
+    font-size:.68rem; font-weight:600; letter-spacing:.04em; padding:7px 12px; border-radius:100px;
+    cursor:pointer; transition:all .3s var(--ease);
+  }
+  .currency-pill button.active{background:var(--accent); color:#fff;}
+  .fx-caption{
+    position:fixed; top:60px; right:20px; z-index:40; font-family:var(--font-mono); font-size:.62rem;
+    color:var(--hero-text-soft); text-align:right; max-width:180px; line-height:1.5; opacity:.8;
+    transition:color 1s var(--ease);
+  }
+  .fx-caption button{
+    background:none; border:none; color:inherit; text-decoration:underline; cursor:pointer;
+    font-family:inherit; font-size:inherit; padding:0;
+  }
+  body.unlocked .fx-caption{position:absolute; top:62px;}
   .icon-btn{
     width:38px; height:38px; border-radius:50%; border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
     background:color-mix(in srgb, var(--hero-text) 10%, transparent); backdrop-filter:blur(10px);
@@ -435,7 +468,7 @@
 
   /* ---------- responsive ---------- */
   @media (max-width:720px){
-    .hero{min-height:74vh; padding:100px 16px 56px;}
+    .hero{min-height:74vh; padding:150px 16px 56px;}
     .stat-row{margin-top:-42px;}
     .data-table thead{display:none;}
     .data-table, .data-table tbody, .data-table tr, .data-table td{display:block; width:100%;}
@@ -454,6 +487,10 @@
 <div id="portalOverlay"></div>
 
 <div class="corner-controls">
+  <div class="currency-pill" id="currencyPill">
+    <button data-currency="LKR" class="active">LKR</button>
+    <button data-currency="AUD">AUD</button>
+  </div>
   <button class="icon-btn" id="soundToggle" title="Toggle sound" aria-label="Toggle sound">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path id="soundWaves" d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></svg>
   </button>
@@ -461,6 +498,7 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
   </button>
 </div>
+<div class="fx-caption" id="fxCaption">Loading rate…</div>
 
 <div id="pinGate">
   <div class="hero-layer stars">
@@ -551,6 +589,35 @@
   </svg>
   <svg class="hero-layer candleBorder" viewBox="0 0 1200 70" preserveAspectRatio="none" fill="none" stroke="var(--accent)" stroke-width="1.2">
     <path d="M0 40 Q30 10 60 40 Q90 10 120 40 Q150 10 180 40 Q210 10 240 40 Q270 10 300 40 Q330 10 360 40 Q390 10 420 40 Q450 10 480 40 Q510 10 540 40 Q570 10 600 40 Q630 10 660 40 Q690 10 720 40 Q750 10 780 40 Q810 10 840 40 Q870 10 900 40 Q930 10 960 40 Q990 10 1020 40 Q1050 10 1080 40 Q1110 10 1140 40 Q1170 10 1200 40"/>
+  </svg>
+
+  <svg class="hero-layer garland" viewBox="0 0 560 60" fill="none">
+    <path d="M10 15 Q140 55 280 20 Q420 -15 550 15" stroke="var(--accent-deep)" stroke-width="1.6"/>
+    <g fill="var(--accent2)">
+      <circle cx="60" cy="24" r="5"/><circle cx="130" cy="42" r="4.5"/><circle cx="200" cy="28" r="5"/>
+      <circle cx="280" cy="20" r="6"/><circle cx="360" cy="26" r="5"/><circle cx="430" cy="14" r="4.5"/><circle cx="500" cy="22" r="5"/>
+    </g>
+    <g fill="var(--accent)">
+      <circle cx="60" cy="24" r="2"/><circle cx="130" cy="42" r="1.8"/><circle cx="200" cy="28" r="2"/>
+      <circle cx="280" cy="20" r="2.3"/><circle cx="360" cy="26" r="2"/><circle cx="430" cy="14" r="1.8"/><circle cx="500" cy="22" r="2"/>
+    </g>
+    <g stroke="var(--accent-deep)" stroke-width="1">
+      <path d="M95 33 Q100 20 108 30"/><path d="M240 24 Q246 10 255 20"/><path d="M395 20 Q401 8 410 16"/>
+    </g>
+  </svg>
+  <svg class="hero-layer chandelier" viewBox="0 0 150 110" fill="none">
+    <path d="M75 0 L75 18" stroke="var(--accent)" stroke-width="1.4"/>
+    <ellipse cx="75" cy="24" rx="46" ry="7" stroke="var(--accent)" stroke-width="1.4"/>
+    <path d="M29 24 Q75 44 121 24" stroke="var(--accent)" stroke-width="1.2"/>
+    <g stroke="var(--accent)" stroke-width="1.2">
+      <path d="M40 25 L34 46"/><path d="M75 30 L75 52"/><path d="M110 25 L116 46"/>
+      <path d="M55 26 L50 42"/><path d="M95 26 L100 42"/>
+    </g>
+    <g class="flame">
+      <circle cx="34" cy="42" r="3" fill="var(--accent2)"/><circle cx="75" cy="48" r="3.4" fill="var(--accent2)"/>
+      <circle cx="116" cy="42" r="3" fill="var(--accent2)"/><circle cx="50" cy="38" r="2.4" fill="var(--accent2)"/>
+      <circle cx="100" cy="38" r="2.4" fill="var(--accent2)"/>
+    </g>
   </svg>
 
   <div class="hero-inner">
@@ -649,11 +716,87 @@ const THEME_COPY = {
 const state = {
   currentEvent:'wedding',
   currentSection:'vendors',
+  displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
+  fxRate: null, // AUD per 1 LKR
+  fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
   data:{ wedding:{vendors:[],budget_items:[],tasks:[],guests:[]}, homecoming:{vendors:[],budget_items:[],tasks:[],guests:[]} }
 };
 
-const AUD = n => n === null || n === undefined || n === '' ? '—' : new Intl.NumberFormat('en-AU',{style:'currency',currency:'AUD',maximumFractionDigits:0}).format(n);
+/* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
+const FX_CACHE_KEY = 'wedplanner_fx';
+const FX_FALLBACK_RATE = 0.0056; // used only if no cached/live rate is available at all
+
+function fmtMoney(lkrValue){
+  if (lkrValue === null || lkrValue === undefined || lkrValue === '') return '—';
+  if (state.displayCurrency === 'LKR'){
+    return new Intl.NumberFormat('en-LK', {style:'currency', currency:'LKR', maximumFractionDigits:0}).format(lkrValue);
+  }
+  const rate = state.fxRate ?? FX_FALLBACK_RATE;
+  return new Intl.NumberFormat('en-AU', {style:'currency', currency:'AUD', maximumFractionDigits:2}).format(lkrValue * rate);
+}
+
+function renderFxCaption(){
+  const cap = document.getElementById('fxCaption');
+  if (!cap) return;
+  if (state.fxRate === null){
+    cap.innerHTML = 'Loading live rate…';
+    return;
+  }
+  const audFor1000 = (1000 * state.fxRate).toFixed(2);
+  const when = state.fxUpdated ? new Date(state.fxUpdated).toLocaleDateString('en-AU', {day:'numeric', month:'short'}) : '—';
+  cap.innerHTML = `1,000 LKR ≈ ${audFor1000} AUD<br>rate as of ${when} · <button id="fxRefresh">refresh</button>`;
+  const btn = document.getElementById('fxRefresh');
+  if (btn) btn.addEventListener('click', () => fetchExchangeRate(true));
+}
+
+async function fetchExchangeRate(force){
+  const cached = JSON.parse(localStorage.getItem(FX_CACHE_KEY) || 'null');
+  const cacheAgeMs = cached ? Date.now() - cached.fetchedAt : Infinity;
+  if (cached && !force){
+    state.fxRate = cached.rate;
+    state.fxUpdated = cached.date;
+    renderFxCaption();
+  }
+  if (cached && cacheAgeMs < 12 * 60 * 60 * 1000 && !force) return; // fresh enough, skip network
+
+  const urls = [
+    'https://cdn.jsdelivr.net/npm/@fawazahmed0/currency-api@latest/v1/currencies/lkr.min.json',
+    'https://latest.currency-api.pages.dev/v1/currencies/lkr.min.json'
+  ];
+  for (const url of urls){
+    try{
+      const res = await fetch(url);
+      if (!res.ok) continue;
+      const json = await res.json();
+      const rate = json.lkr && json.lkr.aud;
+      if (typeof rate === 'number'){
+        state.fxRate = rate;
+        state.fxUpdated = json.date || new Date().toISOString();
+        localStorage.setItem(FX_CACHE_KEY, JSON.stringify({ rate, date: state.fxUpdated, fetchedAt: Date.now() }));
+        renderFxCaption();
+        if (state.displayCurrency === 'AUD'){ renderSummary(); renderSection(); }
+        return;
+      }
+    } catch(e){ /* try next source */ }
+  }
+  if (!cached){
+    state.fxRate = FX_FALLBACK_RATE;
+    state.fxUpdated = null;
+    toast('Could not reach live exchange rate — using an approximate fallback.', true);
+    renderFxCaption();
+  }
+}
+
+document.getElementById('currencyPill').addEventListener('click', e => {
+  const btn = e.target.closest('[data-currency]');
+  if (!btn) return;
+  state.displayCurrency = btn.dataset.currency;
+  localStorage.setItem('wedplanner_currency', state.displayCurrency);
+  document.querySelectorAll('#currencyPill button').forEach(b => b.classList.toggle('active', b === btn));
+  renderSummary();
+  renderSection();
+});
 
 function toast(msg, isError){
   const t = document.getElementById('toast');
@@ -801,6 +944,7 @@ function countUp(el, target){
 
 function renderSummary(){
   const ev = state.events[state.currentEvent];
+  const isWedding = state.currentEvent === 'wedding';
   const copy = THEME_COPY[state.currentEvent];
   document.getElementById('heroTitle').textContent = copy.title;
   document.getElementById('heroTagline').textContent = copy.taglines[Math.floor(Math.random()*copy.taglines.length)];
@@ -808,13 +952,16 @@ function renderSummary(){
   document.getElementById('eventDateInput').value = ev.event_date || '';
 
   const stampEl = document.getElementById('heroStamp');
+  const glyph = isWed => isWed
+    ? `<svg class="stampGlyph" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6l1.4 1.4M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>`
+    : `<svg class="stampGlyph" viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 21c0-5-4-6-4-10a4 4 0 0 1 8 0c0 4-4 5-4 10Z"/></svg>`;
   if (ev.event_date){
     const days = Math.ceil((new Date(ev.event_date + 'T00:00:00') - new Date(new Date().toDateString())) / 86400000);
     const target = Math.abs(days);
-    stampEl.innerHTML = `<div class="n" id="stampNum">0</div><div class="u">${days >= 0 ? 'days to go' : 'days since'}</div>`;
+    stampEl.innerHTML = `${glyph(isWedding)}<div class="n" id="stampNum">0</div><div class="u">${days >= 0 ? 'days to go' : 'days since'}</div>`;
     countUp(document.getElementById('stampNum'), target);
   } else {
-    stampEl.innerHTML = `<div class="u" style="font-size:.62rem;">set a<br>date</div>`;
+    stampEl.innerHTML = `${glyph(isWedding)}<div class="u" style="font-size:.62rem;">set a<br>date</div>`;
   }
 
   const d = state.data[state.currentEvent];
@@ -828,7 +975,7 @@ function renderSummary(){
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l1-5h16l1 5M3 9v11h18V9M3 9h18"/></svg></div>
       <div class="v">${vendorsBooked}/${d.vendors.length}</div><div class="l">Vendors booked</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v10M9 9.5h4.5a2 2 0 0 1 0 4H9"/></svg></div>
-      <div class="v">${AUD(actualSum)}</div><div class="l">of ${AUD(plannedSum)} spent</div></div>
+      <div class="v">${fmtMoney(actualSum)}</div><div class="l">of ${fmtMoney(plannedSum)} spent</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11l3 3L22 4M5 12v7a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1v-4"/></svg></div>
       <div class="v">${tasksDone}/${d.tasks.length}</div><div class="l">Tasks done</div></div>
     <div class="stat-card"><div class="icon"><svg viewBox="0 0 24 24" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8Z"/></svg></div>
@@ -874,8 +1021,8 @@ function renderVendors(){
       <div class="field"><label>Vendor name</label><input id="v_name" required></div>
       <div class="field"><label>Phone / email</label><input id="v_contact"></div>
       <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
-      <div class="field"><label>Price (AUD)</label><input id="v_price" type="number"></div>
-      <div class="field"><label>Deposit (AUD)</label><input id="v_deposit" type="number"></div>
+      <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
+      <div class="field"><label>Deposit (LKR)</label><input id="v_deposit" type="number"></div>
       <div class="field full"><label>Notes</label><input id="v_notes"></div>
       <div class="submit-row">
         <button type="button" class="btn-ghost" data-toggle="vendorForm">Cancel</button>
@@ -883,7 +1030,7 @@ function renderVendors(){
       </div>
     </form>
     <table class="data-table">
-      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Price</th><th>Deposit paid</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Price (LKR)</th><th>Deposit paid</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -898,7 +1045,7 @@ function renderBudget(){
       <td data-label="Item"><input data-table="budget_items" data-id="${r.id}" data-field="item_name" value="${esc(r.item_name)}"></td>
       <td data-label="Planned"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="planned_amount" value="${r.planned_amount ?? 0}"></td>
       <td data-label="Actual"><input type="number" data-table="budget_items" data-id="${r.id}" data-field="actual_amount" value="${r.actual_amount ?? ''}" placeholder="0"></td>
-      <td data-label="Diff" style="font-family:var(--font-mono); color:${(r.actual_amount||0) > (r.planned_amount||0) ? 'var(--danger)' : 'var(--ink-soft)'};">${AUD((r.planned_amount||0) - (r.actual_amount||0))}</td>
+      <td data-label="Diff" style="font-family:var(--font-mono); color:${(r.actual_amount||0) > (r.planned_amount||0) ? 'var(--danger)' : 'var(--ink-soft)'};">${fmtMoney((r.planned_amount||0) - (r.actual_amount||0))}</td>
       <td data-label="Notes"><input data-table="budget_items" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="budget_items" data-id="${r.id}">✕</button></td>
     </tr>`).join('') : `<tr class="empty-row"><td colspan="7">No budget lines yet — add your first one above.</td></tr>`;
@@ -906,16 +1053,16 @@ function renderBudget(){
   return `
     ${datalist('budgetCatList', BUDGET_CATS)}
     <div class="budget-summary">
-      <div class="stat-card"><div class="v">${AUD(plannedSum)}</div><div class="l">Planned total</div></div>
-      <div class="stat-card"><div class="v">${AUD(actualSum)}</div><div class="l">Actual so far</div></div>
-      <div class="stat-card"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${AUD(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
+      <div class="stat-card"><div class="v">${fmtMoney(plannedSum)}</div><div class="l">Planned total</div></div>
+      <div class="stat-card"><div class="v">${fmtMoney(actualSum)}</div><div class="l">Actual so far</div></div>
+      <div class="stat-card"><div class="v" style="color:${plannedSum-actualSum<0?'var(--danger)':'var(--accent)'}">${fmtMoney(plannedSum-actualSum)}</div><div class="l">Remaining</div></div>
     </div>
     <button class="add-toggle" data-toggle="budgetForm">+ Add budget line</button>
     <form class="add-form" id="budgetForm">
       <div class="field"><label>Category</label><input list="budgetCatList" id="b_category" required></div>
       <div class="field"><label>Item</label><input id="b_item" required></div>
-      <div class="field"><label>Planned (AUD)</label><input id="b_planned" type="number" required></div>
-      <div class="field"><label>Actual (AUD)</label><input id="b_actual" type="number"></div>
+      <div class="field"><label>Planned (LKR)</label><input id="b_planned" type="number" required></div>
+      <div class="field"><label>Actual (LKR)</label><input id="b_actual" type="number"></div>
       <div class="field full"><label>Notes</label><input id="b_notes"></div>
       <div class="submit-row">
         <button type="button" class="btn-ghost" data-toggle="budgetForm">Cancel</button>
@@ -923,7 +1070,7 @@ function renderBudget(){
       </div>
     </form>
     <table class="data-table">
-      <thead><tr><th>Category</th><th>Item</th><th>Planned</th><th>Actual</th><th>Diff</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Category</th><th>Item</th><th>Planned (LKR)</th><th>Actual (LKR)</th><th>Diff</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -1138,6 +1285,10 @@ if (window.matchMedia('(hover: hover)').matches){
     });
   });
 }
+
+document.querySelectorAll('#currencyPill button').forEach(b => b.classList.toggle('active', b.dataset.currency === state.displayCurrency));
+fetchExchangeRate(false);
+setInterval(() => fetchExchangeRate(false), 60 * 60 * 1000); // check hourly; actual refetch only after 12h cache age
 
 /* ---------------- pin preview toggle ---------------- */
 document.getElementById('pinPreviewToggle').addEventListener('click', e => {
