@@ -355,7 +355,7 @@
     box-shadow:0 30px 50px -34px rgba(0,0,0,.3);
     overflow-x:auto; -webkit-overflow-scrolling:touch;
   }
-  table.data-table{width:100%; min-width:820px; border-collapse:collapse; font-size:.87rem;}
+  table.data-table{table-layout:fixed; border-collapse:collapse; font-size:.87rem;}
   .data-table th{
     text-align:left; font-family:var(--font-mono); font-size:.64rem; letter-spacing:.08em;
     text-transform:uppercase; color:var(--ink-soft); padding:12px 12px 10px; border-bottom:1px solid var(--line);
@@ -382,7 +382,10 @@
   .data-table td.wrap-col{min-width:165px; max-width:230px;}
   .data-table td.wrap-col textarea{max-width:100%; width:100%;}
   .data-table td.num-col{min-width:118px;}
-  .data-table td.num-col input{font-size:.85rem; min-width:100px;}
+  .data-table td.num-col input{font-size:.85rem;}
+  .data-table td.num-col input::-webkit-outer-spin-button,
+  .data-table td.num-col input::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .data-table td.num-col input[type="number"]{ -moz-appearance:textfield; appearance:textfield; }
   .del-btn{
     background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
     line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.55;
@@ -1388,6 +1391,11 @@ function renderVendors(){
       </div>
     </form>
     <table class="data-table">
+      <colgroup>
+        <col style="width:170px"><col style="width:160px"><col style="width:150px">
+        <col style="width:136px"><col style="width:136px"><col style="width:122px">
+        <col style="width:122px"><col style="width:170px"><col style="width:46px">
+      </colgroup>
       <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
@@ -1426,6 +1434,10 @@ function renderTasks(){
       </div>
     </form>
     <table class="data-table">
+      <colgroup>
+        <col style="width:56px"><col style="width:210px"><col style="width:140px">
+        <col style="width:130px"><col style="width:190px"><col style="width:46px">
+      </colgroup>
       <thead><tr><th>Done</th><th>Task</th><th>Category</th><th>Due</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
@@ -1500,6 +1512,10 @@ function renderGuests(){
       </div>
     </form>
     <table class="data-table">
+      <colgroup>
+        <col style="width:180px"><col style="width:130px"><col style="width:120px">
+        <col style="width:90px"><col style="width:210px"><col style="width:70px">
+      </colgroup>
       <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Dietary / notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
