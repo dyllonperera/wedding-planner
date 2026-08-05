@@ -1349,7 +1349,7 @@ function renderVendors(){
   const totalQuoted = rows.reduce((s,v)=> s + (Number(v.price)||0), 0);
   const body = rows.length ? rows.map(r => `
     <tr>
-      <td data-label="Category" class="wrap-col"><input list="vendorCatList" data-table="vendors" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
+      ${taCell('Category', 'vendors', r.id, 'category', r.category)}
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
       ${taCell('Contact', 'vendors', r.id, 'contact_phone', r.contact_phone||'', {placeholder:'phone / email'})}
       <td data-label="Status">
@@ -1413,7 +1413,7 @@ function renderTasks(){
     <tr style="${r.completed ? 'opacity:.5;' : ''}">
       <td data-label="Done" style="text-align:center;"><input type="checkbox" data-table="tasks" data-id="${r.id}" data-field="completed" ${r.completed?'checked':''}></td>
       ${taCell('Task', 'tasks', r.id, 'title', r.title)}
-      <td data-label="Category" class="wrap-col"><input list="taskCatList" data-table="tasks" data-id="${r.id}" data-field="category" value="${esc(r.category||'')}"></td>
+      ${taCell('Category', 'tasks', r.id, 'category', r.category||'')}
       <td data-label="Due"><input type="date" data-table="tasks" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}"></td>
       ${taCell('Notes', 'tasks', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="tasks" data-id="${r.id}">✕</button></td>
