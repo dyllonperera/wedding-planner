@@ -374,6 +374,11 @@
   }
   .data-table input[type="number"]{font-family:var(--font-mono);}
   .data-table select.badge{min-width:132px; padding:6px 10px;}
+  .data-table textarea{
+    resize:none; overflow:hidden; line-height:1.4; min-height:30px; display:block;
+    font-family:var(--font-body); white-space:pre-wrap; overflow-wrap:break-word;
+  }
+  .data-table td.wrap-col{min-width:165px;}
   .del-btn{
     background:none; border:none; color:var(--danger); cursor:pointer; font-size:1.1rem;
     line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.55;
@@ -1053,6 +1058,22 @@ function datalist(id, options){
   return `<datalist id="${id}">${options.map(o=>`<option value="${o}">`).join('')}</datalist>`;
 }
 
+// A table cell that wraps long text (e.g. "Photography & Videography") instead of
+// clipping or scrolling — used for category/name/contact/notes-style free-text fields.
+function taCell(label, table, id, field, value, opts){
+  opts = opts || {};
+  const ph = opts.placeholder ? ` placeholder="${esc(opts.placeholder)}"` : '';
+  const listAttr = opts.list ? ` list="${opts.list}"` : '';
+  return `<td data-label="${label}" class="wrap-col"><textarea rows="1" data-autogrow data-table="${table}" data-id="${id}" data-field="${field}"${listAttr}${ph}>${esc(value)}</textarea></td>`;
+}
+
+function autoGrowTextareas(container){
+  (container || document).querySelectorAll('textarea[data-autogrow]').forEach(t => {
+    t.style.height = 'auto';
+    t.style.height = t.scrollHeight + 'px';
+  });
+}
+
 /* ---------------- confetti ---------------- */
 function fireConfetti(){
   const canvas = document.createElement('canvas');
@@ -1305,6 +1326,7 @@ function renderSection(){
   else if (state.currentSection === 'guests') html = renderGuests();
   else html = renderMoodboard();
   el.innerHTML = `<div class="table-wrap">${html}</div>`;
+  autoGrowTextareas(el);
 }
 
 function renderVendors(){
@@ -1316,9 +1338,9 @@ function renderVendors(){
   const totalQuoted = rows.reduce((s,v)=> s + (Number(v.price)||0), 0);
   const body = rows.length ? rows.map(r => `
     <tr>
-      <td data-label="Category"><input list="vendorCatList" data-table="vendors" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
-      <td data-label="Name"><input data-table="vendors" data-id="${r.id}" data-field="name" value="${esc(r.name)}"></td>
-      <td data-label="Contact"><input data-table="vendors" data-id="${r.id}" data-field="contact_phone" value="${esc(r.contact_phone||'')}" placeholder="phone / email"></td>
+      <td data-label="Category" class="wrap-col"><input list="vendorCatList" data-table="vendors" data-id="${r.id}" data-field="category" value="${esc(r.category)}"></td>
+      ${taCell('Name', 'vendors', r.id, 'name', r.name)}
+      ${taCell('Contact', 'vendors', r.id, 'contact_phone', r.contact_phone||'', {placeholder:'phone / email'})}
       <td data-label="Status">
         <select data-table="vendors" data-id="${r.id}" data-field="status" class="badge ${r.status}">${
           Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.status?'selected':''}>${l}</option>`).join('')
@@ -1331,7 +1353,7 @@ function renderVendors(){
       </td>
       <td data-label="Price (${cur})"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0"></td>
       <td data-label="Deposit (${cur})"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0"></td>
-      <td data-label="Notes"><input data-table="vendors" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
+      ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`).join('') : `<tr class="empty-row"><td colspan="9">No vendors yet for this event — add your first one above.</td></tr>`;
 
@@ -1374,10 +1396,10 @@ function renderTasks(){
     return `
     <tr style="${r.completed ? 'opacity:.5;' : ''}">
       <td data-label="Done" style="text-align:center;"><input type="checkbox" data-table="tasks" data-id="${r.id}" data-field="completed" ${r.completed?'checked':''}></td>
-      <td data-label="Task"><input data-table="tasks" data-id="${r.id}" data-field="title" value="${esc(r.title)}"></td>
-      <td data-label="Category"><input list="taskCatList" data-table="tasks" data-id="${r.id}" data-field="category" value="${esc(r.category||'')}"></td>
+      ${taCell('Task', 'tasks', r.id, 'title', r.title)}
+      <td data-label="Category" class="wrap-col"><input list="taskCatList" data-table="tasks" data-id="${r.id}" data-field="category" value="${esc(r.category||'')}"></td>
       <td data-label="Due"><input type="date" data-table="tasks" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}"></td>
-      <td data-label="Notes"><input data-table="tasks" data-id="${r.id}" data-field="notes" value="${esc(r.notes||'')}"></td>
+      ${taCell('Notes', 'tasks', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="tasks" data-id="${r.id}">✕</button></td>
     </tr>`;
   }).join('') : `<tr class="empty-row"><td colspan="6">Nothing on the checklist yet — add your first task above.</td></tr>`;
@@ -1424,7 +1446,7 @@ function renderGuests(){
 
   const body = rows.length ? rows.map(r => `
     <tr>
-      <td data-label="Name"><input data-table="guests" data-id="${r.id}" data-field="name" value="${esc(r.name)}"></td>
+      ${taCell('Name', 'guests', r.id, 'name', r.name)}
       <td data-label="Side">
         <select data-table="guests" data-id="${r.id}" data-field="side">${
           SIDE_LIST.map(s => `<option value="${esc(s)}" ${s===(r.side||'Her side')?'selected':''}>${esc(s)}</option>`).join('')
@@ -1436,7 +1458,7 @@ function renderGuests(){
         }</select>
       </td>
       <td data-label="Party size"><input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;"></td>
-      <td data-label="Dietary"><input data-table="guests" data-id="${r.id}" data-field="dietary_notes" value="${esc(r.dietary_notes||'')}"></td>
+      ${taCell('Dietary', 'guests', r.id, 'dietary_notes', r.dietary_notes||'')}
       <td data-label="" class="actions">
         <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
         <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
@@ -1588,6 +1610,13 @@ document.getElementById('sectionContent').addEventListener('click', e => {
     localStorage.setItem('wedplanner_guestside', state.guestSide);
     renderSection();
     return;
+  }
+});
+
+document.getElementById('sectionContent').addEventListener('input', e => {
+  if (e.target.hasAttribute('data-autogrow')){
+    e.target.style.height = 'auto';
+    e.target.style.height = e.target.scrollHeight + 'px';
   }
 });
 
