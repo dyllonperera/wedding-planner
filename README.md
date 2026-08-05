@@ -90,6 +90,25 @@ This adds the new column and carries your existing data over sensibly — anythi
 marked "Paid in full" or "Deposit paid" (via the old dropdown or the old checkbox)
 keeps that payment info, with its booking Status reset to "Booked".
 
+### One more step: RSVP deadline
+
+Run this once in Supabase → **SQL Editor**:
+
+```sql
+alter table events add column if not exists rsvp_deadline date;
+```
+
+Set the deadline per event on the **Guests** tab — guests can change their response
+right up to and including that date. After it passes, their RSVP link locks: they see
+their final response but can no longer change it, so you know exactly who's coming
+before offering spots to anyone on a backup list. Leave it blank and there's no
+deadline — the link stays editable indefinitely.
+
+The guest-facing RSVP page no longer asks for dietary notes or has a general notes
+field, since it's buffet-style — that field's still there for your own internal use on
+the **Guests** tab (now just labeled "Notes"), guests just don't see or fill it in
+themselves anymore.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

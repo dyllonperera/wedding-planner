@@ -37,12 +37,11 @@
   .sub{text-align:center; color:var(--ink-soft); font-size:.88rem; margin:0 0 28px;}
   .field{margin-bottom:16px;}
   .field label{display:block; font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px;}
-  .field input, .field select{
+  .field input{
     width:100%; font-family:var(--font-body); font-size:.95rem; padding:11px 12px;
     border:1px solid var(--line); border-radius:10px; background:var(--paper-warm); color:var(--ink);
   }
-  .field input:focus, .field select:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);}
-  .field .hint{font-size:.74rem; color:var(--ink-soft); margin-top:6px;}
+  .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);}
   .rsvp-choice{display:flex; gap:10px;}
   .rsvp-choice button{
     flex:1; padding:12px; border:1.5px solid var(--line); background:var(--paper-warm); border-radius:10px;
@@ -51,6 +50,10 @@
   }
   .rsvp-choice button.active[data-v="yes"]{background:#DFEEDD; border-color:#2E6B3E; color:#2E6B3E;}
   .rsvp-choice button.active[data-v="no"]{background:#F0E1E3; border-color:#8C3B47; color:#8C3B47;}
+  .deadline-note{
+    text-align:center; font-size:.78rem; color:var(--ink-soft); background:var(--paper-warm);
+    border-radius:10px; padding:10px 14px; margin:0 0 18px;
+  }
   button.submit{
     width:100%; background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff;
     border:none; padding:13px; border-radius:10px; font-weight:600; font-size:.95rem; cursor:pointer;
@@ -60,11 +63,20 @@
   .thanks{text-align:center; display:none;}
   .thanks.show{display:block;}
   .thanks svg{width:44px; height:44px; color:var(--accent); margin-bottom:14px;}
-  #form.hide, #loading.hide, #notfound.hide{display:none;}
+  #form.hide, #loading.hide, #notfound.hide, #locked.hide{display:none;}
   .error{color:var(--danger); font-size:.82rem; text-align:center; min-height:18px; margin-top:4px;}
   #loading{text-align:center; color:var(--ink-soft); font-size:.9rem;}
   #notfound{text-align:center;}
   #notfound .sub{margin-bottom:0;}
+  #locked{text-align:center; display:none;}
+  #locked.show{display:block;}
+  #locked svg{width:40px; height:40px; color:var(--ink-soft); margin-bottom:14px;}
+  .locked-response{
+    display:inline-block; margin-top:8px; padding:8px 18px; border-radius:100px;
+    font-family:var(--font-display); font-weight:600; font-size:.92rem;
+  }
+  .locked-response.yes{background:#DFEEDD; color:#2E6B3E;}
+  .locked-response.no{background:#F0E1E3; color:#8C3B47;}
 </style>
 </head>
 <body>
@@ -77,11 +89,20 @@
       <p class="sub">Double-check the link you were sent, or reach out to the couple directly.</p>
     </div>
 
+    <div id="locked">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
+      <p class="eyebrow" id="lockedEyebrow">You're invited to the</p>
+      <h1 id="lockedTitle">Wedding</h1>
+      <p class="guestname" id="lockedName"></p>
+      <p class="sub" id="lockedMsg">RSVPs have closed.</p>
+      <div class="locked-response" id="lockedResponse"></div>
+    </div>
+
     <form id="form" class="hide">
       <p class="eyebrow" id="eyebrow">You're invited to the</p>
       <h1 id="title">Wedding</h1>
       <p class="guestname" id="guestName"></p>
-      <p class="sub">We'd love to know if you can make it.</p>
+      <p class="sub" id="formSub">We'd love to know if you can make it.</p>
 
       <div class="field">
         <label>Will you be attending?</label>
@@ -93,9 +114,8 @@
       <div class="field">
         <label>How many in your party?</label>
         <input id="partySize" type="number" min="1" value="1">
-        <p class="hint" id="partyHint"></p>
       </div>
-      <div class="field"><label>Dietary requirements / notes</label><input id="notes" placeholder="Optional"></div>
+      <p class="deadline-note hide" id="deadlineNote"></p>
       <button class="submit" type="submit" id="submitBtn">Send RSVP</button>
       <p class="error" id="err"></p>
     </form>
@@ -104,6 +124,7 @@
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 21c0-5-4-6-4-10a4 4 0 0 1 8 0c0 4-4 5-4 10Z"/></svg>
       <h1>Thank you!</h1>
       <p class="sub" id="thanksMsg">Your RSVP has been received.</p>
+      <p class="sub" id="thanksDeadline" style="margin-top:-14px;"></p>
     </div>
   </div>
 
@@ -120,8 +141,12 @@ const COPY = {
   wedding: { title:'Wedding', eyebrow:"You're invited to the" },
   homecoming: { title:'Homecoming', eyebrow:"You're invited to the" }
 };
-document.getElementById('title').textContent = COPY[eventId].title;
-document.getElementById('eyebrow').textContent = COPY[eventId].eyebrow;
+['title','lockedTitle'].forEach(id => document.getElementById(id).textContent = COPY[eventId].title);
+['eyebrow','lockedEyebrow'].forEach(id => document.getElementById(id).textContent = COPY[eventId].eyebrow);
+
+function fmtDate(d){
+  return new Date(d + 'T00:00:00').toLocaleDateString('en-AU', { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
 
 let rsvpValue = null;
 document.querySelectorAll('.rsvp-choice button').forEach(btn => {
@@ -133,19 +158,48 @@ document.querySelectorAll('.rsvp-choice button').forEach(btn => {
 
 async function loadGuest(){
   if (!guestId){ showNotFound(); return; }
-  const { data, error } = await supabaseClient.from('guests').select('*').eq('id', guestId).eq('event_id', eventId).maybeSingle();
-  if (error || !data){ showNotFound(); return; }
 
-  document.getElementById('guestName').textContent = data.name;
-  document.getElementById('partySize').value = data.party_size || 1;
-  document.getElementById('partyHint').textContent = `We have you down for a party of ${data.party_size || 1}${(data.party_size||1) > 1 ? " — adjust if that's changed" : ''}.`;
-  document.getElementById('notes').value = data.dietary_notes || '';
-  if (data.rsvp_status === 'yes' || data.rsvp_status === 'no'){
-    const btn = document.querySelector(`.rsvp-choice button[data-v="${data.rsvp_status}"]`);
-    if (btn){ rsvpValue = data.rsvp_status; btn.classList.add('active'); }
-  }
+  const [{ data: guest, error: gErr }, { data: ev }] = await Promise.all([
+    supabaseClient.from('guests').select('*').eq('id', guestId).eq('event_id', eventId).maybeSingle(),
+    supabaseClient.from('events').select('rsvp_deadline').eq('id', eventId).maybeSingle()
+  ]);
+
+  if (gErr || !guest){ showNotFound(); return; }
+
+  const deadline = ev && ev.rsvp_deadline ? ev.rsvp_deadline : null;
+  const deadlinePassed = deadline ? new Date() > new Date(deadline + 'T23:59:59') : false;
 
   document.getElementById('loading').classList.add('hide');
+
+  if (deadlinePassed){
+    document.getElementById('lockedName').textContent = guest.name;
+    if (guest.rsvp_status === 'yes' || guest.rsvp_status === 'no'){
+      document.getElementById('lockedMsg').textContent = `RSVPs closed on ${fmtDate(deadline)}. Here's what we have on file — reach out to the couple directly if anything's changed.`;
+      const chip = document.getElementById('lockedResponse');
+      chip.textContent = guest.rsvp_status === 'yes'
+        ? `Attending — party of ${guest.party_size || 1}`
+        : "Not attending";
+      chip.className = 'locked-response ' + guest.rsvp_status;
+    } else {
+      document.getElementById('lockedMsg').textContent = `RSVPs closed on ${fmtDate(deadline)} without a response on file. Please reach out to the couple directly.`;
+    }
+    document.getElementById('locked').classList.add('show');
+    return;
+  }
+
+  document.getElementById('guestName').textContent = guest.name;
+  document.getElementById('partySize').value = guest.party_size || 1;
+  if (guest.rsvp_status === 'yes' || guest.rsvp_status === 'no'){
+    document.getElementById('formSub').textContent = "You've already responded — feel free to update it below.";
+    const btn = document.querySelector(`.rsvp-choice button[data-v="${guest.rsvp_status}"]`);
+    if (btn){ rsvpValue = guest.rsvp_status; btn.classList.add('active'); }
+  }
+  if (deadline){
+    const note = document.getElementById('deadlineNote');
+    note.textContent = `You can change your response anytime up to ${fmtDate(deadline)}.`;
+    note.classList.remove('hide');
+  }
+
   document.getElementById('form').classList.remove('hide');
 }
 
@@ -166,8 +220,7 @@ document.getElementById('form').addEventListener('submit', async e => {
 
   const { error } = await supabaseClient.from('guests').update({
     rsvp_status: rsvpValue,
-    party_size: partySize,
-    dietary_notes: document.getElementById('notes').value || null
+    party_size: partySize
   }).eq('id', guestId);
 
   if (error){
@@ -179,6 +232,9 @@ document.getElementById('form').addEventListener('submit', async e => {
   document.getElementById('thanksMsg').textContent = rsvpValue === 'yes'
     ? `Wonderful — we've got you down for ${partySize === 1 ? '1 person' : partySize + ' people'}.`
     : "We'll miss you, but thanks for letting us know.";
+  const deadlineNote = document.getElementById('deadlineNote');
+  document.getElementById('thanksDeadline').textContent = !deadlineNote.classList.contains('hide')
+    ? deadlineNote.textContent : '';
   document.getElementById('form').classList.add('hide');
   document.getElementById('thanks').classList.add('show');
 });

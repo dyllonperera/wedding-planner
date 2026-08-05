@@ -434,6 +434,18 @@
   .side-bar{height:6px; border-radius:100px; background:var(--line); overflow:hidden;}
   .side-bar-fill{height:100%; border-radius:100px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width .6s var(--ease);}
 
+  .rsvp-deadline-row{
+    display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;
+    background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
+    border-radius:14px; padding:16px 20px; margin-bottom:20px;
+  }
+  .rsvp-deadline-row label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:6px;}
+  .rsvp-deadline-row input{
+    font-family:var(--font-body); font-size:.9rem; padding:8px 10px; border:1px solid var(--line);
+    border-radius:8px; background:var(--paper); color:var(--ink);
+  }
+  .rsvp-deadline-row .hint{font-size:.78rem; color:var(--ink-soft); max-width:38ch; margin:2px 0 0; flex:1; min-width:200px;}
+
   /* ---------- who gate ---------- */
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
@@ -878,7 +890,7 @@ const state = {
   guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
-  events:{ wedding:{id:'wedding', name:'Wedding', event_date:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null} },
+  events:{ wedding:{id:'wedding', name:'Wedding', event_date:null, rsvp_deadline:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null, rsvp_deadline:null} },
   data:{ wedding:{vendors:[],tasks:[],guests:[],moodboard:[]}, homecoming:{vendors:[],tasks:[],guests:[],moodboard:[]} }
 };
 
@@ -1235,6 +1247,14 @@ async function updateEventDate(dateVal){
   renderSummary();
 }
 
+async function updateRsvpDeadline(dateVal){
+  const eventId = state.currentEvent;
+  const { error } = await supabaseClient.from('events').update({ rsvp_deadline: dateVal || null }).eq('id', eventId);
+  if (error){ toast(error.message, true); return; }
+  state.events[eventId].rsvp_deadline = dateVal || null;
+  toast('RSVP deadline updated');
+}
+
 /* ---------------- render: hero / stats ---------------- */
 function countUp(el, target){
   if (!el) return;
@@ -1478,7 +1498,7 @@ function renderGuests(){
         }</select>
       </td>
       <td data-label="Party size"><input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;"></td>
-      ${taCell('Dietary', 'guests', r.id, 'dietary_notes', r.dietary_notes||'')}
+      ${taCell('Notes', 'guests', r.id, 'dietary_notes', r.dietary_notes||'')}
       <td data-label="" class="actions">
         <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
         <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
@@ -1493,6 +1513,14 @@ function renderGuests(){
       No open link, no strangers adding themselves. Set "Party size" above 1 for households — e.g. "Mr &amp; Mrs Perera" = 2,
       "Mr Ajith and family" = however many are actually coming.
     </p>
+    <div class="rsvp-deadline-row">
+      <div>
+        <label>RSVP deadline for ${esc(THEME_COPY[state.currentEvent].title)}</label>
+        <input type="date" id="rsvpDeadlineInput" value="${state.events[state.currentEvent].rsvp_deadline || ''}">
+      </div>
+      <p class="hint">Guests can change their response up to and including this date. After it passes, their RSVP locks —
+        so you know exactly who's confirmed before inviting anyone from your backup list.</p>
+    </div>
     <div class="budget-summary">
       <div class="stat-card"><div class="v">${allRows.length}</div><div class="l">Entries on the list</div></div>
       <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Entries confirmed</div></div>
@@ -1505,7 +1533,7 @@ function renderGuests(){
       <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
       <div class="field"><label>Party size</label><input id="g_party" type="number" min="1" value="1"></div>
       <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
-      <div class="field full"><label>Dietary / notes</label><input id="g_notes"></div>
+      <div class="field full"><label>Notes</label><input id="g_notes"></div>
       <div class="submit-row">
         <button type="button" class="btn-ghost" data-toggle="guestForm">Cancel</button>
         <button type="submit" class="btn-primary">Save guest</button>
@@ -1516,7 +1544,7 @@ function renderGuests(){
         <col style="width:180px"><col style="width:130px"><col style="width:120px">
         <col style="width:90px"><col style="width:210px"><col style="width:70px">
       </colgroup>
-      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Dietary / notes</th><th></th></tr></thead>
+      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -1646,6 +1674,7 @@ document.getElementById('sectionContent').addEventListener('input', e => {
 
 document.getElementById('sectionContent').addEventListener('change', e => {
   if (e.target.id === 'moodFileInput'){ handleMoodUpload(e.target.files); return; }
+  if (e.target.id === 'rsvpDeadlineInput'){ updateRsvpDeadline(e.target.value); return; }
   const el = e.target.closest('[data-field]');
   if (!el) return;
   const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
