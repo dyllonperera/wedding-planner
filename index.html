@@ -420,6 +420,15 @@
     border-radius:50%; width:26px; height:26px; cursor:pointer; opacity:0; transition:opacity .2s ease;
   }
   .mood-item:hover .mood-del{opacity:1;}
+  .mood-item.pdf-tile{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:8px;
+    background:var(--paper-warm); padding:16px; text-align:center; cursor:pointer;
+  }
+  .mood-item.pdf-tile svg{width:32px; height:32px; color:var(--accent); flex-shrink:0;}
+  .mood-item.pdf-tile .pdf-name{
+    font-size:.68rem; color:var(--ink-soft); word-break:break-word; line-height:1.35;
+    max-height:2.7em; overflow:hidden; font-family:var(--font-body);
+  }
 
   .mood-cat-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
   .mood-cat-tab{
@@ -456,6 +465,10 @@
   }
   #lightboxImg.no-transition{transition:none;}
   #lightboxImg.zoomed{cursor:grab;}
+  #lightboxPdf{
+    display:none; width:min(94vw, 900px); height:85vh; border:none; border-radius:8px;
+    background:#fff; box-shadow:0 40px 80px -20px rgba(0,0,0,.6);
+  }
   #lightboxImg.dragging{cursor:grabbing;}
   .lb-close, .lb-nav{
     position:absolute; border-radius:50%; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
@@ -470,7 +483,11 @@
     position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.7);
     font-family:var(--font-mono); font-size:.76rem; letter-spacing:.05em; z-index:2;
   }
-  @media (max-width:720px){ .lb-nav{display:none;} .lb-close{top:14px; right:14px;} }
+  @media (max-width:720px){
+    .lb-nav{display:none;}
+    #lightbox.pdf-mode .lb-nav{display:flex;}
+    .lb-close{top:14px; right:14px;}
+  }
 
   .side-tabs{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
   .side-tab{
@@ -903,6 +920,7 @@
   </button>
   <div class="lb-stage" id="lbStage">
     <img id="lightboxImg" src="" alt="">
+    <iframe id="lightboxPdf" src="" title="Document preview"></iframe>
   </div>
   <div class="lb-counter" id="lightboxCounter"></div>
 </div>
@@ -1678,11 +1696,23 @@ function renderMoodboard(){
   } else if (!items.length){
     grid = `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:40px 0;">No photos in ${esc(activeCat.name)} yet — add your first one.</p>`;
   } else {
-    grid = items.map((img, i) => `
-      <div class="mood-item">
-        <img src="${img.url}" alt="" loading="lazy" data-lb-index="${i}">
+    grid = items.map((img, i) => {
+      const isPdf = img.name.toLowerCase().endsWith('.pdf');
+      const displayName = img.name.replace(/^\d+-/, '');
+      if (isPdf){
+        return `
+      <div class="mood-item pdf-tile" data-lb-index="${i}">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
+        <div class="pdf-name">${esc(displayName)}</div>
         <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
-      </div>`).join('');
+      </div>`;
+      }
+      return `
+      <div class="mood-item" data-lb-index="${i}">
+        <img src="${img.url}" alt="" loading="lazy">
+        <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
+      </div>`;
+    }).join('');
   }
 
   return `
@@ -1692,7 +1722,7 @@ function renderMoodboard(){
     </div>
     ${addForm}
     <label class="add-toggle" for="moodFileInput" style="display:inline-block; cursor:pointer;">+ Add photo to ${esc(activeCat.name)}</label>
-    <input type="file" id="moodFileInput" accept="image/*" style="display:none;" multiple>
+    <input type="file" id="moodFileInput" accept="image/*,application/pdf" style="display:none;" multiple>
     <div class="mood-grid">${grid}</div>`;
 }
 
@@ -2094,15 +2124,30 @@ function openLightbox(images, index){
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('show');
+  document.getElementById('lightboxPdf').src = '';
   document.body.style.overflow = '';
 }
 function showLightboxImage(){
   lbScale = 1; lbPanX = 0; lbPanY = 0;
+  const item = lbImages[lbIndex];
+  const isPdf = item.name.toLowerCase().endsWith('.pdf');
   const img = document.getElementById('lightboxImg');
-  img.classList.remove('zoomed');
-  img.src = lbImages[lbIndex].url;
-  img.style.transform = 'translate(0px,0px) scale(1)';
-  img.style.opacity = '1';
+  const pdf = document.getElementById('lightboxPdf');
+  document.getElementById('lightbox').classList.toggle('pdf-mode', isPdf);
+  if (isPdf){
+    img.style.display = 'none';
+    img.src = '';
+    pdf.style.display = 'block';
+    pdf.src = item.url;
+  } else {
+    pdf.style.display = 'none';
+    pdf.src = '';
+    img.style.display = 'block';
+    img.classList.remove('zoomed');
+    img.src = item.url;
+    img.style.transform = 'translate(0px,0px) scale(1)';
+    img.style.opacity = '1';
+  }
   document.getElementById('lightboxCounter').textContent = lbImages.length > 1 ? `${lbIndex + 1} / ${lbImages.length}` : '';
   document.getElementById('lbPrev').style.visibility = lbIndex > 0 ? 'visible' : 'hidden';
   document.getElementById('lbNext').style.visibility = lbIndex < lbImages.length - 1 ? 'visible' : 'hidden';
@@ -2210,10 +2255,11 @@ window.addEventListener('mouseup', () => {
 });
 
 document.getElementById('sectionContent').addEventListener('click', e => {
-  const img = e.target.closest('.mood-item img');
-  if (img){
+  if (e.target.closest('.mood-del')) return;
+  const item = e.target.closest('.mood-item[data-lb-index]');
+  if (item){
     const images = (state.data[state.currentEvent].moodPhotos || {})[state.moodCategory] || [];
-    openLightbox(images, Number(img.dataset.lbIndex || 0));
+    openLightbox(images, Number(item.dataset.lbIndex || 0));
   }
 });
 
