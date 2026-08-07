@@ -30,6 +30,7 @@ create table if not exists vendors (
   price numeric,
   deposit_amount numeric,
   deposit_paid boolean not null default false, -- legacy, superseded by payment_status
+  due_date date, -- next payment due date
   notes text,
   created_at timestamptz not null default now()
 );
@@ -98,3 +99,12 @@ on conflict (id) do nothing;
 create policy "moodboard anon read" on storage.objects for select using (bucket_id = 'moodboard');
 create policy "moodboard anon upload" on storage.objects for insert with check (bucket_id = 'moodboard');
 create policy "moodboard anon delete" on storage.objects for delete using (bucket_id = 'moodboard');
+
+create table if not exists moodboard_categories (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null references events(id),
+  name text not null,
+  created_at timestamptz not null default now()
+);
+alter table moodboard_categories enable row level security;
+create policy "anon full access" on moodboard_categories for all using (true) with check (true);

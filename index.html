@@ -421,6 +421,57 @@
   }
   .mood-item:hover .mood-del{opacity:1;}
 
+  .mood-cat-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
+  .mood-cat-tab{
+    position:relative; display:inline-flex; align-items:center; gap:8px; padding:9px 12px 9px 16px;
+    border-radius:100px; border:1.5px solid var(--line); background:var(--paper-warm);
+    font-family:var(--font-body); font-weight:600; font-size:.82rem; color:var(--ink-soft);
+    cursor:pointer; transition:all .3s var(--ease);
+  }
+  .mood-cat-tab:hover{transform:translateY(-2px);}
+  .mood-cat-tab.active{
+    background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff; border-color:transparent;
+    box-shadow:0 10px 20px -10px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
+  .mood-cat-del{
+    width:16px; height:16px; border-radius:50%; display:flex; align-items:center; justify-content:center;
+    font-size:.62rem; opacity:.55; transition:opacity .2s ease, background .2s ease;
+  }
+  .mood-cat-tab:hover .mood-cat-del{opacity:1;}
+  .mood-cat-tab.active .mood-cat-del:hover{background:rgba(255,255,255,.28);}
+  .mood-cat-tab:not(.active) .mood-cat-del:hover{background:rgba(0,0,0,.08);}
+  .mood-cat-add{background:transparent; border-style:dashed;}
+
+  /* ---------- lightbox ---------- */
+  #lightbox{
+    position:fixed; inset:0; z-index:96; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,6,.94); opacity:0; pointer-events:none; transition:opacity .35s var(--ease);
+  }
+  #lightbox.show{opacity:1; pointer-events:auto;}
+  .lb-stage{position:relative; width:100%; height:100%; display:flex; align-items:center; justify-content:center; overflow:hidden;}
+  #lightboxImg{
+    max-width:90vw; max-height:85vh; border-radius:8px; touch-action:none; user-select:none;
+    -webkit-user-select:none; transition:transform .35s var(--ease), opacity .35s var(--ease);
+    box-shadow:0 40px 80px -20px rgba(0,0,0,.6); cursor:zoom-in;
+  }
+  #lightboxImg.no-transition{transition:none;}
+  #lightboxImg.zoomed{cursor:grab;}
+  #lightboxImg.dragging{cursor:grabbing;}
+  .lb-close, .lb-nav{
+    position:absolute; border-radius:50%; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
+    color:#fff; display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2;
+    transition:background .25s ease;
+  }
+  .lb-close:hover, .lb-nav:hover{background:rgba(255,255,255,.24);}
+  .lb-close{top:18px; right:18px; width:42px; height:42px;}
+  .lb-nav{top:50%; transform:translateY(-50%); width:46px; height:46px;}
+  .lb-nav.prev{left:16px;} .lb-nav.next{right:16px;}
+  .lb-counter{
+    position:absolute; bottom:20px; left:50%; transform:translateX(-50%); color:rgba(255,255,255,.7);
+    font-family:var(--font-mono); font-size:.76rem; letter-spacing:.05em; z-index:2;
+  }
+  @media (max-width:720px){ .lb-nav{display:none;} .lb-close{top:14px; right:14px;} }
+
   .side-tabs{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
   .side-tab{
     flex:1; min-width:200px; text-align:left; padding:16px 20px; border-radius:14px;
@@ -840,6 +891,22 @@
 <div id="printSheet"></div>
 
 <div id="toast"></div>
+<div id="lightbox">
+  <button class="lb-close" id="lbClose" aria-label="Close">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+  </button>
+  <button class="lb-nav prev" id="lbPrev" aria-label="Previous">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 18l-6-6 6-6"/></svg>
+  </button>
+  <button class="lb-nav next" id="lbNext" aria-label="Next">
+    <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 18l6-6-6-6"/></svg>
+  </button>
+  <div class="lb-stage" id="lbStage">
+    <img id="lightboxImg" src="" alt="">
+  </div>
+  <div class="lb-counter" id="lightboxCounter"></div>
+</div>
+
 <div id="achievementModal">
   <div class="ach-card">
     <svg class="ach-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2l2.6 6.2L21 9l-5 4.6L17.5 21 12 17.3 6.5 21 8 13.6 3 9l6.4-.8Z"/></svg>
@@ -888,10 +955,11 @@ const state = {
   currentSection:'vendors',
   displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
   guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
+  moodCategory: null,
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null, rsvp_deadline:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null, rsvp_deadline:null} },
-  data:{ wedding:{vendors:[],tasks:[],guests:[],moodboard:[]}, homecoming:{vendors:[],tasks:[],guests:[],moodboard:[]} }
+  data:{ wedding:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{}}, homecoming:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{}} }
 };
 
 /* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
@@ -1360,6 +1428,13 @@ function renderSection(){
   autoGrowTextareas(el);
 }
 
+function vendorRemaining(v){
+  const price = Number(v.price) || 0;
+  if (v.payment_status === 'paid_full') return 0;
+  const paidSoFar = v.payment_status === 'deposit_paid' ? (Number(v.deposit_amount) || 0) : 0;
+  return Math.max(0, price - paidSoFar);
+}
+
 function renderVendors(){
   const rows = state.data[state.currentEvent].vendors;
   const statusOptions = Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}">${l}</option>`).join('');
@@ -1367,7 +1442,11 @@ function renderVendors(){
   const cur = state.displayCurrency;
   const spentSoFar = computeSpent(state.currentEvent);
   const totalQuoted = rows.reduce((s,v)=> s + (Number(v.price)||0), 0);
-  const body = rows.length ? rows.map(r => `
+  const today = new Date().toDateString();
+  const body = rows.length ? rows.map(r => {
+    const remaining = vendorRemaining(r);
+    const overdue = r.due_date && remaining > 0 && new Date(r.due_date+'T00:00:00') < new Date(today);
+    return `
     <tr>
       ${taCell('Category', 'vendors', r.id, 'category', r.category)}
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
@@ -1382,11 +1461,14 @@ function renderVendors(){
           Object.entries(PAYMENT_LABELS).map(([v,l])=>`<option value="${v}" ${v===(r.payment_status||'unpaid')?'selected':''}>${l}</option>`).join('')
         }</select>
       </td>
+      <td data-label="Due"><input type="date" data-table="vendors" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}"></td>
       <td data-label="Price (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0"></td>
       <td data-label="Deposit (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0"></td>
+      <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:600; color:${overdue?'var(--danger)':remaining>0?'var(--accent)':'var(--ink-soft)'};">${fmtMoney(remaining)}</td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="9">No vendors yet for this event — add your first one above.</td></tr>`;
+    </tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="11">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -1401,6 +1483,7 @@ function renderVendors(){
       <div class="field"><label>Vendor name</label><input id="v_name" required></div>
       <div class="field"><label>Phone / email</label><input id="v_contact"></div>
       <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
+      <div class="field"><label>Payment due date</label><input id="v_due" type="date"></div>
       <div class="field"><label>Payment</label><select id="v_payment">${paymentOptions}</select></div>
       <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
       <div class="field"><label>Deposit (LKR)</label><input id="v_deposit" type="number"></div>
@@ -1412,11 +1495,12 @@ function renderVendors(){
     </form>
     <table class="data-table">
       <colgroup>
-        <col style="width:170px"><col style="width:160px"><col style="width:150px">
-        <col style="width:136px"><col style="width:136px"><col style="width:122px">
-        <col style="width:122px"><col style="width:170px"><col style="width:46px">
+        <col style="width:160px"><col style="width:150px"><col style="width:140px">
+        <col style="width:132px"><col style="width:132px"><col style="width:114px">
+        <col style="width:110px"><col style="width:110px"><col style="width:110px">
+        <col style="width:150px"><col style="width:46px">
       </colgroup>
-      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -1554,48 +1638,146 @@ function buildRsvpUrl(eventId, guestId){
 }
 
 function renderMoodboard(){
-  const items = state.data[state.currentEvent].moodboard || [];
-  const grid = items.length ? items.map(img => `
-    <div class="mood-item">
-      <img src="${img.url}" alt="" loading="lazy">
-      <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
-    </div>`).join('') : `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:40px 0;">No inspiration photos yet — add your first one.</p>`;
+  const cats = state.data[state.currentEvent].moodCategories || [];
+  if (!state.moodCategory || !cats.find(c => c.id === state.moodCategory)){
+    state.moodCategory = cats.length ? cats[0].id : null;
+  }
+
+  const addForm = `
+    <form class="add-form" id="moodCatForm">
+      <div class="field full"><label>Category name</label><input id="mc_name" required placeholder="e.g. Décor, Bride's Dress, Groom's Suit"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="moodCatForm">Cancel</button>
+        <button type="submit" class="btn-primary">Add category</button>
+      </div>
+    </form>`;
+
+  if (!cats.length){
+    return `
+      <p style="font-size:.85rem; color:var(--ink-soft); margin:0 0 18px; max-width:56ch;">
+        No categories yet — add one to start collecting inspiration. Make as many as you like:
+        "Décor", "Bride's Dress", "Groom's Suit", whatever fits how you're planning.
+      </p>
+      <button class="add-toggle" data-toggle="moodCatForm">+ New category</button>
+      ${addForm}`;
+  }
+
+  const activeCat = cats.find(c => c.id === state.moodCategory);
+  ensureMoodPhotosLoaded(state.currentEvent, state.moodCategory);
+  const items = (state.data[state.currentEvent].moodPhotos || {})[state.moodCategory];
+
+  const tabsHtml = cats.map(c => `
+    <button class="mood-cat-tab ${c.id===state.moodCategory?'active':''}" data-mood-cat="${c.id}">
+      ${esc(c.name)}
+      <span class="mood-cat-del" data-mood-cat-del="${c.id}" data-mood-cat-name="${esc(c.name)}" title="Delete category">✕</span>
+    </button>`).join('');
+
+  let grid;
+  if (items === undefined){
+    grid = `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:40px 0;">Loading…</p>`;
+  } else if (!items.length){
+    grid = `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:40px 0;">No photos in ${esc(activeCat.name)} yet — add your first one.</p>`;
+  } else {
+    grid = items.map((img, i) => `
+      <div class="mood-item">
+        <img src="${img.url}" alt="" loading="lazy" data-lb-index="${i}">
+        <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
+      </div>`).join('');
+  }
+
   return `
-    <label class="add-toggle" for="moodFileInput" style="display:inline-block; cursor:pointer;">+ Add photo</label>
+    <div class="mood-cat-tabs">
+      ${tabsHtml}
+      <button class="mood-cat-tab mood-cat-add" data-toggle="moodCatForm">+ New</button>
+    </div>
+    ${addForm}
+    <label class="add-toggle" for="moodFileInput" style="display:inline-block; cursor:pointer;">+ Add photo to ${esc(activeCat.name)}</label>
     <input type="file" id="moodFileInput" accept="image/*" style="display:none;" multiple>
     <div class="mood-grid">${grid}</div>`;
 }
 
-async function fetchMoodboard(eventId){
+async function fetchMoodCategories(eventId){
+  return await fetchTable('moodboard_categories', eventId);
+}
+
+async function fetchMoodPhotos(eventId, categoryId){
   try{
-    const { data, error } = await supabaseClient.storage.from('moodboard').list(eventId, { sortBy: { column: 'created_at', order: 'desc' } });
+    const { data, error } = await supabaseClient.storage.from('moodboard').list(`${eventId}/${categoryId}`, { sortBy: { column: 'created_at', order: 'desc' } });
     if (error || !data) return [];
     return data.filter(f => f.name !== '.emptyFolderPlaceholder').map(f => ({
       name: f.name,
-      url: supabaseClient.storage.from('moodboard').getPublicUrl(`${eventId}/${f.name}`).data.publicUrl
+      url: supabaseClient.storage.from('moodboard').getPublicUrl(`${eventId}/${categoryId}/${f.name}`).data.publicUrl
     }));
   } catch(e){ return []; }
 }
 
+async function ensureMoodPhotosLoaded(eventId, categoryId){
+  if (!categoryId) return;
+  const d = state.data[eventId];
+  if (!d.moodPhotos) d.moodPhotos = {};
+  if (d.moodPhotos[categoryId] !== undefined) return;
+  d._moodLoading = d._moodLoading || {};
+  if (d._moodLoading[categoryId]) return;
+  d._moodLoading[categoryId] = true;
+  const photos = await fetchMoodPhotos(eventId, categoryId);
+  d.moodPhotos[categoryId] = photos;
+  d._moodLoading[categoryId] = false;
+  if (state.currentEvent === eventId && state.currentSection === 'moodboard') renderSection();
+}
+
+async function addMoodCategory(name){
+  name = name.trim();
+  if (!name) return;
+  const eventId = state.currentEvent;
+  const { data, error } = await supabaseClient.from('moodboard_categories').insert([{ event_id: eventId, name }]).select();
+  if (error){ toast(error.message, true); return; }
+  state.data[eventId].moodCategories.push(data[0]);
+  state.moodCategory = data[0].id;
+  renderSection();
+  toast('Category added');
+}
+
+async function deleteMoodCategory(categoryId, categoryName){
+  const eventId = state.currentEvent;
+  let photos = (state.data[eventId].moodPhotos || {})[categoryId];
+  if (photos === undefined) photos = await fetchMoodPhotos(eventId, categoryId);
+  const msg = photos.length
+    ? `Delete "${categoryName}" and its ${photos.length} photo${photos.length===1?'':'s'}? This can't be undone.`
+    : `Delete "${categoryName}"?`;
+  if (!confirm(msg)) return;
+  if (photos.length){
+    await supabaseClient.storage.from('moodboard').remove(photos.map(p => `${eventId}/${categoryId}/${p.name}`));
+  }
+  const { error } = await supabaseClient.from('moodboard_categories').delete().eq('id', categoryId);
+  if (error){ toast(error.message, true); return; }
+  state.data[eventId].moodCategories = state.data[eventId].moodCategories.filter(c => c.id !== categoryId);
+  if (state.data[eventId].moodPhotos) delete state.data[eventId].moodPhotos[categoryId];
+  if (state.moodCategory === categoryId) state.moodCategory = null;
+  renderSection();
+  toast('Category deleted');
+}
+
 async function handleMoodUpload(files){
-  if (!files || !files.length) return;
+  if (!files || !files.length || !state.moodCategory) return;
   toast('Uploading…');
+  const eventId = state.currentEvent, categoryId = state.moodCategory;
   for (const file of files){
     const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
-    const path = `${state.currentEvent}/${Date.now()}-${safeName}`;
+    const path = `${eventId}/${categoryId}/${Date.now()}-${safeName}`;
     const { error } = await supabaseClient.storage.from('moodboard').upload(path, file);
     if (error){ toast(error.message, true); }
   }
-  state.data[state.currentEvent].moodboard = await fetchMoodboard(state.currentEvent);
+  state.data[eventId].moodPhotos[categoryId] = await fetchMoodPhotos(eventId, categoryId);
   renderSection();
   toast('Photo added');
 }
 
 async function handleMoodDelete(name){
   if (!confirm('Remove this photo?')) return;
-  const { error } = await supabaseClient.storage.from('moodboard').remove([`${state.currentEvent}/${name}`]);
+  const eventId = state.currentEvent, categoryId = state.moodCategory;
+  const { error } = await supabaseClient.storage.from('moodboard').remove([`${eventId}/${categoryId}/${name}`]);
   if (error){ toast(error.message, true); return; }
-  state.data[state.currentEvent].moodboard = await fetchMoodboard(state.currentEvent);
+  state.data[eventId].moodPhotos[categoryId] = await fetchMoodPhotos(eventId, categoryId);
   renderSection();
   toast('Removed');
 }
@@ -1656,6 +1838,10 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   }
   const moodDel = e.target.closest('.mood-del');
   if (moodDel){ handleMoodDelete(moodDel.dataset.moodName); return; }
+  const moodCatDel = e.target.closest('[data-mood-cat-del]');
+  if (moodCatDel){ deleteMoodCategory(moodCatDel.dataset.moodCatDel, moodCatDel.dataset.moodCatName); return; }
+  const moodCatTab = e.target.closest('[data-mood-cat]');
+  if (moodCatTab){ state.moodCategory = moodCatTab.dataset.moodCat; renderSection(); return; }
   const sideTab = e.target.closest('[data-side]');
   if (sideTab){
     state.guestSide = sideTab.dataset.side;
@@ -1699,7 +1885,7 @@ document.getElementById('sectionContent').addEventListener('change', e => {
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','side'].includes(field)){
+  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','due_date','side'].includes(field)){
     renderSummary();
     if (['status','payment_status'].includes(field)) return;
     renderSection();
@@ -1715,6 +1901,7 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
       contact_phone: document.getElementById('v_contact').value,
       status: document.getElementById('v_status').value,
       payment_status: document.getElementById('v_payment').value,
+      due_date: document.getElementById('v_due').value || null,
       price: document.getElementById('v_price').value ? Number(document.getElementById('v_price').value) : null,
       deposit_amount: document.getElementById('v_deposit').value ? Number(document.getElementById('v_deposit').value) : null,
       notes: document.getElementById('v_notes').value
@@ -1736,6 +1923,9 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
       rsvp_status: document.getElementById('g_rsvp').value,
       dietary_notes: document.getElementById('g_notes').value
     });
+    e.target.reset(); e.target.classList.remove('open');
+  } else if (e.target.id === 'moodCatForm'){
+    addMoodCategory(document.getElementById('mc_name').value);
     e.target.reset(); e.target.classList.remove('open');
   }
 });
@@ -1876,15 +2066,156 @@ async function init(){
   evRows.forEach(r => state.events[r.id] = r);
 
   for (const ev of ['wedding','homecoming']){
-    const [vendors, tasks, guests, moodboard] = await Promise.all([
-      fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodboard(ev)
+    const [vendors, tasks, guests, moodCategories] = await Promise.all([
+      fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodCategories(ev)
     ]);
-    state.data[ev] = { vendors, tasks, guests, moodboard };
+    state.data[ev] = { vendors, tasks, guests, moodCategories, moodPhotos:{} };
   }
   renderSummary();
   renderSection();
   moveTabIndicator(document.querySelector('#sectionTabs button.active'));
 }
+
+/* ---------------- lightbox (pinch-zoom + swipe photo viewer) ---------------- */
+let lbImages = [];
+let lbIndex = 0;
+let lbScale = 1, lbPanX = 0, lbPanY = 0;
+
+function dist(a, b){ return Math.hypot(a.clientX - b.clientX, a.clientY - b.clientY); }
+function clamp(n, min, max){ return Math.min(max, Math.max(min, n)); }
+
+function openLightbox(images, index){
+  if (!images.length) return;
+  lbImages = images;
+  lbIndex = index;
+  document.getElementById('lightbox').classList.add('show');
+  document.body.style.overflow = 'hidden';
+  showLightboxImage();
+}
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('show');
+  document.body.style.overflow = '';
+}
+function showLightboxImage(){
+  lbScale = 1; lbPanX = 0; lbPanY = 0;
+  const img = document.getElementById('lightboxImg');
+  img.classList.remove('zoomed');
+  img.src = lbImages[lbIndex].url;
+  img.style.transform = 'translate(0px,0px) scale(1)';
+  img.style.opacity = '1';
+  document.getElementById('lightboxCounter').textContent = lbImages.length > 1 ? `${lbIndex + 1} / ${lbImages.length}` : '';
+  document.getElementById('lbPrev').style.visibility = lbIndex > 0 ? 'visible' : 'hidden';
+  document.getElementById('lbNext').style.visibility = lbIndex < lbImages.length - 1 ? 'visible' : 'hidden';
+}
+function lbNext(){ if (lbIndex < lbImages.length - 1){ lbIndex++; showLightboxImage(); } }
+function lbPrev(){ if (lbIndex > 0){ lbIndex--; showLightboxImage(); } }
+function applyLbTransform(){
+  const img = document.getElementById('lightboxImg');
+  img.style.transform = `translate(${lbPanX}px, ${lbPanY}px) scale(${lbScale})`;
+  img.classList.toggle('zoomed', lbScale > 1.02);
+}
+
+document.getElementById('lbClose').addEventListener('click', closeLightbox);
+document.getElementById('lbPrev').addEventListener('click', lbPrev);
+document.getElementById('lbNext').addEventListener('click', lbNext);
+document.getElementById('lightbox').addEventListener('click', e => {
+  if (e.target.id === 'lightbox' || e.target.id === 'lbStage') closeLightbox();
+});
+document.addEventListener('keydown', e => {
+  if (!document.getElementById('lightbox').classList.contains('show')) return;
+  if (e.key === 'Escape') closeLightbox();
+  else if (e.key === 'ArrowRight') lbNext();
+  else if (e.key === 'ArrowLeft') lbPrev();
+});
+
+const lbImg = document.getElementById('lightboxImg');
+
+lbImg.addEventListener('wheel', e => {
+  e.preventDefault();
+  lbScale = clamp(lbScale + (e.deltaY < 0 ? 0.18 : -0.18), 1, 4);
+  if (lbScale === 1){ lbPanX = 0; lbPanY = 0; }
+  applyLbTransform();
+}, { passive:false });
+
+lbImg.addEventListener('dblclick', () => {
+  lbScale = lbScale > 1 ? 1 : 2.4;
+  lbPanX = 0; lbPanY = 0;
+  applyLbTransform();
+});
+
+let lbTouchMode = null;
+let lbStartX = 0, lbStartY = 0, lbPanStartX = 0, lbPanStartY = 0;
+let lbPinchStartDist = 0, lbPinchStartScale = 1, lbSwipeDx = 0;
+
+lbImg.addEventListener('touchstart', e => {
+  lbImg.classList.add('no-transition');
+  if (e.touches.length === 2){
+    lbTouchMode = 'pinch';
+    lbPinchStartDist = dist(e.touches[0], e.touches[1]);
+    lbPinchStartScale = lbScale;
+  } else if (e.touches.length === 1){
+    lbStartX = e.touches[0].clientX; lbStartY = e.touches[0].clientY;
+    lbPanStartX = lbPanX; lbPanStartY = lbPanY;
+    lbSwipeDx = 0;
+    lbTouchMode = lbScale > 1.02 ? 'pan' : 'swipe';
+  }
+}, { passive:true });
+
+lbImg.addEventListener('touchmove', e => {
+  if (lbTouchMode === 'pinch' && e.touches.length === 2){
+    const d = dist(e.touches[0], e.touches[1]);
+    lbScale = clamp(lbPinchStartScale * (d / lbPinchStartDist), 1, 4);
+    applyLbTransform();
+  } else if (lbTouchMode === 'pan' && e.touches.length === 1){
+    lbPanX = lbPanStartX + (e.touches[0].clientX - lbStartX);
+    lbPanY = lbPanStartY + (e.touches[0].clientY - lbStartY);
+    applyLbTransform();
+  } else if (lbTouchMode === 'swipe' && e.touches.length === 1){
+    lbSwipeDx = e.touches[0].clientX - lbStartX;
+    lbImg.style.transform = `translateX(${lbSwipeDx}px) scale(1)`;
+    lbImg.style.opacity = String(1 - Math.min(0.55, Math.abs(lbSwipeDx) / 500));
+  }
+}, { passive:true });
+
+lbImg.addEventListener('touchend', () => {
+  lbImg.classList.remove('no-transition');
+  if (lbTouchMode === 'swipe'){
+    if (lbSwipeDx < -70) lbNext();
+    else if (lbSwipeDx > 70) lbPrev();
+    else { lbImg.style.transform = 'translateX(0px) scale(1)'; lbImg.style.opacity = '1'; }
+  } else if (lbTouchMode === 'pinch' && lbScale <= 1.02){
+    lbScale = 1; lbPanX = 0; lbPanY = 0; applyLbTransform();
+  }
+  lbTouchMode = null;
+});
+
+// mouse-drag pan when zoomed in (desktop)
+let lbMouseDown = false;
+lbImg.addEventListener('mousedown', e => {
+  if (lbScale <= 1.02) return;
+  lbMouseDown = true;
+  lbImg.classList.add('dragging', 'no-transition');
+  lbStartX = e.clientX; lbStartY = e.clientY;
+  lbPanStartX = lbPanX; lbPanStartY = lbPanY;
+});
+window.addEventListener('mousemove', e => {
+  if (!lbMouseDown) return;
+  lbPanX = lbPanStartX + (e.clientX - lbStartX);
+  lbPanY = lbPanStartY + (e.clientY - lbStartY);
+  applyLbTransform();
+});
+window.addEventListener('mouseup', () => {
+  lbMouseDown = false;
+  lbImg.classList.remove('dragging', 'no-transition');
+});
+
+document.getElementById('sectionContent').addEventListener('click', e => {
+  const img = e.target.closest('.mood-item img');
+  if (img){
+    const images = (state.data[state.currentEvent].moodPhotos || {})[state.moodCategory] || [];
+    openLightbox(images, Number(img.dataset.lbIndex || 0));
+  }
+});
 
 const UNLOCK_KEY = 'wedplanner_unlocked';
 

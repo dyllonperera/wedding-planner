@@ -109,6 +109,36 @@ field, since it's buffet-style — that field's still there for your own interna
 the **Guests** tab (now just labeled "Notes"), guests just don't see or fill it in
 themselves anymore.
 
+### One more step: vendor due dates + mood board categories
+
+Run this once in Supabase → **SQL Editor**:
+
+```sql
+alter table vendors add column if not exists due_date date;
+
+create table if not exists moodboard_categories (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null references events(id),
+  name text not null,
+  created_at timestamptz not null default now()
+);
+alter table moodboard_categories enable row level security;
+create policy "anon full access" on moodboard_categories for all using (true) with check (true);
+```
+
+**Vendors** now have a **Due** date column and a computed **Remaining** column (what's
+left to pay — full price if unpaid, price minus deposit if a deposit's down, zero once
+paid in full). An overdue due date turns red, same pattern as overdue tasks.
+
+**Mood board** is now organized into categories you name yourself — "Décor," "Bride's
+Dress," "Groom's Suit," whatever fits. Each category is its own tab with its own
+photos; add as many as you like from the **+ New** button. Deleting a category deletes
+its photos too, with a confirmation first.
+
+**Photos are now a proper lightbox** — tap any photo to open it full-screen. Pinch to
+zoom (or scroll-wheel/double-click on desktop), drag to pan while zoomed, swipe left or
+right for the next/previous photo, and tap outside the image or the ✕ to close.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it
