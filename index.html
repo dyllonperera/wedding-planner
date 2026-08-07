@@ -429,6 +429,11 @@
     font-size:.68rem; color:var(--ink-soft); word-break:break-word; line-height:1.35;
     max-height:2.7em; overflow:hidden; font-family:var(--font-body);
   }
+  .pdf-badge{
+    position:absolute; bottom:8px; left:8px; background:rgba(0,0,0,.68); color:#fff;
+    font-size:.6rem; font-weight:700; letter-spacing:.05em; padding:2px 7px; border-radius:5px;
+    font-family:var(--font-mono);
+  }
 
   .mood-cat-tabs{display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;}
   .mood-cat-tab{
@@ -465,10 +470,14 @@
   }
   #lightboxImg.no-transition{transition:none;}
   #lightboxImg.zoomed{cursor:grab;}
-  #lightboxPdf{
-    display:none; width:min(94vw, 900px); height:85vh; border:none; border-radius:8px;
-    background:#fff; box-shadow:0 40px 80px -20px rgba(0,0,0,.6);
+  .lb-pdf-wrap{
+    display:none; width:min(92vw, 820px); height:85vh; overflow-y:auto; border-radius:10px;
+    background:#fff; box-shadow:0 40px 80px -20px rgba(0,0,0,.6); padding:16px;
+    -webkit-overflow-scrolling:touch;
   }
+  #lightboxPdfPages canvas{display:block; width:100%; height:auto; margin-bottom:14px; border-radius:4px; box-shadow:0 2px 10px rgba(0,0,0,.1);}
+  #lightboxPdfPages canvas:last-child{margin-bottom:0;}
+  #lightboxPdfPages p{font-family:var(--font-body); color:#8A7458; text-align:center; padding:40px 0; margin:0;}
   #lightboxImg.dragging{cursor:grabbing;}
   .lb-close, .lb-nav{
     position:absolute; border-radius:50%; background:rgba(255,255,255,.12); border:1px solid rgba(255,255,255,.25);
@@ -920,7 +929,9 @@
   </button>
   <div class="lb-stage" id="lbStage">
     <img id="lightboxImg" src="" alt="">
-    <iframe id="lightboxPdf" src="" title="Document preview"></iframe>
+    <div class="lb-pdf-wrap" id="lightboxPdfWrap">
+      <div id="lightboxPdfPages"></div>
+    </div>
   </div>
   <div class="lb-counter" id="lightboxCounter"></div>
 </div>
@@ -934,6 +945,10 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.min.js"></script>
+<script>
+  pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdn.jsdelivr.net/npm/pdfjs-dist@3.11.174/legacy/build/pdf.worker.min.js';
+</script>
 <script src="config.js"></script>
 <script>
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
@@ -1655,6 +1670,25 @@ function buildRsvpUrl(eventId, guestId){
   return new URL(`rsvp.html?event=${eventId}&guest=${guestId}`, window.location.href).href;
 }
 
+const pdfThumbCache = {};
+async function ensurePdfThumb(url, onReady){
+  if (pdfThumbCache[url]){ onReady(pdfThumbCache[url]); return; }
+  try{
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    const page = await pdf.getPage(1);
+    const baseViewport = page.getViewport({ scale: 1 });
+    const scale = 320 / baseViewport.width;
+    const viewport = page.getViewport({ scale });
+    const canvas = document.createElement('canvas');
+    canvas.width = viewport.width;
+    canvas.height = viewport.height;
+    await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+    const dataUrl = canvas.toDataURL('image/jpeg', 0.75);
+    pdfThumbCache[url] = dataUrl;
+    onReady(dataUrl);
+  } catch(e){ /* leave as generic document tile */ }
+}
+
 function renderMoodboard(){
   const cats = state.data[state.currentEvent].moodCategories || [];
   if (!state.moodCategory || !cats.find(c => c.id === state.moodCategory)){
@@ -1700,6 +1734,15 @@ function renderMoodboard(){
       const isPdf = img.name.toLowerCase().endsWith('.pdf');
       const displayName = img.name.replace(/^\d+-/, '');
       if (isPdf){
+        const thumb = pdfThumbCache[img.url];
+        if (thumb){
+          return `
+      <div class="mood-item" data-lb-index="${i}">
+        <img src="${thumb}" alt="" loading="lazy">
+        <span class="pdf-badge">PDF</span>
+        <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
+      </div>`;
+        }
         return `
       <div class="mood-item pdf-tile" data-lb-index="${i}">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg>
@@ -1713,6 +1756,12 @@ function renderMoodboard(){
         <button class="mood-del" data-mood-name="${esc(img.name)}" title="Remove">✕</button>
       </div>`;
     }).join('');
+
+    items.forEach(img => {
+      if (img.name.toLowerCase().endsWith('.pdf') && !pdfThumbCache[img.url]){
+        ensurePdfThumb(img.url, () => { if (state.currentSection === 'moodboard') renderSection(); });
+      }
+    });
   }
 
   return `
@@ -2124,24 +2173,43 @@ function openLightbox(images, index){
 }
 function closeLightbox(){
   document.getElementById('lightbox').classList.remove('show');
-  document.getElementById('lightboxPdf').src = '';
+  document.getElementById('lightboxPdfPages').innerHTML = '';
   document.body.style.overflow = '';
+}
+async function renderPdfIntoLightbox(url){
+  const pagesEl = document.getElementById('lightboxPdfPages');
+  pagesEl.innerHTML = '<p>Loading document…</p>';
+  try{
+    const pdf = await pdfjsLib.getDocument(url).promise;
+    pagesEl.innerHTML = '';
+    for (let n = 1; n <= pdf.numPages; n++){
+      const page = await pdf.getPage(n);
+      const viewport = page.getViewport({ scale: 1.5 });
+      const canvas = document.createElement('canvas');
+      canvas.width = viewport.width;
+      canvas.height = viewport.height;
+      await page.render({ canvasContext: canvas.getContext('2d'), viewport }).promise;
+      pagesEl.appendChild(canvas);
+    }
+  } catch(e){
+    pagesEl.innerHTML = '<p>Could not preview this document — it may still open if you download it.</p>';
+  }
 }
 function showLightboxImage(){
   lbScale = 1; lbPanX = 0; lbPanY = 0;
   const item = lbImages[lbIndex];
   const isPdf = item.name.toLowerCase().endsWith('.pdf');
   const img = document.getElementById('lightboxImg');
-  const pdf = document.getElementById('lightboxPdf');
+  const pdfWrap = document.getElementById('lightboxPdfWrap');
   document.getElementById('lightbox').classList.toggle('pdf-mode', isPdf);
   if (isPdf){
     img.style.display = 'none';
     img.src = '';
-    pdf.style.display = 'block';
-    pdf.src = item.url;
+    pdfWrap.style.display = 'block';
+    renderPdfIntoLightbox(item.url);
   } else {
-    pdf.style.display = 'none';
-    pdf.src = '';
+    pdfWrap.style.display = 'none';
+    document.getElementById('lightboxPdfPages').innerHTML = '';
     img.style.display = 'block';
     img.classList.remove('zoomed');
     img.src = item.url;
