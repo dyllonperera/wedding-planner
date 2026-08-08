@@ -141,17 +141,10 @@
   body[data-theme="wedding"] .sunGlow, body[data-theme="wedding"] .sunRays{opacity:1;}
 
   /* -- moon + rose window (homecoming) -- */
-  .moonGlow{
-    position:absolute; top:-10%; left:-6%; width:34vw; height:34vw; max-width:420px; max-height:420px;
-    border-radius:50%;
-    background:radial-gradient(circle, color-mix(in srgb, var(--hero-text) 65%, transparent) 0%, transparent 70%);
-    filter:blur(4px); opacity:0; transition:opacity 1s var(--ease);
-  }
   .roseWindow{
     position:absolute; top:4%; right:2%; width:46vw; height:46vw; max-width:520px; max-height:520px;
     opacity:0; transition:opacity 1.2s var(--ease); animation:spinSlowRev 140s linear infinite;
   }
-  body[data-theme="homecoming"] .moonGlow{opacity:1;}
   body[data-theme="homecoming"] .roseWindow{opacity:.85;}
 
   .domeScene{
@@ -833,7 +826,6 @@
 <section class="hero" id="heroSection">
   <div class="hero-layer">
     <div class="sunGlow"></div>
-    <div class="moonGlow"></div>
   </div>
   <svg class="hero-layer sunRays" viewBox="0 0 200 200" fill="none">
     <g fill="var(--accent)">
@@ -2354,7 +2346,7 @@ if (window.matchMedia('(hover: hover)').matches){
     document.querySelectorAll('.sunRays, .roseWindow').forEach(el => {
       el.style.transform = `translate(${x*10}px, ${y*10}px)`;
     });
-    document.querySelectorAll('.sunGlow, .moonGlow').forEach(el => {
+    document.querySelectorAll('.sunGlow').forEach(el => {
       el.style.transform = `translate(${x*-14}px, ${y*-14}px)`;
     });
   });
