@@ -751,6 +751,17 @@
     .data-table td.wrap-col{min-width:0; max-width:none;}
     .data-table td.num-col{min-width:0;}
     .data-table td.num-col input{min-width:0;}
+    .section-tabs{
+      flex-wrap:wrap; width:100%; overflow-x:visible; border-radius:16px;
+      justify-content:flex-start; padding:5px;
+    }
+    .section-tabs button{flex:1 1 auto; justify-content:center; padding:10px 12px; font-size:.76rem; gap:6px;}
+    .section-tabs button svg{width:14px; height:14px;}
+    #tabIndicator{display:none;}
+    .section-tabs button.active{
+      background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff;
+      box-shadow:0 8px 16px -8px color-mix(in srgb, var(--accent) 65%, transparent);
+    }
   }
 </style>
 </head>
