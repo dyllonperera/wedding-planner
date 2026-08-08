@@ -1620,6 +1620,7 @@ function renderVendors(){
     const docCount = (state.data[state.currentEvent].vendorDocs || {})[r.id];
     return `
     <tr>
+      <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Category', 'vendors', r.id, 'category', r.category)}
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
       ${taCell('Contact', 'vendors', r.id, 'contact_phone', r.contact_phone||'', {placeholder:'phone / email'})}
@@ -1637,7 +1638,6 @@ function renderVendors(){
       <td data-label="Price (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0"></td>
       <td data-label="Deposit (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0"></td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:600; color:${overdue?'var(--danger)':remaining>0?'var(--accent)':'var(--ink-soft)'};">${fmtMoney(remaining)}</td>
-      <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
@@ -1668,12 +1668,12 @@ function renderVendors(){
     </form>
     <table class="data-table">
       <colgroup>
-        <col style="width:160px"><col style="width:150px"><col style="width:140px">
-        <col style="width:132px"><col style="width:132px"><col style="width:114px">
-        <col style="width:110px"><col style="width:110px"><col style="width:110px">
-        <col style="width:80px"><col style="width:150px"><col style="width:46px">
+        <col style="width:80px"><col style="width:160px"><col style="width:150px">
+        <col style="width:140px"><col style="width:132px"><col style="width:132px">
+        <col style="width:114px"><col style="width:110px"><col style="width:110px">
+        <col style="width:110px"><col style="width:150px"><col style="width:46px">
       </colgroup>
-      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Docs</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Docs</th><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
