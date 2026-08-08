@@ -152,6 +152,17 @@
   body[data-theme="homecoming"] .moonGlow{opacity:1;}
   body[data-theme="homecoming"] .roseWindow{opacity:.85;}
 
+  .domeScene{
+    position:absolute; right:-1%; bottom:0; width:min(20vw, 190px); opacity:0;
+    transition:opacity 1.2s var(--ease); pointer-events:none;
+  }
+  body[data-theme="homecoming"] .domeScene{opacity:.95;}
+  .dome-rose{ animation:domeRoseGlow 3.2s ease-in-out infinite; transform-origin:100px 172px; }
+  @keyframes domeRoseGlow{
+    0%,100%{filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent2) 55%, transparent));}
+    50%{filter:drop-shadow(0 0 11px color-mix(in srgb, var(--accent2) 80%, transparent));}
+  }
+
   /* -- stars (homecoming) -- */
   .stars{position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease);}
   body[data-theme="homecoming"] .stars{opacity:1;}
@@ -909,10 +920,33 @@
       <circle cx="780" cy="8" r="4"/><circle cx="1020" cy="10" r="5"/>
     </g>
   </svg>
-  <svg class="hero-layer candleBorder" viewBox="0 0 1200 70" preserveAspectRatio="none" fill="none" stroke="var(--accent)" stroke-width="1.2">
-    <path d="M0 40 Q30 10 60 40 Q90 10 120 40 Q150 10 180 40 Q210 10 240 40 Q270 10 300 40 Q330 10 360 40 Q390 10 420 40 Q450 10 480 40 Q510 10 540 40 Q570 10 600 40 Q630 10 660 40 Q690 10 720 40 Q750 10 780 40 Q810 10 840 40 Q870 10 900 40 Q930 10 960 40 Q990 10 1020 40 Q1050 10 1080 40 Q1110 10 1140 40 Q1170 10 1200 40"/>
+  <svg class="hero-layer candleBorder" viewBox="0 0 1200 70" preserveAspectRatio="none" fill="none">
+    <path d="M0 40 Q30 10 60 40 Q90 10 120 40 Q150 10 180 40 Q210 10 240 40 Q270 10 300 40 Q330 10 360 40 Q390 10 420 40 Q450 10 480 40 Q510 10 540 40 Q570 10 600 40 Q630 10 660 40 Q690 10 720 40 Q750 10 780 40 Q810 10 840 40 Q870 10 900 40 Q930 10 960 40 Q990 10 1020 40 Q1050 10 1080 40 Q1110 10 1140 40 Q1170 10 1200 40" stroke="var(--accent)" stroke-width="1.2"/>
+    <g><rect x="28.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="30" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:0.0s;"/><rect x="148.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="150" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:0.5s;"/><rect x="268.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="270" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:1.0s;"/><rect x="388.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="390" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:1.5s;"/><rect x="508.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="510" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:2.0s;"/><rect x="628.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="630" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:0.0s;"/><rect x="748.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="750" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:0.5s;"/><rect x="868.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="870" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:1.0s;"/><rect x="988.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="990" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:1.5s;"/><rect x="1108.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="1110" cy="12" rx="2" ry="3.4" fill="var(--accent2)" style="animation-delay:2.0s;"/></g>
   </svg>
 
+  <svg class="hero-layer domeScene" viewBox="0 0 200 260" fill="none">
+    <path d="M70 240 L130 240 L120 254 L80 254 Z" fill="var(--accent-deep)" opacity="0.5"/>
+    <rect x="58" y="228" width="84" height="13" rx="2" fill="var(--accent-deep)" opacity="0.5"/>
+    <path d="M46 230 L46 140 A54 78 0 0 1 154 140 L154 230" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
+    <line x1="46" y1="230" x2="154" y2="230" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
+    <circle cx="100" cy="58" r="4" fill="#E4EEF3" opacity="0.55"/>
+    <line x1="100" y1="62" x2="100" y2="58" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
+    <g stroke="#E4EEF3" stroke-width="1" opacity="0.38">
+      <path d="M52 158 l-6 -6M52 158 l-6 6M52 158 l8 0"/>
+      <path d="M148 178 l-6 -6M148 178 l-6 6M148 178 l8 0"/>
+    </g>
+    <path d="M100 225 L100 175" stroke="var(--accent-deep)" stroke-width="2"/>
+    <path d="M100 205 Q88 200 82 188" stroke="var(--accent-deep)" stroke-width="1.6"/>
+    <path d="M100 195 Q112 190 118 178" stroke="var(--accent-deep)" stroke-width="1.6"/>
+    <g class="dome-rose" fill="var(--accent2)">
+      <path d="M100 178c-13 5-21-5-16-18 5 13 16 10 16 18Z"/>
+      <path d="M100 178c13 5 21-5 16-18-5 13-16 10-16 18Z"/>
+      <path d="M100 172c-8 3-13-3-10-11 3 8 10 6 10 11Z"/>
+      <path d="M100 172c8 3 13-3 10-11-3 8-10 6-10 11Z"/>
+      <circle cx="100" cy="166" r="7"/>
+    </g>
+  </svg>
   <svg class="hero-layer garland" viewBox="0 0 560 60" fill="none">
     <path d="M10 15 Q140 55 280 20 Q420 -15 550 15" stroke="var(--accent-deep)" stroke-width="1.6"/>
     <g stroke="var(--accent-deep)" stroke-width="1" fill="none">
