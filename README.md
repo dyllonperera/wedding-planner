@@ -139,6 +139,15 @@ its photos too, with a confirmation first.
 zoom (or scroll-wheel/double-click on desktop), drag to pan while zoomed, swipe left or
 right for the next/previous photo, and tap outside the image or the ✕ to close.
 
+### Vendor documents (receipts, invoices, quotations)
+
+No new SQL — this reuses the same storage bucket and policies the Mood Board already
+set up. Each vendor row now has a **📎 Docs** button showing how many files are
+attached. Tap it to open a panel scoped to just that vendor — add a deposit receipt,
+invoice, or final quotation (PDF, JPG, or PNG), and it opens the exact same way as
+mood board photos: real thumbnails, tap to view full-screen, zoom and swipe for
+photos, rendered pages for PDFs.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

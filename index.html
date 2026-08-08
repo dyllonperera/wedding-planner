@@ -511,6 +511,42 @@
   .side-bar{height:6px; border-radius:100px; background:var(--line); overflow:hidden;}
   .side-bar-fill{height:100%; border-radius:100px; background:linear-gradient(90deg, var(--accent), var(--accent2)); transition:width .6s var(--ease);}
 
+  .guest-search{
+    position:relative; display:flex; align-items:center; margin-bottom:18px; max-width:360px;
+  }
+  .guest-search svg{position:absolute; left:14px; width:16px; height:16px; color:var(--ink-soft); pointer-events:none;}
+  .guest-search input{
+    width:100%; font-family:var(--font-body); font-size:.9rem; padding:11px 38px 11px 40px;
+    border:1px solid var(--line); border-radius:100px; background:var(--paper); color:var(--ink);
+    transition:border-color .25s var(--ease), box-shadow .25s var(--ease);
+  }
+  .guest-search input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);}
+  .guest-search button{
+    position:absolute; right:10px; background:none; border:none; color:var(--ink-soft); cursor:pointer;
+    font-size:.85rem; padding:4px 6px; border-radius:50%; transition:background .2s ease, color .2s ease;
+  }
+  .guest-search button:hover{background:var(--paper-warm); color:var(--danger);}
+
+  #vendorDocsModal{
+    position:fixed; inset:0; z-index:92; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,6,.55); opacity:0; pointer-events:none; transition:opacity .35s var(--ease); padding:20px;
+  }
+  #vendorDocsModal.show{opacity:1; pointer-events:auto;}
+  .vdocs-card{
+    position:relative; max-width:640px; width:100%; max-height:82vh; overflow-y:auto;
+    background:var(--paper); border:1px solid var(--line); border-radius:20px; padding:36px 32px;
+    box-shadow:0 40px 80px -30px rgba(0,0,0,.5); animation:fadeInUp .4s var(--ease) both;
+  }
+  .vdocs-card .eyebrow{color:var(--ink-soft); margin-bottom:4px;}
+  .vdocs-card h2{font-family:var(--font-display); font-weight:600; font-size:1.3rem; margin:0 0 18px; color:var(--ink);}
+  #vdocsGrid{margin-top:18px;}
+  .doc-btn{
+    display:inline-flex; align-items:center; gap:5px; background:var(--paper-warm); border:1px solid var(--line);
+    border-radius:100px; padding:6px 11px; font-size:.76rem; color:var(--ink-soft); cursor:pointer;
+    font-family:var(--font-body); transition:all .25s ease; white-space:nowrap;
+  }
+  .doc-btn:hover{border-color:var(--accent); color:var(--accent); transform:translateY(-1px);}
+
   .rsvp-deadline-row{
     display:flex; gap:20px; align-items:flex-start; flex-wrap:wrap;
     background:color-mix(in srgb, var(--paper-warm) 70%, transparent); border:1px solid var(--line);
@@ -917,6 +953,19 @@
 <div id="printSheet"></div>
 
 <div id="toast"></div>
+<div id="vendorDocsModal">
+  <div class="vdocs-card">
+    <button class="lb-close" id="vdocsClose" aria-label="Close" style="position:absolute; top:14px; right:14px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <p class="eyebrow">Documents for</p>
+    <h2 id="vdocsVendorName"></h2>
+    <label class="add-toggle" for="vendorDocInput" style="display:inline-block; cursor:pointer;">+ Add file</label>
+    <input type="file" id="vendorDocInput" accept="image/*,application/pdf" style="display:none;" multiple>
+    <div class="mood-grid" id="vdocsGrid"></div>
+  </div>
+</div>
+
 <div id="lightbox">
   <button class="lb-close" id="lbClose" aria-label="Close">
     <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
@@ -989,10 +1038,12 @@ const state = {
   displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
   guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
   moodCategory: null,
+  guestSearch: '',
+  vendorDocsFor: null,
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null, rsvp_deadline:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null, rsvp_deadline:null} },
-  data:{ wedding:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{}}, homecoming:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{}} }
+  data:{ wedding:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{}}, homecoming:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{}} }
 };
 
 /* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
@@ -1461,6 +1512,92 @@ function renderSection(){
   autoGrowTextareas(el);
 }
 
+/* ---------------- vendor documents (receipts, invoices, quotations) ---------------- */
+async function fetchVendorDocs(eventId, vendorId){
+  try{
+    const { data, error } = await supabaseClient.storage.from('moodboard').list(`vendor-docs/${eventId}/${vendorId}`, { sortBy: { column: 'created_at', order: 'desc' } });
+    if (error || !data) return [];
+    return data.filter(f => f.name !== '.emptyFolderPlaceholder').map(f => ({
+      name: f.name,
+      url: supabaseClient.storage.from('moodboard').getPublicUrl(`vendor-docs/${eventId}/${vendorId}/${f.name}`).data.publicUrl
+    }));
+  } catch(e){ return []; }
+}
+
+async function ensureVendorDocsLoaded(eventId, vendorId){
+  const d = state.data[eventId];
+  if (!d.vendorDocs) d.vendorDocs = {};
+  if (d.vendorDocs[vendorId] !== undefined) return;
+  d._vdocsLoading = d._vdocsLoading || {};
+  if (d._vdocsLoading[vendorId]) return;
+  d._vdocsLoading[vendorId] = true;
+  const docs = await fetchVendorDocs(eventId, vendorId);
+  d.vendorDocs[vendorId] = docs;
+  d._vdocsLoading[vendorId] = false;
+  if (state.currentSection === 'vendors') renderSection();
+}
+
+function openVendorDocsModal(vendorId, vendorName){
+  state.vendorDocsFor = vendorId;
+  document.getElementById('vdocsVendorName').textContent = vendorName;
+  document.getElementById('vendorDocsModal').classList.add('show');
+  renderVendorDocsGrid();
+}
+function closeVendorDocsModal(){
+  document.getElementById('vendorDocsModal').classList.remove('show');
+  state.vendorDocsFor = null;
+}
+function renderVendorDocsGrid(){
+  const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
+  if (!vendorId) return;
+  const items = (state.data[eventId].vendorDocs || {})[vendorId] || [];
+  const grid = document.getElementById('vdocsGrid');
+  if (!items.length){
+    grid.innerHTML = `<p class="empty-row" style="grid-column:1/-1; text-align:center; padding:30px 0;">No files yet — add a deposit receipt, invoice, or final quotation.</p>`;
+    return;
+  }
+  grid.innerHTML = items.map((f, i) => {
+    const isPdf = f.name.toLowerCase().endsWith('.pdf');
+    const displayName = f.name.replace(/^\d+-/, '');
+    if (isPdf){
+      const thumb = pdfThumbCache[f.url];
+      if (thumb){
+        return `<div class="mood-item" data-vdoc-index="${i}"><img src="${thumb}" alt=""><span class="pdf-badge">PDF</span><button class="mood-del" data-vdoc-del="${esc(f.name)}" title="Remove">✕</button></div>`;
+      }
+      ensurePdfThumb(f.url, renderVendorDocsGrid);
+      return `<div class="mood-item pdf-tile" data-vdoc-index="${i}"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><path d="M14 2v6h6"/></svg><div class="pdf-name">${esc(displayName)}</div><button class="mood-del" data-vdoc-del="${esc(f.name)}" title="Remove">✕</button></div>`;
+    }
+    return `<div class="mood-item" data-vdoc-index="${i}"><img src="${f.url}" alt="" loading="lazy"><button class="mood-del" data-vdoc-del="${esc(f.name)}" title="Remove">✕</button></div>`;
+  }).join('');
+}
+
+async function handleVendorDocUpload(files){
+  if (!files || !files.length || !state.vendorDocsFor) return;
+  toast('Uploading…');
+  const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
+  for (const file of files){
+    const safeName = file.name.replace(/[^a-zA-Z0-9.\-_]/g, '_');
+    const path = `vendor-docs/${eventId}/${vendorId}/${Date.now()}-${safeName}`;
+    const { error } = await supabaseClient.storage.from('moodboard').upload(path, file);
+    if (error){ toast(error.message, true); }
+  }
+  state.data[eventId].vendorDocs[vendorId] = await fetchVendorDocs(eventId, vendorId);
+  renderVendorDocsGrid();
+  if (state.currentSection === 'vendors') renderSection();
+  toast('File added');
+}
+
+async function handleVendorDocDelete(name){
+  if (!confirm('Remove this file?')) return;
+  const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
+  const { error } = await supabaseClient.storage.from('moodboard').remove([`vendor-docs/${eventId}/${vendorId}/${name}`]);
+  if (error){ toast(error.message, true); return; }
+  state.data[eventId].vendorDocs[vendorId] = await fetchVendorDocs(eventId, vendorId);
+  renderVendorDocsGrid();
+  if (state.currentSection === 'vendors') renderSection();
+  toast('Removed');
+}
+
 function vendorRemaining(v){
   const price = Number(v.price) || 0;
   if (v.payment_status === 'paid_full') return 0;
@@ -1479,6 +1616,8 @@ function renderVendors(){
   const body = rows.length ? rows.map(r => {
     const remaining = vendorRemaining(r);
     const overdue = r.due_date && remaining > 0 && new Date(r.due_date+'T00:00:00') < new Date(today);
+    ensureVendorDocsLoaded(state.currentEvent, r.id);
+    const docCount = (state.data[state.currentEvent].vendorDocs || {})[r.id];
     return `
     <tr>
       ${taCell('Category', 'vendors', r.id, 'category', r.category)}
@@ -1498,10 +1637,11 @@ function renderVendors(){
       <td data-label="Price (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0"></td>
       <td data-label="Deposit (${cur})" class="num-col"><input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0"></td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:600; color:${overdue?'var(--danger)':remaining>0?'var(--accent)':'var(--ink-soft)'};">${fmtMoney(remaining)}</td>
+      <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="11">No vendors yet for this event — add your first one above.</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="12">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -1531,9 +1671,9 @@ function renderVendors(){
         <col style="width:160px"><col style="width:150px"><col style="width:140px">
         <col style="width:132px"><col style="width:132px"><col style="width:114px">
         <col style="width:110px"><col style="width:110px"><col style="width:110px">
-        <col style="width:150px"><col style="width:46px">
+        <col style="width:80px"><col style="width:150px"><col style="width:46px">
       </colgroup>
-      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
+      <thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Docs</th><th>Notes</th><th></th></tr></thead>
       <tbody>${body}</tbody>
     </table>`;
 }
@@ -1582,8 +1722,12 @@ function renderTasks(){
 
 function renderGuests(){
   const allRows = state.data[state.currentEvent].guests;
-  const rows = allRows.filter(r => (r.side || 'Her side') === state.guestSide);
   const psize = r => r.party_size || 1;
+  const query = (state.guestSearch || '').trim().toLowerCase();
+  const searching = query.length > 0;
+  const rows = searching
+    ? allRows.filter(r => r.name.toLowerCase().includes(query) || (r.dietary_notes||'').toLowerCase().includes(query))
+    : allRows.filter(r => (r.side || 'Her side') === state.guestSide);
 
   const sideStats = SIDE_LIST.map(side => {
     const list = allRows.filter(r => (r.side || 'Her side') === side);
@@ -1620,7 +1764,7 @@ function renderGuests(){
         <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
         <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
       </td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">No one on ${esc(state.guestSide)} yet — add your first guest above.</td></tr>`;
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one on ${esc(state.guestSide)} yet — add your first guest above.`}</td></tr>`;
 
   const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + psize(r), 0);
 
@@ -1644,7 +1788,14 @@ function renderGuests(){
       <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
       <div class="stat-card"><div class="v">${headcount}</div><div class="l">Confirmed headcount</div></div>
     </div>
-    <div class="side-tabs" id="sideTabs">${tabsHtml}</div>
+    <div class="guest-search">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
+      <input type="text" id="guestSearchInput" placeholder="Search guests by name…" value="${esc(state.guestSearch || '')}">
+      ${searching ? `<button type="button" id="clearGuestSearch" aria-label="Clear search">✕</button>` : ''}
+    </div>
+    ${searching
+      ? `<p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 18px;">${rows.length} match${rows.length===1?'':'es'} for "${esc((state.guestSearch||'').trim())}" across both sides.</p>`
+      : `<div class="side-tabs" id="sideTabs">${tabsHtml}</div>`}
     <button class="add-toggle" data-toggle="guestForm">+ Add guest to ${esc(state.guestSide)}</button>
     <form class="add-form" id="guestForm">
       <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
@@ -1917,10 +2068,19 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   }
   const moodDel = e.target.closest('.mood-del');
   if (moodDel){ handleMoodDelete(moodDel.dataset.moodName); return; }
+  const docBtn = e.target.closest('[data-vendor-docs]');
+  if (docBtn){ openVendorDocsModal(docBtn.dataset.vendorDocs, docBtn.dataset.vendorName); return; }
   const moodCatDel = e.target.closest('[data-mood-cat-del]');
   if (moodCatDel){ deleteMoodCategory(moodCatDel.dataset.moodCatDel, moodCatDel.dataset.moodCatName); return; }
   const moodCatTab = e.target.closest('[data-mood-cat]');
   if (moodCatTab){ state.moodCategory = moodCatTab.dataset.moodCat; renderSection(); return; }
+  if (e.target.closest('#clearGuestSearch')){
+    state.guestSearch = '';
+    renderSection();
+    const input = document.getElementById('guestSearchInput');
+    if (input) input.focus();
+    return;
+  }
   const sideTab = e.target.closest('[data-side]');
   if (sideTab){
     state.guestSide = sideTab.dataset.side;
@@ -1934,6 +2094,13 @@ document.getElementById('sectionContent').addEventListener('input', e => {
   if (e.target.hasAttribute('data-autogrow')){
     e.target.style.height = 'auto';
     e.target.style.height = e.target.scrollHeight + 'px';
+  }
+  if (e.target.id === 'guestSearchInput'){
+    state.guestSearch = e.target.value;
+    const cursorPos = e.target.selectionStart;
+    renderSection();
+    const newInput = document.getElementById('guestSearchInput');
+    if (newInput){ newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
   }
 });
 
@@ -2148,7 +2315,7 @@ async function init(){
     const [vendors, tasks, guests, moodCategories] = await Promise.all([
       fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodCategories(ev)
     ]);
-    state.data[ev] = { vendors, tasks, guests, moodCategories, moodPhotos:{} };
+    state.data[ev] = { vendors, tasks, guests, moodCategories, moodPhotos:{}, vendorDocs:{} };
   }
   renderSummary();
   renderSection();
@@ -2329,6 +2496,25 @@ document.getElementById('sectionContent').addEventListener('click', e => {
     const images = (state.data[state.currentEvent].moodPhotos || {})[state.moodCategory] || [];
     openLightbox(images, Number(item.dataset.lbIndex || 0));
   }
+});
+
+document.getElementById('vdocsClose').addEventListener('click', closeVendorDocsModal);
+document.getElementById('vendorDocsModal').addEventListener('click', e => {
+  if (e.target.id === 'vendorDocsModal') closeVendorDocsModal();
+});
+document.getElementById('vendorDocInput').addEventListener('change', e => handleVendorDocUpload(e.target.files));
+document.getElementById('vdocsGrid').addEventListener('click', e => {
+  const del = e.target.closest('[data-vdoc-del]');
+  if (del){ handleVendorDocDelete(del.dataset.vdocDel); return; }
+  const item = e.target.closest('[data-vdoc-index]');
+  if (item){
+    const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
+    const images = (state.data[eventId].vendorDocs || {})[vendorId] || [];
+    openLightbox(images, Number(item.dataset.vdocIndex || 0));
+  }
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'Escape' && document.getElementById('vendorDocsModal').classList.contains('show')) closeVendorDocsModal();
 });
 
 const UNLOCK_KEY = 'wedplanner_unlocked';
