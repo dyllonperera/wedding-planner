@@ -469,11 +469,11 @@
   body.read-only .data-table input,
   body.read-only .data-table select,
   body.read-only .data-table textarea{ cursor:not-allowed; opacity:.72; }
-  .locked-event-badge{
-    display:inline-flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--hero-text) 10%, transparent);
+  .role-badge{
+    background:color-mix(in srgb, var(--hero-text) 10%, transparent);
     border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent); color:var(--hero-text);
-    padding:14px 26px; border-radius:100px; font-family:var(--font-display); font-size:1.05rem; font-weight:500;
-    backdrop-filter:blur(10px);
+    padding:8px 16px; border-radius:100px; font-family:var(--font-body); font-weight:600; font-size:.74rem;
+    backdrop-filter:blur(10px); white-space:nowrap;
   }
   .family-edit-toggle{
     display:flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--paper-warm) 80%, transparent);
@@ -668,7 +668,7 @@
   .pinToggle button.active{background:var(--accent); border-color:transparent; color:#fff;}
 
   /* ---------- lock / sound controls ---------- */
-  .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px; align-items:flex-start;}
+  .corner-controls{position:fixed; top:18px; right:20px; z-index:40; display:flex; gap:8px; align-items:flex-start; flex-wrap:wrap; justify-content:flex-end; max-width:min(90vw,420px);}
   #presenceDock{position:fixed; top:18px; left:20px; z-index:40; display:none; flex-direction:column; gap:6px;}
   body.unlocked #presenceDock{position:absolute; top:20px;}
   .presence-chip{
@@ -805,20 +805,23 @@
   <button class="icon-btn" id="lockBtn" title="Lock" aria-label="Lock">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
   </button>
-  <button class="icon-btn" id="switchWhoBtn2" title="Switch who's using this device" aria-label="Switch user" style="display:none;">
+  <div class="role-badge" id="roleBadge" style="display:none;"></div>
+  <button class="icon-btn" id="switchWhoBtn2" title="Switch profile" aria-label="Switch profile">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
   </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
 <div id="presenceDock"></div>
 
-<div id="whoGate" class="hide">
+<div id="whoGate">
   <div class="who-card">
     <p class="eyebrow">Before we begin</p>
     <h2>Who's this?</h2>
     <div class="who-choices" id="whoChoices">
-      <button class="who-btn" data-who="Nithara">Nithara</button>
-      <button class="who-btn" data-who="Dyllon">Dyllon</button>
+      <button class="who-btn" data-who="Nithara" data-role="admin">Nithara</button>
+      <button class="who-btn" data-who="Dyllon" data-role="admin">Dyllon</button>
+      <button class="who-btn" data-role="bride_family">Bride's Family</button>
+      <button class="who-btn" data-role="groom_family">Groom's Family</button>
     </div>
   </div>
 </div>
@@ -1026,7 +1029,6 @@
         Homecoming
       </button>
     </div>
-    <div class="locked-event-badge" id="lockedEventBadge" style="display:none;"></div>
 
     <div class="heroStamp" id="heroStamp"><div class="n">—</div><div class="u">set a date</div></div>
     <div class="heroDate">
@@ -2159,19 +2161,19 @@ function syncReadOnlyClass(){
 
 function renderFamilyEditToggle(){
   const wrap = document.getElementById('familyEditToggleWrap');
-  const badge = document.getElementById('lockedEventBadge');
+  const roleBadge = document.getElementById('roleBadge');
   const portals = document.getElementById('eventTabs');
-  const switchBtn = document.getElementById('switchWhoBtn2');
-  if (!wrap || !badge || !portals) return;
+  if (!wrap || !roleBadge || !portals) return;
 
-  if (switchBtn) switchBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
-
-  if (state.eventLocked){
-    portals.style.display = 'none';
-    badge.style.display = 'inline-flex';
-    const roleLabel = state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
-    badge.textContent = `Viewing as ${roleLabel} — ${THEME_COPY[state.currentEvent].title}`;
+  if (roleBadge){
+    const who = localStorage.getItem('wedplanner_who');
+    const label = state.accessLevel === 'admin' ? (who || 'Admin')
+      : state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
+    roleBadge.textContent = label;
+    roleBadge.style.display = 'inline-block';
   }
+
+  portals.style.display = state.eventLocked ? 'none' : '';
 
   if (state.accessLevel !== 'admin'){ wrap.innerHTML = ''; return; }
   const ev = state.events[state.currentEvent];
@@ -2727,13 +2729,37 @@ function finishUnlock(role){
   }
 }
 
+const ROLE_PIN = { admin: APP_PIN, bride_family: BRIDE_FAMILY_PIN, groom_family: GROOM_FAMILY_PIN };
+const ROLE_LABEL = { bride_family: "Bride's Family", groom_family: "Groom's Family" };
+let pendingRole = null;
+let pendingWho = null;
+
+function resetProfilePicker(){
+  pendingRole = null; pendingWho = null;
+  document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('picked', 'fade-out'));
+  document.getElementById('whoGate').classList.remove('hide');
+  document.getElementById('pinInput').value = '';
+  document.getElementById('pinError').textContent = '';
+}
+
 document.querySelectorAll('.who-btn').forEach(btn => {
   btn.addEventListener('click', () => {
-    const name = btn.dataset.who;
+    pendingRole = btn.dataset.role;
+    pendingWho = btn.dataset.who || null;
     document.querySelectorAll('.who-btn').forEach(b => b.classList.add(b === btn ? 'picked' : 'fade-out'));
-    localStorage.setItem('wedplanner_who', name);
     playChime('sparkle');
-    setTimeout(() => finishUnlock('admin'), 550);
+    setTimeout(() => {
+      document.getElementById('whoGate').classList.add('hide');
+      const whoami = document.getElementById('pinWhoami');
+      if (whoami){
+        const label = pendingWho || ROLE_LABEL[pendingRole];
+        whoami.innerHTML = `Entering as <strong>${esc(label)}</strong> &middot; <button type="button" id="switchWhoBtn">Not you?</button>`;
+        document.getElementById('switchWhoBtn').addEventListener('click', resetProfilePicker);
+      }
+      document.getElementById('pinInput').value = '';
+      document.getElementById('pinError').textContent = '';
+      document.getElementById('pinInput').focus();
+    }, 550);
   });
 });
 
@@ -2742,26 +2768,21 @@ document.getElementById('pinForm').addEventListener('submit', e => {
   const input = document.getElementById('pinInput');
   const card = document.querySelector('.pin-card');
   const val = input.value.trim();
-  let role = null;
-  if (val === String(APP_PIN)) role = 'admin';
-  else if (val === String(BRIDE_FAMILY_PIN)) role = 'bride_family';
-  else if (val === String(GROOM_FAMILY_PIN)) role = 'groom_family';
 
-  if (!role){
+  if (!pendingRole){ resetProfilePicker(); return; }
+
+  if (val === String(ROLE_PIN[pendingRole])){
+    if (pendingRole === 'admin'){
+      if (pendingWho) localStorage.setItem('wedplanner_who', pendingWho);
+      state.currentEvent = document.body.dataset.theme || 'wedding';
+      document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b.dataset.event === state.currentEvent));
+    }
+    finishUnlock(pendingRole);
+  } else {
     document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
     input.value = '';
     input.focus();
-    return;
-  }
-
-  if (role === 'admin'){
-    state.currentEvent = document.body.dataset.theme || 'wedding';
-    document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b.dataset.event === state.currentEvent));
-    if (localStorage.getItem('wedplanner_who')) finishUnlock('admin');
-    else document.getElementById('whoGate').classList.remove('hide');
-  } else {
-    finishUnlock(role);
   }
 });
 
@@ -2769,11 +2790,12 @@ document.getElementById('lockBtn').addEventListener('click', () => {
   localStorage.removeItem(UNLOCK_KEY);
   localStorage.removeItem(ROLE_KEY);
   document.body.classList.remove('unlocked');
-  document.getElementById('pinInput').value = '';
-  document.getElementById('pinInput').focus();
+  resetProfilePicker();
 });
 
 document.getElementById('switchWhoBtn2').addEventListener('click', () => {
+  localStorage.removeItem(UNLOCK_KEY);
+  localStorage.removeItem(ROLE_KEY);
   localStorage.removeItem('wedplanner_who');
   location.reload();
 });
@@ -2792,11 +2814,7 @@ if (localStorage.getItem(UNLOCK_KEY) === '1' && !storedRole){
   localStorage.setItem(ROLE_KEY, 'admin');
 }
 if (localStorage.getItem(UNLOCK_KEY) === '1' && storedRole){
-  if (storedRole === 'admin' && !localStorage.getItem('wedplanner_who')){
-    document.getElementById('whoGate').classList.remove('hide');
-  } else {
-    finishUnlock(storedRole);
-  }
+  finishUnlock(storedRole);
 }
 </script>
 </body>
