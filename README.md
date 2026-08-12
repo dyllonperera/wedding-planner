@@ -148,6 +148,49 @@ invoice, or final quotation (PDF, JPG, or PNG), and it opens the exact same way 
 mood board photos: real thumbnails, tap to view full-screen, zoom and swipe for
 photos, rendered pages for PDFs.
 
+### Backups (worth setting up — the free Supabase tier has none built in)
+
+Supabase's free tier doesn't include automatic backups at all — that's a paid-tier
+feature. Two things now cover that gap:
+
+**1. Manual backup, anytime.** A **💾 Download full backup** button sits next to the
+print button. Tap it and it downloads a single JSON file with everything — every
+vendor, task, guest, and mood board category, for both events. Takes a few seconds,
+no setup needed.
+
+**2. Automatic daily backup.** `.github/workflows/backup.yml` in this folder runs
+every night on GitHub's own servers and commits a dated snapshot straight into your
+repo's `backups/` folder — genuinely automatic, no app needs to be open, and it costs
+nothing (GitHub Actions is free for the usage a solo project generates). To turn it on:
+
+1. Upload the whole `.github` folder (with `workflows/backup.yml` inside it) to your
+   repo, same as the other files — GitHub should recognize it as an Actions workflow.
+2. In your repo → **Settings → Secrets and variables → Actions** → add two repository
+   secrets:
+   - `SUPABASE_URL` — same value as in `config.js`
+   - `SUPABASE_ANON_KEY` — same value as in `config.js`
+3. That's it. It runs automatically every day at 03:00 UTC, and keeps the most recent
+   30 daily backups (older ones are cleaned up automatically so the repo doesn't grow
+   forever). You can also trigger it manually anytime from your repo's **Actions** tab
+   → "Daily data backup" → **Run workflow**.
+
+**What's not covered:** both backups capture all your structured data (vendors,
+tasks, guests, categories) but not the actual mood board photos or vendor documents
+themselves — those live in Supabase Storage, which doesn't disappear on its own, but
+isn't duplicated anywhere else either. If you ever want those included too, say the
+word and I'll extend it.
+
+### One more step: restricted family access
+
+Run this once in Supabase → **SQL Editor**:
+
+```sql
+alter table events add column if not exists family_editable boolean not null default false;
+```
+
+This powers the two new restricted-access PINs — see the **Bride's Family / Groom's
+Family access** section below for the full setup.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it
@@ -166,6 +209,43 @@ stops a random visitor or a phone left unlocked on a table from casually poking 
 it won't stop someone who deliberately goes looking. The real protection is what we set
 up already: a private GitHub repo and an unlisted `.pages.dev` URL that only you two
 have. Don't post the link anywhere public.
+
+## Bride's Family / Groom's Family access
+
+Two more PINs, each unlocking only **one** event — no world-switcher, no way to see the
+other event at all. Set them in `config.js`:
+
+```js
+const BRIDE_FAMILY_PIN = '1111';
+const BRIDE_FAMILY_EVENT = 'wedding';   // which event this PIN unlocks
+const GROOM_FAMILY_PIN = '2222';
+const GROOM_FAMILY_EVENT = 'homecoming'; // which event this PIN unlocks
+```
+
+Change the PINs to whatever you want, and swap the `_EVENT` lines if you want the
+mapping the other way around — nothing else in the app needs to change.
+
+**They're view-only by default.** Someone on a family PIN can browse everything in
+their one event — vendors, checklist, guests, mood board — but every add/edit/delete/
+upload is silently blocked, with a small message explaining why if they try. This is
+enforced in the code that talks to the database, not just by hiding buttons, so it
+holds even if someone pokes around in dev tools.
+
+**You can flip it to editable, per event.** When you (the shared `APP_PIN`) are viewing
+an event, a small toggle appears near the top — "Bride's Family can edit this event" /
+"Groom's Family can edit this event". Switch it on and that family PIN gains full edit
+access to that one event; switch it off and they're back to view-only. This is stored
+in the database, so it applies immediately to anyone on that PIN, not just per-device.
+
+**One SQL step** (also listed above) — adds the column this relies on:
+```sql
+alter table events add column if not exists family_editable boolean not null default false;
+```
+
+**The "who's this" picker (Nithara/Dyllon) only applies to the `APP_PIN`.** Family PINs
+skip it entirely and drop straight into their event — there's no presence tracking or
+name needed for a view-only guest. If you (admin) ever need to switch which of you is
+using a shared device, there's now a small switch-user icon next to Lock, top-right.
 
 ## One-time setup (~10 minutes)
 

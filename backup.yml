@@ -1,0 +1,45 @@
+name: Daily data backup
+
+# Runs automatically every day at 03:00 UTC, and can also be triggered manually
+# from the Actions tab in GitHub. No setup needed beyond the two repo secrets
+# described in README.md.
+on:
+  schedule:
+    - cron: '0 3 * * *'
+  workflow_dispatch:
+
+jobs:
+  backup:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repo
+        uses: actions/checkout@v4
+
+      - name: Fetch all tables from Supabase
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+        run: |
+          mkdir -p backups
+          STAMP=$(date +'%Y-%m-%d')
+          OUT="backups/backup-$STAMP.json"
+          echo '{' > "$OUT"
+          echo "\"exported_at\": \"$(date -u +'%Y-%m-%dT%H:%M:%SZ')\"," >> "$OUT"
+          for TABLE in events vendors tasks guests moodboard_categories; do
+            echo "\"$TABLE\": " >> "$OUT"
+            curl -s "$SUPABASE_URL/rest/v1/$TABLE?select=*" \
+              -H "apikey: $SUPABASE_ANON_KEY" \
+              -H "Authorization: Bearer $SUPABASE_ANON_KEY" >> "$OUT"
+            if [ "$TABLE" != "moodboard_categories" ]; then echo "," >> "$OUT"; fi
+          done
+          echo '}' >> "$OUT"
+          # keep only the most recent 30 daily backups so the repo doesn't grow forever
+          cd backups && ls -1t backup-*.json | tail -n +31 | xargs -r rm --
+
+      - name: Commit backup
+        run: |
+          git config user.name "backup-bot"
+          git config user.email "backup-bot@users.noreply.github.com"
+          git add backups/
+          git diff --staged --quiet || git commit -m "Automatic backup $(date +'%Y-%m-%d')"
+          git push

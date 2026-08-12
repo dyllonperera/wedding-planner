@@ -9,7 +9,8 @@ create table if not exists events (
   id text primary key,
   name text not null,
   event_date date,
-  rsvp_deadline date -- guests can change their RSVP up to and including this date
+  rsvp_deadline date, -- guests can change their RSVP up to and including this date
+  family_editable boolean not null default false -- whether the family-access PIN for this event can edit, or view only
 );
 
 insert into events (id, name, event_date) values

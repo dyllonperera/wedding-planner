@@ -140,17 +140,6 @@
   }
   body[data-theme="homecoming"] .roseWindow{opacity:.85;}
 
-  .domeScene{
-    position:absolute; right:-1%; bottom:0; width:min(20vw, 190px); opacity:0;
-    transition:opacity 1.2s var(--ease); pointer-events:none;
-  }
-  body[data-theme="homecoming"] .domeScene{opacity:.95;}
-  .dome-rose{ animation:domeRoseGlow 3.2s ease-in-out infinite; transform-origin:100px 172px; }
-  @keyframes domeRoseGlow{
-    0%,100%{filter:drop-shadow(0 0 3px color-mix(in srgb, var(--accent) 55%, transparent));}
-    50%{filter:drop-shadow(0 0 11px color-mix(in srgb, var(--accent) 80%, transparent));}
-  }
-
   /* -- stars (homecoming) -- */
   .stars{position:absolute; inset:0; opacity:0; transition:opacity 1s var(--ease);}
   body[data-theme="homecoming"] .stars{opacity:1;}
@@ -464,6 +453,43 @@
   .mood-cat-tab.active .mood-cat-del:hover{background:rgba(255,255,255,.28);}
   .mood-cat-tab:not(.active) .mood-cat-del:hover{background:rgba(0,0,0,.08);}
   .mood-cat-add{background:transparent; border-style:dashed;}
+
+  /* ---------- read-only (family access) mode ---------- */
+  body.read-only .add-toggle,
+  body.read-only .del-btn,
+  body.read-only .mood-cat-add,
+  body.read-only .mood-cat-del,
+  body.read-only .mood-del,
+  body.read-only label[for="moodFileInput"],
+  body.read-only #moodFileInput,
+  body.read-only label[for="vendorDocInput"],
+  body.read-only #vendorDocInput,
+  body.read-only #rsvpDeadlineInput,
+  body.read-only .rsvp-deadline-row input{ display:none !important; }
+  body.read-only .data-table input,
+  body.read-only .data-table select,
+  body.read-only .data-table textarea{ cursor:not-allowed; opacity:.72; }
+  .locked-event-badge{
+    display:inline-flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--hero-text) 10%, transparent);
+    border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent); color:var(--hero-text);
+    padding:14px 26px; border-radius:100px; font-family:var(--font-display); font-size:1.05rem; font-weight:500;
+    backdrop-filter:blur(10px);
+  }
+  .family-edit-toggle{
+    display:flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--paper-warm) 80%, transparent);
+    border:1px solid var(--line); border-radius:100px; padding:6px 14px 6px 16px; font-size:.76rem;
+    color:var(--ink-soft); margin:0 0 18px;
+  }
+  .family-edit-toggle button{
+    position:relative; width:36px; height:20px; border-radius:100px; border:none; cursor:pointer;
+    background:var(--line); transition:background .25s ease; flex-shrink:0;
+  }
+  .family-edit-toggle button::after{
+    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:#fff; transition:transform .25s ease; box-shadow:0 1px 3px rgba(0,0,0,.3);
+  }
+  .family-edit-toggle button.on{background:var(--accent);}
+  .family-edit-toggle button.on::after{transform:translateX(16px);}
 
   /* ---------- lightbox ---------- */
   #lightbox{
@@ -779,11 +805,14 @@
   <button class="icon-btn" id="lockBtn" title="Lock" aria-label="Lock">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0v3"/></svg>
   </button>
+  <button class="icon-btn" id="switchWhoBtn2" title="Switch who's using this device" aria-label="Switch user" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+  </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
 <div id="presenceDock"></div>
 
-<div id="whoGate">
+<div id="whoGate" class="hide">
   <div class="who-card">
     <p class="eyebrow">Before we begin</p>
     <h2>Who's this?</h2>
@@ -933,28 +962,6 @@
     <g><rect x="28.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="30" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:0.0s;"/><rect x="148.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="150" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:0.5s;"/><rect x="268.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="270" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:1.0s;"/><rect x="388.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="390" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:1.5s;"/><rect x="508.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="510" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:2.0s;"/><rect x="628.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="630" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:0.0s;"/><rect x="748.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="750" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:0.5s;"/><rect x="868.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="870" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:1.0s;"/><rect x="988.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="990" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:1.5s;"/><rect x="1108.5" y="15" width="3" height="9" fill="var(--accent-deep)" opacity="0.55"/><ellipse class="tower-window" cx="1110" cy="12" rx="2" ry="3.4" fill="var(--accent)" style="animation-delay:2.0s;"/></g>
   </svg>
 
-  <svg class="hero-layer domeScene" viewBox="0 0 200 260" fill="none">
-    <path d="M70 240 L130 240 L120 254 L80 254 Z" fill="var(--accent-deep)" opacity="0.5"/>
-    <rect x="58" y="228" width="84" height="13" rx="2" fill="var(--accent-deep)" opacity="0.5"/>
-    <path d="M46 230 L46 140 A54 78 0 0 1 154 140 L154 230" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
-    <line x1="46" y1="230" x2="154" y2="230" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
-    <circle cx="100" cy="58" r="4" fill="#E4EEF3" opacity="0.55"/>
-    <line x1="100" y1="62" x2="100" y2="58" stroke="#E4EEF3" stroke-width="1.6" opacity="0.5"/>
-    <g stroke="#E4EEF3" stroke-width="1" opacity="0.38">
-      <path d="M52 158 l-6 -6M52 158 l-6 6M52 158 l8 0"/>
-      <path d="M148 178 l-6 -6M148 178 l-6 6M148 178 l8 0"/>
-    </g>
-    <path d="M100 225 L100 175" stroke="var(--accent-deep)" stroke-width="2"/>
-    <path d="M100 205 Q88 200 82 188" stroke="var(--accent-deep)" stroke-width="1.6"/>
-    <path d="M100 195 Q112 190 118 178" stroke="var(--accent-deep)" stroke-width="1.6"/>
-    <g class="dome-rose" fill="var(--accent)">
-      <path d="M100 178c-13 5-21-5-16-18 5 13 16 10 16 18Z"/>
-      <path d="M100 178c13 5 21-5 16-18-5 13-16 10-16 18Z"/>
-      <path d="M100 172c-8 3-13-3-10-11 3 8 10 6 10 11Z"/>
-      <path d="M100 172c8 3 13-3 10-11-3 8-10 6-10 11Z"/>
-      <circle cx="100" cy="166" r="7"/>
-    </g>
-  </svg>
   <svg class="hero-layer garland" viewBox="0 0 560 60" fill="none">
     <path d="M10 15 Q140 55 280 20 Q420 -15 550 15" stroke="var(--accent-deep)" stroke-width="1.6"/>
     <g stroke="var(--accent-deep)" stroke-width="1" fill="none">
@@ -1019,6 +1026,7 @@
         Homecoming
       </button>
     </div>
+    <div class="locked-event-badge" id="lockedEventBadge" style="display:none;"></div>
 
     <div class="heroStamp" id="heroStamp"><div class="n">—</div><div class="u">set a date</div></div>
     <div class="heroDate">
@@ -1033,6 +1041,7 @@
 </section>
 
 <div id="main-content">
+  <div id="familyEditToggleWrap"></div>
   <div class="stat-row" id="statRow"></div>
 
   <nav class="section-tabs" id="sectionTabs">
@@ -1054,7 +1063,8 @@
       Mood Board
     </button>
   </nav>
-  <button class="btn-ghost" id="printSheetBtn" style="margin:16px 0 24px;">🖨 Print day-of run sheet</button>
+  <button class="btn-ghost" id="printSheetBtn" style="margin:16px 8px 24px 0;">🖨 Print day-of run sheet</button>
+  <button class="btn-ghost" id="backupBtn" style="margin:16px 0 24px;">💾 Download full backup</button>
 
   <main id="sectionContent"></main>
 </div>
@@ -1149,6 +1159,8 @@ const state = {
   moodCategory: null,
   guestSearch: '',
   vendorDocsFor: null,
+  accessLevel: 'admin', // 'admin' | 'bride_family' | 'groom_family'
+  eventLocked: false,
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null, rsvp_deadline:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null, rsvp_deadline:null} },
@@ -1473,6 +1485,7 @@ async function refreshCurrentTable(table){
 }
 
 async function insertRow(table, payload){
+  if (guardWrite()) return false;
   const { error } = await supabaseClient.from(table).insert([{ ...payload, event_id: state.currentEvent }]);
   if (error){ toast(error.message, true); return false; }
   toast('Added');
@@ -1481,6 +1494,7 @@ async function insertRow(table, payload){
 }
 
 async function updateRow(table, id, payload){
+  if (guardWrite()) return;
   const { error } = await supabaseClient.from(table).update(payload).eq('id', id);
   if (error){ toast(error.message, true); return; }
   const list = state.data[state.currentEvent][table];
@@ -1490,6 +1504,7 @@ async function updateRow(table, id, payload){
 }
 
 async function deleteRow(table, id){
+  if (guardWrite()) return;
   const { error } = await supabaseClient.from(table).delete().eq('id', id);
   if (error){ toast(error.message, true); return; }
   toast('Deleted');
@@ -1497,6 +1512,7 @@ async function deleteRow(table, id){
 }
 
 async function updateEventDate(dateVal){
+  if (guardWrite()) return;
   const eventId = state.currentEvent;
   const { error } = await supabaseClient.from('events').update({ event_date: dateVal || null }).eq('id', eventId);
   if (error){ toast(error.message, true); return; }
@@ -1509,6 +1525,7 @@ async function updateEventDate(dateVal){
 }
 
 async function updateRsvpDeadline(dateVal){
+  if (guardWrite()) return;
   const eventId = state.currentEvent;
   const { error } = await supabaseClient.from('events').update({ rsvp_deadline: dateVal || null }).eq('id', eventId);
   if (error){ toast(error.message, true); return; }
@@ -1562,6 +1579,8 @@ function renderSummary(){
   const ev = state.events[state.currentEvent];
   const isWedding = state.currentEvent === 'wedding';
   const copy = THEME_COPY[state.currentEvent];
+  syncReadOnlyClass();
+  renderFamilyEditToggle();
   document.getElementById('heroTitle').textContent = copy.title;
   document.getElementById('heroTagline').textContent = copy.taglines[Math.floor(Math.random()*copy.taglines.length)];
   document.getElementById('heroDateLabel').textContent = copy.dateLabel;
@@ -1682,6 +1701,7 @@ function renderVendorDocsGrid(){
 
 async function handleVendorDocUpload(files){
   if (!files || !files.length || !state.vendorDocsFor) return;
+  if (guardWrite()) return;
   toast('Uploading…');
   const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
   for (const file of files){
@@ -1697,6 +1717,7 @@ async function handleVendorDocUpload(files){
 }
 
 async function handleVendorDocDelete(name){
+  if (guardWrite()) return;
   if (!confirm('Remove this file?')) return;
   const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
   const { error } = await supabaseClient.storage.from('moodboard').remove([`vendor-docs/${eventId}/${vendorId}/${name}`]);
@@ -2065,6 +2086,7 @@ async function ensureMoodPhotosLoaded(eventId, categoryId){
 }
 
 async function addMoodCategory(name){
+  if (guardWrite()) return;
   name = name.trim();
   if (!name) return;
   const eventId = state.currentEvent;
@@ -2077,6 +2099,7 @@ async function addMoodCategory(name){
 }
 
 async function deleteMoodCategory(categoryId, categoryName){
+  if (guardWrite()) return;
   const eventId = state.currentEvent;
   let photos = (state.data[eventId].moodPhotos || {})[categoryId];
   if (photos === undefined) photos = await fetchMoodPhotos(eventId, categoryId);
@@ -2097,6 +2120,7 @@ async function deleteMoodCategory(categoryId, categoryName){
 }
 
 async function handleMoodUpload(files){
+  if (guardWrite()) return;
   if (!files || !files.length || !state.moodCategory) return;
   toast('Uploading…');
   const eventId = state.currentEvent, categoryId = state.moodCategory;
@@ -2112,6 +2136,7 @@ async function handleMoodUpload(files){
 }
 
 async function handleMoodDelete(name){
+  if (guardWrite()) return;
   if (!confirm('Remove this photo?')) return;
   const eventId = state.currentEvent, categoryId = state.moodCategory;
   const { error } = await supabaseClient.storage.from('moodboard').remove([`${eventId}/${categoryId}/${name}`]);
@@ -2123,8 +2148,61 @@ async function handleMoodDelete(name){
 
 function esc(s){ return String(s ?? '').replace(/"/g,'&quot;').replace(/</g,'&lt;'); }
 
+function isReadOnly(){
+  if (state.accessLevel === 'admin') return false;
+  const ev = state.events[state.currentEvent];
+  return !(ev && ev.family_editable);
+}
+function syncReadOnlyClass(){
+  document.body.classList.toggle('read-only', isReadOnly());
+}
+
+function renderFamilyEditToggle(){
+  const wrap = document.getElementById('familyEditToggleWrap');
+  const badge = document.getElementById('lockedEventBadge');
+  const portals = document.getElementById('eventTabs');
+  const switchBtn = document.getElementById('switchWhoBtn2');
+  if (!wrap || !badge || !portals) return;
+
+  if (switchBtn) switchBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
+
+  if (state.eventLocked){
+    portals.style.display = 'none';
+    badge.style.display = 'inline-flex';
+    const roleLabel = state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
+    badge.textContent = `Viewing as ${roleLabel} — ${THEME_COPY[state.currentEvent].title}`;
+  }
+
+  if (state.accessLevel !== 'admin'){ wrap.innerHTML = ''; return; }
+  const ev = state.events[state.currentEvent];
+  const on = !!(ev && ev.family_editable);
+  const roleLabel = state.currentEvent === BRIDE_FAMILY_EVENT ? "Bride's Family" : (state.currentEvent === GROOM_FAMILY_EVENT ? "Groom's Family" : 'Family');
+  wrap.innerHTML = `<div class="family-edit-toggle">${esc(roleLabel)} can edit this event <button type="button" class="${on?'on':''}" id="familyEditBtn" aria-label="Toggle family edit access"></button></div>`;
+  document.getElementById('familyEditBtn').addEventListener('click', toggleFamilyEditable);
+}
+
+async function toggleFamilyEditable(){
+  const eventId = state.currentEvent;
+  const ev = state.events[eventId];
+  const newVal = !ev.family_editable;
+  const { error } = await supabaseClient.from('events').update({ family_editable: newVal }).eq('id', eventId);
+  if (error){ toast(error.message, true); return; }
+  ev.family_editable = newVal;
+  renderFamilyEditToggle();
+  toast(newVal ? 'Family can now edit' : 'Family is now view-only');
+}
+
+function guardWrite(){
+  if (isReadOnly()){
+    toast("View-only access — ask the couple to make changes", true);
+    return true;
+  }
+  return false;
+}
+
 /* ---------------- events / delegation ---------------- */
 document.getElementById('eventTabs').addEventListener('click', e => {
+  if (state.eventLocked) return;
   const btn = e.target.closest('[data-event]');
   if (!btn || btn.classList.contains('active')) return;
   const target = btn.dataset.event;
@@ -2317,6 +2395,41 @@ document.getElementById('printSheetBtn').addEventListener('click', () => {
   setTimeout(() => window.print(), 80);
 });
 
+/* ---------------- full data backup ---------------- */
+async function downloadFullBackup(){
+  const btn = document.getElementById('backupBtn');
+  const original = btn.textContent;
+  btn.textContent = 'Gathering data…';
+  btn.disabled = true;
+  try{
+    const backup = { exported_at: new Date().toISOString(), events: {} };
+    for (const eventId of ['wedding', 'homecoming']){
+      const [vendors, tasks, guests, moodCategories] = await Promise.all([
+        fetchTable('vendors', eventId), fetchTable('tasks', eventId),
+        fetchTable('guests', eventId), fetchTable('moodboard_categories', eventId)
+      ]);
+      backup.events[eventId] = { ...state.events[eventId], vendors, tasks, guests, moodCategories };
+    }
+    const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    const stamp = new Date().toISOString().slice(0, 10);
+    a.href = url;
+    a.download = `wedding-planner-backup-${stamp}.json`;
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+    toast('Backup downloaded');
+  } catch(e){
+    toast('Backup failed — try again', true);
+  } finally {
+    btn.textContent = original;
+    btn.disabled = false;
+  }
+}
+document.getElementById('backupBtn').addEventListener('click', downloadFullBackup);
+
 /* ---------------- parallax ---------------- */
 if (window.matchMedia('(hover: hover)').matches){
   window.addEventListener('mousemove', e => {
@@ -2345,43 +2458,7 @@ document.getElementById('pinPreviewToggle').addEventListener('click', e => {
 
 /* ---------------- live presence ---------------- */
 let presenceChannel = null;
-function initWhoGate(){
-  const whoGate = document.getElementById('whoGate');
-  const existing = localStorage.getItem('wedplanner_who');
-  if (existing){
-    whoGate.classList.add('hide');
-    afterWhoChosen(existing);
-    return;
-  }
-  document.querySelectorAll('.who-btn').forEach(btn => {
-    btn.addEventListener('click', () => {
-      const name = btn.dataset.who;
-      document.querySelectorAll('.who-btn').forEach(b => b.classList.add(b === btn ? 'picked' : 'fade-out'));
-      localStorage.setItem('wedplanner_who', name);
-      playChime('sparkle');
-      setTimeout(() => {
-        whoGate.classList.add('hide');
-        afterWhoChosen(name);
-      }, 550);
-    });
-  });
-}
-function afterWhoChosen(name){
-  const whoami = document.getElementById('pinWhoami');
-  if (whoami){
-    whoami.innerHTML = `Signed in as <strong>${esc(name)}</strong> &middot; <button type="button" id="switchWhoBtn">Not you?</button>`;
-    document.getElementById('switchWhoBtn').addEventListener('click', () => {
-      localStorage.removeItem('wedplanner_who');
-      document.getElementById('whoGate').classList.remove('hide');
-      document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('picked', 'fade-out'));
-    });
-  }
-  if (localStorage.getItem(UNLOCK_KEY) === '1'){
-    document.body.classList.add('unlocked');
-    init();
-    initPresence(name);
-  }
-}
+// (who-picker + PIN flow now lives near the bottom of the script, after role/PIN constants are all in scope)
 function initPresence(myName){
   presenceChannel = supabaseClient.channel('wedplanner-presence', {
     config: { presence: { key: myName + '-' + Math.random().toString(36).slice(2, 7) } }
@@ -2627,36 +2704,78 @@ document.addEventListener('keydown', e => {
 });
 
 const UNLOCK_KEY = 'wedplanner_unlocked';
+const ROLE_KEY = 'wedplanner_role';
 
-function unlock(){
+function applyRoleState(role){
+  state.accessLevel = role;
+  if (role === 'bride_family'){ state.currentEvent = BRIDE_FAMILY_EVENT; state.eventLocked = true; }
+  else if (role === 'groom_family'){ state.currentEvent = GROOM_FAMILY_EVENT; state.eventLocked = true; }
+  else { state.eventLocked = false; }
+  document.body.dataset.theme = state.currentEvent;
+}
+
+function finishUnlock(role){
+  applyRoleState(role);
   localStorage.setItem(UNLOCK_KEY, '1');
+  localStorage.setItem(ROLE_KEY, role);
   document.body.classList.add('unlocked');
+  document.getElementById('whoGate').classList.add('hide');
   playChime('unlock');
   init();
-  if (!presenceChannel) initPresence(localStorage.getItem('wedplanner_who') || 'Guest');
+  if (role === 'admin' && !presenceChannel){
+    initPresence(localStorage.getItem('wedplanner_who') || 'Guest');
+  }
 }
+
+document.querySelectorAll('.who-btn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    const name = btn.dataset.who;
+    document.querySelectorAll('.who-btn').forEach(b => b.classList.add(b === btn ? 'picked' : 'fade-out'));
+    localStorage.setItem('wedplanner_who', name);
+    playChime('sparkle');
+    setTimeout(() => finishUnlock('admin'), 550);
+  });
+});
 
 document.getElementById('pinForm').addEventListener('submit', e => {
   e.preventDefault();
   const input = document.getElementById('pinInput');
   const card = document.querySelector('.pin-card');
-  if (input.value.trim() === String(APP_PIN)){
-    state.currentEvent = document.body.dataset.theme || 'wedding';
-    document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b.dataset.event === state.currentEvent));
-    unlock();
-  } else {
+  const val = input.value.trim();
+  let role = null;
+  if (val === String(APP_PIN)) role = 'admin';
+  else if (val === String(BRIDE_FAMILY_PIN)) role = 'bride_family';
+  else if (val === String(GROOM_FAMILY_PIN)) role = 'groom_family';
+
+  if (!role){
     document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
     input.value = '';
     input.focus();
+    return;
+  }
+
+  if (role === 'admin'){
+    state.currentEvent = document.body.dataset.theme || 'wedding';
+    document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b.dataset.event === state.currentEvent));
+    if (localStorage.getItem('wedplanner_who')) finishUnlock('admin');
+    else document.getElementById('whoGate').classList.remove('hide');
+  } else {
+    finishUnlock(role);
   }
 });
 
 document.getElementById('lockBtn').addEventListener('click', () => {
   localStorage.removeItem(UNLOCK_KEY);
+  localStorage.removeItem(ROLE_KEY);
   document.body.classList.remove('unlocked');
   document.getElementById('pinInput').value = '';
   document.getElementById('pinInput').focus();
+});
+
+document.getElementById('switchWhoBtn2').addEventListener('click', () => {
+  localStorage.removeItem('wedplanner_who');
+  location.reload();
 });
 
 window.addEventListener('resize', () => {
@@ -2664,7 +2783,21 @@ window.addEventListener('resize', () => {
   autoGrowTextareas(document.getElementById('sectionContent'));
 });
 
-initWhoGate();
+/* ---------------- boot ---------------- */
+let storedRole = localStorage.getItem(ROLE_KEY);
+if (localStorage.getItem(UNLOCK_KEY) === '1' && !storedRole){
+  // pre-existing session from before family-access roles existed — only the admin
+  // PIN could unlock the app back then, so this is safe to assume.
+  storedRole = 'admin';
+  localStorage.setItem(ROLE_KEY, 'admin');
+}
+if (localStorage.getItem(UNLOCK_KEY) === '1' && storedRole){
+  if (storedRole === 'admin' && !localStorage.getItem('wedplanner_who')){
+    document.getElementById('whoGate').classList.remove('hide');
+  } else {
+    finishUnlock(storedRole);
+  }
+}
 </script>
 </body>
 </html>
