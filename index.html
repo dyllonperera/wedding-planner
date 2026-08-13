@@ -723,6 +723,11 @@
   }
   .icon-btn:hover{background:var(--accent); border-color:transparent; color:#fff; transform:translateY(-2px);}
   .icon-btn.on{background:var(--accent); border-color:transparent; color:#fff;}
+  .family-edit-pill{
+    width:auto; border-radius:100px; padding:0 14px 0 10px; gap:6px;
+    font-family:var(--font-body); font-weight:600; font-size:.72rem; white-space:nowrap;
+  }
+  .family-edit-pill svg{width:14px; height:14px; flex-shrink:0;}
   .icon-btn svg{width:16px; height:16px;}
   body.unlocked .corner-controls{position:absolute; top:20px;}
   body:not(.unlocked) .corner-controls, body:not(.unlocked) .fx-caption, body:not(.unlocked) #presenceDock{display:none;}
@@ -825,8 +830,9 @@
   <button class="icon-btn" id="backupBtn" title="Download full backup" aria-label="Download full backup" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
   </button>
-  <button class="icon-btn" id="familyEditBtn" title="Family view is read-only — tap to allow editing" aria-label="Toggle family edit access" style="display:none;">
+  <button class="icon-btn family-edit-pill" id="familyEditBtn" title="Tap to allow/block editing for this family" aria-label="Toggle family edit access" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/></svg>
+    <span id="familyEditLabel">Family</span>
   </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
@@ -2223,6 +2229,8 @@ function renderFamilyEditToggle(){
       const ev = state.events[state.currentEvent];
       const on = !!(ev && ev.family_editable);
       const roleLabel = state.currentEvent === BRIDE_FAMILY_EVENT ? "Bride's Family" : (state.currentEvent === GROOM_FAMILY_EVENT ? "Groom's Family" : 'Family');
+      const label = document.getElementById('familyEditLabel');
+      if (label) label.textContent = roleLabel;
       familyBtn.classList.toggle('on', on);
       familyBtn.title = on
         ? `${roleLabel} can currently edit this event — tap to make view-only`
