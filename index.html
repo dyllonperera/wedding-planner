@@ -296,6 +296,24 @@
 
   main{padding-top:4px;}
 
+  .rotate-tip{
+    display:flex; align-items:center; gap:12px; background:var(--paper-warm); border:1px solid var(--line);
+    border-radius:14px; padding:12px 16px; margin-bottom:18px; font-size:.82rem; color:var(--ink-soft);
+    animation:fadeInUp .4s var(--ease) both;
+  }
+  .rotate-tip-icon{width:24px; height:24px; flex-shrink:0; color:var(--accent); animation:rotateHint 2.2s ease-in-out infinite;}
+  @keyframes rotateHint{
+    0%,15%{transform:rotate(0deg);}
+    45%,65%{transform:rotate(90deg);}
+    88%,100%{transform:rotate(0deg);}
+  }
+  .rotate-tip span{flex:1; line-height:1.4;}
+  .rotate-tip button{
+    background:none; border:none; color:var(--ink-soft); cursor:pointer; font-size:.9rem; padding:4px 6px;
+    border-radius:50%; transition:background .2s ease, color .2s ease; flex-shrink:0;
+  }
+  .rotate-tip button:hover{background:var(--paper); color:var(--danger);}
+
   /* ---------- add form ---------- */
   .add-toggle{
     background:var(--ink); color:var(--paper); border:none; border-radius:10px;
@@ -599,10 +617,29 @@
   /* ---------- who gate ---------- */
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
-    background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
+    overflow:hidden;
+    background:linear-gradient(to bottom, #C98A94 0%, #E0AC4C 100%);
     transition:opacity .6s var(--ease), visibility .6s;
   }
+  #whoGate::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(to bottom, #2A3D63 0%, #8B1A2B 100%);
+    opacity:var(--who-overlay-opacity, 1);
+    -webkit-mask-image:var(--who-overlay-mask, linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%));
+    mask-image:var(--who-overlay-mask, linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%));
+    transition:opacity .5s ease;
+  }
   #whoGate.hide{opacity:0; pointer-events:none; visibility:hidden;}
+  .who-theme-icon{
+    position:absolute; top:20px; right:20px; z-index:3; width:36px; height:36px; border-radius:50%;
+    border:none; cursor:pointer; padding:0; background:rgba(0,0,0,.16);
+    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
+    display:flex; align-items:center; justify-content:center;
+    box-shadow:0 4px 14px rgba(0,0,0,.3);
+    transition:transform .3s var(--ease-snap), background .3s ease;
+  }
+  .who-theme-icon:hover{transform:scale(1.12) rotate(15deg); background:rgba(0,0,0,.24);}
+  .who-theme-icon svg{transition:transform .4s var(--ease);}
   .who-card{
     text-align:center; padding:48px 42px; max-width:400px; width:90%;
     border:1px solid color-mix(in srgb, var(--hero-text) 25%, transparent); border-radius:20px;
@@ -611,8 +648,8 @@
     box-shadow:0 40px 70px -30px rgba(0,0,0,.4);
     animation:fadeInUp .6s var(--ease) both; position:relative; z-index:2;
   }
-  .who-card .eyebrow{color:var(--hero-text-soft); margin-bottom:8px;}
-  .who-card h2{font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 28px; color:var(--hero-text);}
+  .who-card .eyebrow{color:var(--hero-text-soft); margin-bottom:8px; text-shadow:0 1px 8px rgba(0,0,0,.35);}
+  .who-card h2{font-family:var(--font-display); font-weight:500; font-size:1.5rem; margin:0 0 28px; color:var(--hero-text); text-shadow:0 1px 10px rgba(0,0,0,.35);}
   .who-choices{display:flex; gap:14px; justify-content:center; flex-wrap:wrap;}
   .who-btn{
     flex:1; min-width:135px; padding:24px 16px; border-radius:16px;
@@ -819,6 +856,23 @@
 <div id="presenceDock"></div>
 
 <div id="whoGate">
+  <button type="button" class="who-theme-icon" id="whoThemeIcon" title="Switch background" aria-label="Switch background theme">
+    <svg viewBox="0 0 24 24" width="20" height="20">
+      <defs>
+        <linearGradient id="whoIconWedding" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#C98A94"/>
+          <stop offset="100%" stop-color="#E0AC4C"/>
+        </linearGradient>
+        <linearGradient id="whoIconHomecoming" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stop-color="#2A3D63"/>
+          <stop offset="100%" stop-color="#8B1A2B"/>
+        </linearGradient>
+      </defs>
+      <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(251,243,228,.8)" stroke-width="1.6"/>
+      <path id="whoIconLeft" d="M12 3a9 9 0 000 18z"/>
+      <path id="whoIconRight" d="M12 3a9 9 0 010 18z"/>
+    </svg>
+  </button>
   <div class="who-card">
     <p class="eyebrow">Before we begin</p>
     <h2>Who's this?</h2>
@@ -1072,6 +1126,13 @@
   </nav>
   <button class="btn-ghost" id="printSheetBtn" style="margin:16px 0 24px;">🖨 Print day-of run sheet</button>
 
+  <div class="rotate-tip" id="rotateTip" style="display:none;">
+    <svg class="rotate-tip-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+      <rect x="5" y="2" width="14" height="20" rx="2"/><line x1="12" y1="18.01" x2="12.01" y2="18.01"/>
+    </svg>
+    <span>Turn your phone sideways for the full vendor table</span>
+    <button type="button" id="rotateTipClose" aria-label="Dismiss">✕</button>
+  </div>
   <main id="sectionContent"></main>
 </div>
 
@@ -2245,7 +2306,23 @@ document.getElementById('sectionTabs').addEventListener('click', e => {
   document.querySelectorAll('#sectionTabs button[data-section]').forEach(b => b.classList.toggle('active', b === btn));
   moveTabIndicator(btn);
   renderSection();
+  updateRotateTip();
 });
+
+function updateRotateTip(){
+  const tip = document.getElementById('rotateTip');
+  if (!tip) return;
+  const dismissed = localStorage.getItem('wedplanner_rotate_dismissed') === '1';
+  const isNarrow = window.innerWidth <= 720;
+  const isPortrait = window.matchMedia('(orientation: portrait)').matches;
+  const show = !dismissed && isNarrow && isPortrait && state.currentSection === 'vendors' && document.body.classList.contains('unlocked');
+  tip.style.display = show ? 'flex' : 'none';
+}
+document.getElementById('rotateTipClose').addEventListener('click', () => {
+  localStorage.setItem('wedplanner_rotate_dismissed', '1');
+  updateRotateTip();
+});
+window.addEventListener('orientationchange', updateRotateTip);
 
 function moveTabIndicator(btn){
   const indicator = document.getElementById('tabIndicator');
@@ -2477,6 +2554,43 @@ document.getElementById('pinPreviewToggle').addEventListener('click', e => {
   document.body.dataset.theme = btn.dataset.preview;
 });
 
+const WHO_BG_PRESETS = {
+  wedding: { opacity: '0', mask: 'none' },
+  homecoming: { opacity: '1', mask: 'none' },
+  mixed: { opacity: '1', mask: 'linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%)' }
+};
+const WHO_BG_ORDER = ['wedding', 'mixed', 'homecoming'];
+const WHO_ICON_FILL = {
+  wedding: { left: 'url(#whoIconWedding)', right: 'none' },
+  homecoming: { left: 'url(#whoIconHomecoming)', right: 'none' },
+  mixed: { left: 'url(#whoIconWedding)', right: 'url(#whoIconHomecoming)' }
+};
+const WHO_BG_TITLE = { wedding:'Wedding', homecoming:'Homecoming', mixed:'Both' };
+let currentWhoBg = 'mixed';
+
+function setWhoBackground(key){
+  if (!WHO_BG_PRESETS[key]) key = 'mixed';
+  currentWhoBg = key;
+  const preset = WHO_BG_PRESETS[key];
+  const gate = document.getElementById('whoGate');
+  gate.style.setProperty('--who-overlay-opacity', preset.opacity);
+  gate.style.setProperty('--who-overlay-mask', preset.mask);
+  const icon = document.getElementById('whoThemeIcon');
+  const left = document.getElementById('whoIconLeft');
+  const right = document.getElementById('whoIconRight');
+  if (icon && left && right){
+    left.setAttribute('fill', WHO_ICON_FILL[key].left);
+    right.setAttribute('fill', WHO_ICON_FILL[key].right);
+    icon.title = `Background: ${WHO_BG_TITLE[key]} — tap to change`;
+  }
+  localStorage.setItem('wedplanner_who_bg', key);
+}
+document.getElementById('whoThemeIcon').addEventListener('click', () => {
+  const next = WHO_BG_ORDER[(WHO_BG_ORDER.indexOf(currentWhoBg) + 1) % WHO_BG_ORDER.length];
+  setWhoBackground(next);
+});
+setWhoBackground(localStorage.getItem('wedplanner_who_bg') || 'mixed');
+
 /* ---------------- live presence ---------------- */
 let presenceChannel = null;
 // (who-picker + PIN flow now lives near the bottom of the script, after role/PIN constants are all in scope)
@@ -2527,6 +2641,7 @@ async function init(){
   renderSummary();
   renderSection();
   moveTabIndicator(document.querySelector('#sectionTabs button.active'));
+  updateRotateTip();
 }
 
 /* ---------------- lightbox (pinch-zoom + swipe photo viewer) ---------------- */
@@ -2822,6 +2937,7 @@ document.getElementById('switchWhoBtn2').addEventListener('click', () => {
 window.addEventListener('resize', () => {
   moveTabIndicator(document.querySelector('#sectionTabs button.active'));
   autoGrowTextareas(document.getElementById('sectionContent'));
+  updateRotateTip();
 });
 
 /* ---------------- boot ---------------- */
