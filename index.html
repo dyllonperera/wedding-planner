@@ -389,7 +389,7 @@
   .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
     outline:none; border-color:var(--accent); background:var(--paper); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
   }
-  .data-table input[type="number"]{font-family:var(--font-mono);}
+  .data-table input[type="number"], .data-table input[data-currency="true"]{font-family:var(--font-mono);}
   .data-table select.badge{min-width:132px; padding:6px 10px;}
   .data-table textarea{
     resize:none; overflow:hidden; line-height:1.4; min-height:30px; display:block;
@@ -1273,6 +1273,14 @@ function fmtNum(lkrValue){
   const maxFrac = state.displayCurrency === 'LKR' ? 0 : 2;
   return new Intl.NumberFormat('en-US', { maximumFractionDigits: maxFrac }).format(shown);
 }
+// Comma-format a number that's already in the display currency (used for live input values).
+function commaFormat(num){
+  if (num === null || num === undefined || num === '') return '';
+  const n = Number(num);
+  if (Number.isNaN(n)) return '';
+  const maxFrac = state.displayCurrency === 'LKR' ? 0 : 2;
+  return new Intl.NumberFormat('en-US', { maximumFractionDigits: maxFrac }).format(n);
+}
 
 function computeSpent(eventId){
   const vendors = state.data[eventId].vendors;
@@ -1990,8 +1998,8 @@ function renderVendors(){
         }</select>`}
       </td>
       <td data-label="Due">${ro ? roField(r.due_date) : `<input type="date" data-table="vendors" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}">`}</td>
-      <td data-label="Price (${cur})" class="num-col">${ro ? roField(fmtNum(r.price), true) : `<input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${toDisplayAmount(r.price)}" placeholder="0">`}</td>
-      <td data-label="Deposit (${cur})" class="num-col">${ro ? roField(fmtNum(r.deposit_amount), true) : `<input type="number" step="0.01" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${toDisplayAmount(r.deposit_amount)}" placeholder="0">`}</td>
+      <td data-label="Price (${cur})" class="num-col">${ro ? roField(fmtNum(r.price), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${commaFormat(toDisplayAmount(r.price))}" placeholder="0">`}</td>
+      <td data-label="Deposit (${cur})" class="num-col">${ro ? roField(fmtNum(r.deposit_amount), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${commaFormat(toDisplayAmount(r.deposit_amount))}" placeholder="0">`}</td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:700; color:var(--danger);">${fmtMoney(remaining)}</td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
@@ -2577,6 +2585,18 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   }
 });
 
+document.getElementById('sectionContent').addEventListener('focusin', e => {
+  if (e.target.dataset && e.target.dataset.currency === 'true'){
+    e.target.value = e.target.value.replace(/,/g, '');
+  }
+});
+document.getElementById('sectionContent').addEventListener('focusout', e => {
+  if (e.target.dataset && e.target.dataset.currency === 'true'){
+    const num = parseFloat(e.target.value.replace(/,/g, ''));
+    e.target.value = Number.isNaN(num) ? '' : commaFormat(num);
+  }
+});
+
 document.getElementById('sectionContent').addEventListener('keydown', e => {
   if (e.key === 'Enter' && e.target.tagName === 'INPUT' && e.target.closest('.data-table')){
     e.preventDefault();
@@ -2606,7 +2626,8 @@ document.getElementById('sectionContent').addEventListener('change', async e => 
   const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
   let value;
   if (el.type === 'checkbox') value = el.checked;
-  else if (el.type === 'number') value = el.dataset.currency === 'true' ? fromDisplayAmount(el.value) : (el.value === '' ? null : Number(el.value));
+  else if (el.dataset.currency === 'true') value = fromDisplayAmount(el.value.replace(/,/g, ''));
+  else if (el.type === 'number') value = (el.value === '' ? null : Number(el.value));
   else value = el.value;
 
   // capture what we need for sparkle effects now, before the row potentially gets rebuilt
