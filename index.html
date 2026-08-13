@@ -617,29 +617,10 @@
   /* ---------- who gate ---------- */
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
-    overflow:hidden;
-    background:linear-gradient(to bottom, #C98A94 0%, #E0AC4C 100%);
+    background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
     transition:opacity .6s var(--ease), visibility .6s;
   }
-  #whoGate::before{
-    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
-    background:linear-gradient(to bottom, #2A3D63 0%, #8B1A2B 100%);
-    opacity:var(--who-overlay-opacity, 1);
-    -webkit-mask-image:var(--who-overlay-mask, linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%));
-    mask-image:var(--who-overlay-mask, linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%));
-    transition:opacity .5s ease;
-  }
   #whoGate.hide{opacity:0; pointer-events:none; visibility:hidden;}
-  .who-theme-icon{
-    position:absolute; top:20px; right:20px; z-index:3; width:36px; height:36px; border-radius:50%;
-    border:none; cursor:pointer; padding:0; background:rgba(0,0,0,.16);
-    backdrop-filter:blur(6px); -webkit-backdrop-filter:blur(6px);
-    display:flex; align-items:center; justify-content:center;
-    box-shadow:0 4px 14px rgba(0,0,0,.3);
-    transition:transform .3s var(--ease-snap), background .3s ease;
-  }
-  .who-theme-icon:hover{transform:scale(1.12) rotate(15deg); background:rgba(0,0,0,.24);}
-  .who-theme-icon svg{transition:transform .4s var(--ease);}
   .who-card{
     text-align:center; padding:48px 42px; max-width:400px; width:90%;
     border:1px solid color-mix(in srgb, var(--hero-text) 25%, transparent); border-radius:20px;
@@ -856,23 +837,6 @@
 <div id="presenceDock"></div>
 
 <div id="whoGate">
-  <button type="button" class="who-theme-icon" id="whoThemeIcon" title="Switch background" aria-label="Switch background theme">
-    <svg viewBox="0 0 24 24" width="20" height="20">
-      <defs>
-        <linearGradient id="whoIconWedding" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#C98A94"/>
-          <stop offset="100%" stop-color="#E0AC4C"/>
-        </linearGradient>
-        <linearGradient id="whoIconHomecoming" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stop-color="#2A3D63"/>
-          <stop offset="100%" stop-color="#8B1A2B"/>
-        </linearGradient>
-      </defs>
-      <circle cx="12" cy="12" r="9" fill="none" stroke="rgba(251,243,228,.8)" stroke-width="1.6"/>
-      <path id="whoIconLeft" d="M12 3a9 9 0 000 18z"/>
-      <path id="whoIconRight" d="M12 3a9 9 0 010 18z"/>
-    </svg>
-  </button>
   <div class="who-card">
     <p class="eyebrow">Before we begin</p>
     <h2>Who's this?</h2>
@@ -2553,43 +2517,6 @@ document.getElementById('pinPreviewToggle').addEventListener('click', e => {
   document.querySelectorAll('#pinPreviewToggle button').forEach(b => b.classList.toggle('active', b === btn));
   document.body.dataset.theme = btn.dataset.preview;
 });
-
-const WHO_BG_PRESETS = {
-  wedding: { opacity: '0', mask: 'none' },
-  homecoming: { opacity: '1', mask: 'none' },
-  mixed: { opacity: '1', mask: 'linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%)' }
-};
-const WHO_BG_ORDER = ['wedding', 'mixed', 'homecoming'];
-const WHO_ICON_FILL = {
-  wedding: { left: 'url(#whoIconWedding)', right: 'none' },
-  homecoming: { left: 'url(#whoIconHomecoming)', right: 'none' },
-  mixed: { left: 'url(#whoIconWedding)', right: 'url(#whoIconHomecoming)' }
-};
-const WHO_BG_TITLE = { wedding:'Wedding', homecoming:'Homecoming', mixed:'Both' };
-let currentWhoBg = 'mixed';
-
-function setWhoBackground(key){
-  if (!WHO_BG_PRESETS[key]) key = 'mixed';
-  currentWhoBg = key;
-  const preset = WHO_BG_PRESETS[key];
-  const gate = document.getElementById('whoGate');
-  gate.style.setProperty('--who-overlay-opacity', preset.opacity);
-  gate.style.setProperty('--who-overlay-mask', preset.mask);
-  const icon = document.getElementById('whoThemeIcon');
-  const left = document.getElementById('whoIconLeft');
-  const right = document.getElementById('whoIconRight');
-  if (icon && left && right){
-    left.setAttribute('fill', WHO_ICON_FILL[key].left);
-    right.setAttribute('fill', WHO_ICON_FILL[key].right);
-    icon.title = `Background: ${WHO_BG_TITLE[key]} — tap to change`;
-  }
-  localStorage.setItem('wedplanner_who_bg', key);
-}
-document.getElementById('whoThemeIcon').addEventListener('click', () => {
-  const next = WHO_BG_ORDER[(WHO_BG_ORDER.indexOf(currentWhoBg) + 1) % WHO_BG_ORDER.length];
-  setWhoBackground(next);
-});
-setWhoBackground(localStorage.getItem('wedplanner_who_bg') || 'mixed');
 
 /* ---------------- live presence ---------------- */
 let presenceChannel = null;
