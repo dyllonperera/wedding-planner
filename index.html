@@ -407,15 +407,23 @@
     line-height:1; padding:4px 6px; transition:transform .2s var(--ease-snap), opacity .2s ease; opacity:.55;
   }
   .del-btn:hover{transform:scale(1.2) rotate(90deg); opacity:1;}
-  .reorder-col{padding:4px !important; text-align:center;}
-  .reorder-btn{
-    display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px;
-    background:none; border:none; color:var(--ink-soft); cursor:pointer; border-radius:6px;
-    transition:background .2s ease, color .2s ease;
+  .reorder-list{display:flex; flex-direction:column; gap:8px;}
+  .reorder-item{
+    display:flex; align-items:center; gap:12px; background:var(--paper); border:1px solid var(--line);
+    border-radius:12px; padding:10px 14px; touch-action:none; user-select:none; -webkit-user-select:none;
+    transition:box-shadow .2s ease;
   }
-  .reorder-btn:hover{background:var(--paper-warm); color:var(--accent);}
-  .reorder-btn:disabled{opacity:.2; cursor:default;}
-  .reorder-btn:disabled:hover{background:none; color:var(--ink-soft);}
+  .reorder-item.dragging{
+    box-shadow:0 16px 30px -14px rgba(0,0,0,.35); border-color:var(--accent); background:var(--paper-warm);
+  }
+  .reorder-grip{
+    display:flex; align-items:center; justify-content:center; width:34px; height:34px; flex-shrink:0;
+    color:var(--ink-soft); cursor:grab; border-radius:8px; touch-action:none;
+  }
+  .reorder-item.dragging .reorder-grip{cursor:grabbing; color:var(--accent);}
+  .reorder-info{min-width:0;}
+  .reorder-name{font-family:var(--font-body); font-weight:600; font-size:.9rem; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap;}
+  .reorder-cat{font-size:.74rem; color:var(--ink-soft); margin-top:1px;}
   .empty-row td{padding:34px 10px; text-align:center; color:var(--ink-soft); font-style:italic;}
 
   .badge{display:inline-block; padding:3px 10px; border-radius:20px; font-size:.72rem; font-weight:600;}
@@ -1767,6 +1775,7 @@ function renderSection(){
   else html = renderMoodboard();
   el.innerHTML = `<div class="table-wrap">${html}</div>`;
   autoGrowTextareas(el);
+  if (state.currentSection === 'vendors' && vendorReorderMode) initVendorReorderDrag();
 }
 
 /* ---------------- vendor documents (receipts, invoices, quotations) ---------------- */
@@ -1874,29 +1883,80 @@ function vendorSortFn(a, b){
   return (a.created_at || '').localeCompare(b.created_at || '');
 }
 
-async function moveVendor(id, direction){
+let vendorReorderMode = false;
+
+async function persistVendorOrder(orderedIds){
   if (guardWrite()) return;
-  const rows = [...state.data[state.currentEvent].vendors].sort(vendorSortFn);
-  const idx = rows.findIndex(r => r.id === id);
-  const swapIdx = direction === 'up' ? idx - 1 : idx + 1;
-  if (idx === -1 || swapIdx < 0 || swapIdx >= rows.length) return;
+  const list = state.data[state.currentEvent].vendors;
+  const updates = orderedIds.map((id, i) => {
+    const row = list.find(r => r.id === id);
+    if (row) row.sort_order = (i + 1) * 10;
+    return supabaseClient.from('vendors').update({ sort_order: (i + 1) * 10 }).eq('id', id);
+  });
+  const results = await Promise.all(updates);
+  const failed = results.find(r => r.error);
+  if (failed){ toast(failed.error.message, true); return; }
+}
 
-  // Lazily assign order values to any rows that don't have one yet, so future
-  // moves resolve predictably instead of relying on created_at ties.
-  if (rows.some(r => r.sort_order == null)){
-    rows.forEach((r, i) => { r.sort_order = (i + 1) * 10; });
-    await Promise.all(rows.map(r => supabaseClient.from('vendors').update({ sort_order: r.sort_order }).eq('id', r.id)));
-  }
+function renderVendorReorderList(rows){
+  return `<div class="reorder-list" id="vendorReorderList">
+    ${rows.map(r => `
+      <div class="reorder-item" data-id="${r.id}">
+        <span class="reorder-grip" title="Hold and drag">
+          <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/></svg>
+        </span>
+        <div class="reorder-info">
+          <div class="reorder-name">${esc(r.name)}</div>
+          <div class="reorder-cat">${esc(r.category || '')}</div>
+        </div>
+      </div>`).join('')}
+  </div>`;
+}
 
-  const a = rows[idx], b = rows[swapIdx];
-  const aOrder = a.sort_order, bOrder = b.sort_order;
-  const [{ error: e1 }, { error: e2 }] = await Promise.all([
-    supabaseClient.from('vendors').update({ sort_order: bOrder }).eq('id', a.id),
-    supabaseClient.from('vendors').update({ sort_order: aOrder }).eq('id', b.id)
-  ]);
-  if (e1 || e2){ toast((e1 || e2).message, true); return; }
-  a.sort_order = bOrder; b.sort_order = aOrder;
-  renderSection();
+let vendorDrag = null;
+function initVendorReorderDrag(){
+  const list = document.getElementById('vendorReorderList');
+  if (!list) return;
+  list.querySelectorAll('.reorder-grip').forEach(grip => {
+    grip.addEventListener('pointerdown', e => {
+      const item = grip.closest('.reorder-item');
+      vendorDrag = { item, startY: e.clientY, offsetTop: item.offsetTop };
+      item.classList.add('dragging');
+      item.style.zIndex = '5';
+      grip.setPointerCapture(e.pointerId);
+      e.preventDefault();
+    });
+  });
+  list.addEventListener('pointermove', e => {
+    if (!vendorDrag) return;
+    const dy = e.clientY - vendorDrag.startY;
+    vendorDrag.item.style.transform = `translateY(${dy}px)`;
+    const siblings = [...list.querySelectorAll('.reorder-item')].filter(el => el !== vendorDrag.item);
+    const draggedMid = vendorDrag.item.offsetTop + dy + vendorDrag.item.offsetHeight / 2;
+    for (const sib of siblings){
+      const sibMid = sib.offsetTop + sib.offsetHeight / 2;
+      if (draggedMid < sibMid && vendorDrag.item.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_PRECEDING){
+        list.insertBefore(vendorDrag.item, sib);
+        vendorDrag.startY = e.clientY;
+        vendorDrag.item.style.transform = 'translateY(0px)';
+        break;
+      } else if (draggedMid > sibMid && vendorDrag.item.compareDocumentPosition(sib) & Node.DOCUMENT_POSITION_FOLLOWING){
+        list.insertBefore(vendorDrag.item, sib.nextSibling);
+        vendorDrag.startY = e.clientY;
+        vendorDrag.item.style.transform = 'translateY(0px)';
+        break;
+      }
+    }
+  });
+  list.addEventListener('pointerup', async () => {
+    if (!vendorDrag) return;
+    vendorDrag.item.classList.remove('dragging');
+    vendorDrag.item.style.transform = '';
+    vendorDrag.item.style.zIndex = '';
+    vendorDrag = null;
+    const orderedIds = [...list.querySelectorAll('.reorder-item')].map(el => el.dataset.id);
+    await persistVendorOrder(orderedIds);
+  });
 }
 
 function renderVendors(){
@@ -1915,14 +1975,6 @@ function renderVendors(){
     const docCount = (state.data[state.currentEvent].vendorDocs || {})[r.id];
     return `
     <tr>
-      ${!ro ? `<td data-label="" class="reorder-col">
-        <button class="reorder-btn" data-action="move-up" data-id="${r.id}" title="Move up" ${idx===0?'disabled':''}>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M18 15l-6-6-6 6"/></svg>
-        </button>
-        <button class="reorder-btn" data-action="move-down" data-id="${r.id}" title="Move down" ${idx===rows.length-1?'disabled':''}>
-          <svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
-        </button>
-      </td>` : ''}
       ${taCell('Category', 'vendors', r.id, 'category', r.category)}
       <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
@@ -1944,7 +1996,7 @@ function renderVendors(){
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="${ro ? 12 : 13}">No vendors yet for this event — add your first one above.</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="12">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -1953,33 +2005,46 @@ function renderVendors(){
       <div class="stat-card"><div class="v">${fmtMoney(totalQuoted)}</div><div class="l">Total quoted</div></div>
       <div class="stat-card"><div class="v">${fmtMoney(totalQuoted - spentSoFar)}</div><div class="l">Remaining to pay</div></div>
     </div>
-    <button class="add-toggle" data-toggle="vendorForm">+ Add vendor</button>
-    <form class="add-form" id="vendorForm">
-      <div class="field"><label>Category</label><input list="vendorCatList" id="v_category" required></div>
-      <div class="field"><label>Vendor name</label><input id="v_name" required></div>
-      <div class="field"><label>Phone / email</label><input id="v_contact"></div>
-      <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
-      <div class="field"><label>Payment</label><select id="v_payment">${paymentOptions}</select></div>
-      <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
-      <div class="field"><label>Deposit (LKR)</label><input id="v_deposit" type="number"></div>
-      <div class="field"><label>Due date (optional)</label><input id="v_due" type="date" placeholder="Add once you know it"></div>
-      <div class="field full"><label>Notes</label><input id="v_notes"></div>
-      <div class="submit-row">
-        <button type="button" class="btn-ghost" data-toggle="vendorForm">Cancel</button>
-        <button type="submit" class="btn-primary">Save vendor</button>
+    ${vendorReorderMode ? `
+      <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:10px;">
+        <p style="font-size:.82rem; color:var(--ink-soft); margin:0;">Hold the <strong>☰</strong> handle and drag to reorder.</p>
+        <button class="btn-primary" id="vendorReorderDoneBtn" type="button">Done</button>
       </div>
-    </form>
-    <table class="data-table">
-      <colgroup>
-        ${!ro ? '<col style="width:44px">' : ''}
-        <col style="width:160px"><col style="width:80px"><col style="width:150px">
-        <col style="width:140px"><col style="width:132px"><col style="width:132px">
-        <col style="width:114px"><col style="width:110px"><col style="width:110px">
-        <col style="width:110px"><col style="width:150px"><col style="width:46px">
-      </colgroup>
-      <thead><tr>${!ro ? '<th></th>' : ''}<th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>`;
+      ${renderVendorReorderList(rows)}
+    ` : `
+      ${!ro ? `<div style="display:flex; gap:8px; flex-wrap:wrap; margin-bottom:18px;">
+        <button class="add-toggle" data-toggle="vendorForm" style="margin-bottom:0;">+ Add vendor</button>
+        <button class="btn-ghost" id="vendorReorderBtn" type="button" title="Reorder vendors">
+          <svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" style="vertical-align:-2px; margin-right:5px;"><path d="M17 3a2.85 2.83 0 1 1 4 4L7.5 20.5 2 22l1.5-5.5Z"/></svg>
+          Reorder
+        </button>
+      </div>` : ''}
+      <form class="add-form" id="vendorForm">
+        <div class="field"><label>Category</label><input list="vendorCatList" id="v_category" required></div>
+        <div class="field"><label>Vendor name</label><input id="v_name" required></div>
+        <div class="field"><label>Phone / email</label><input id="v_contact"></div>
+        <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
+        <div class="field"><label>Payment</label><select id="v_payment">${paymentOptions}</select></div>
+        <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
+        <div class="field"><label>Deposit (LKR)</label><input id="v_deposit" type="number"></div>
+        <div class="field"><label>Due date (optional)</label><input id="v_due" type="date" placeholder="Add once you know it"></div>
+        <div class="field full"><label>Notes</label><input id="v_notes"></div>
+        <div class="submit-row">
+          <button type="button" class="btn-ghost" data-toggle="vendorForm">Cancel</button>
+          <button type="submit" class="btn-primary">Save vendor</button>
+        </div>
+      </form>
+      <table class="data-table">
+        <colgroup>
+          <col style="width:160px"><col style="width:80px"><col style="width:150px">
+          <col style="width:140px"><col style="width:132px"><col style="width:132px">
+          <col style="width:114px"><col style="width:110px"><col style="width:110px">
+          <col style="width:110px"><col style="width:150px"><col style="width:46px">
+        </colgroup>
+        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    `}`;
 }
 
 function renderTasks(){
@@ -2429,6 +2494,7 @@ document.getElementById('sectionTabs').addEventListener('click', e => {
   const btn = e.target.closest('[data-section]');
   if (!btn) return;
   state.currentSection = btn.dataset.section;
+  if (state.currentSection !== 'vendors') vendorReorderMode = false;
   document.querySelectorAll('#sectionTabs button[data-section]').forEach(b => b.classList.toggle('active', b === btn));
   moveTabIndicator(btn);
   renderSection();
@@ -2469,10 +2535,16 @@ document.getElementById('sectionContent').addEventListener('click', e => {
     if (confirm('Delete this row?')) deleteRow(del.dataset.table, del.dataset.id);
     return;
   }
-  const moveUp = e.target.closest('[data-action="move-up"]');
-  if (moveUp){ moveVendor(moveUp.dataset.id, 'up'); return; }
-  const moveDown = e.target.closest('[data-action="move-down"]');
-  if (moveDown){ moveVendor(moveDown.dataset.id, 'down'); return; }
+  if (e.target.closest('#vendorReorderBtn')){
+    vendorReorderMode = true;
+    renderSection();
+    return;
+  }
+  if (e.target.closest('#vendorReorderDoneBtn')){
+    vendorReorderMode = false;
+    renderSection();
+    return;
+  }
   const copyInvite = e.target.closest('[data-action="copy-invite"]');
   if (copyInvite){
     const url = buildRsvpUrl(state.currentEvent, copyInvite.dataset.id);
@@ -2526,7 +2598,7 @@ document.getElementById('sectionContent').addEventListener('input', e => {
   }
 });
 
-document.getElementById('sectionContent').addEventListener('change', e => {
+document.getElementById('sectionContent').addEventListener('change', async e => {
   if (e.target.id === 'moodFileInput'){ handleMoodUpload(e.target.files); return; }
   if (e.target.id === 'rsvpDeadlineInput'){ updateRsvpDeadline(e.target.value); return; }
   const el = e.target.closest('[data-field]');
@@ -2536,20 +2608,26 @@ document.getElementById('sectionContent').addEventListener('change', e => {
   if (el.type === 'checkbox') value = el.checked;
   else if (el.type === 'number') value = el.dataset.currency === 'true' ? fromDisplayAmount(el.value) : (el.value === '' ? null : Number(el.value));
   else value = el.value;
-  updateRow(table, id, { [field]: value });
-  if (el.type === 'checkbox' && el.checked && field === 'completed'){
-    const rect = el.getBoundingClientRect();
+
+  // capture what we need for sparkle effects now, before the row potentially gets rebuilt
+  const rect = el.getBoundingClientRect();
+  const isCompletingTask = el.type === 'checkbox' && el.checked && field === 'completed';
+  const isSelect = el.tagName === 'SELECT';
+  const isRsvpYes = isSelect && field === 'rsvp_status' && value === 'yes';
+  const isPaymentSparkle = isSelect && field === 'payment_status' && (value === 'deposit_paid' || value === 'paid_full');
+
+  await updateRow(table, id, { [field]: value });
+
+  if (isCompletingTask){
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (el.tagName === 'SELECT') el.className = 'badge ' + value;
-  if (el.tagName === 'SELECT' && field === 'rsvp_status' && value === 'yes'){
-    const rect = el.getBoundingClientRect();
+  if (isSelect) el.className = 'badge ' + value;
+  if (isRsvpYes){
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (el.tagName === 'SELECT' && field === 'payment_status' && (value === 'deposit_paid' || value === 'paid_full')){
-    const rect = el.getBoundingClientRect();
+  if (isPaymentSparkle){
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
