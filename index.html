@@ -2231,6 +2231,21 @@ function renderFamilyEditToggle(){
   }
 }
 
+async function pollFamilyEditable(){
+  if (state.accessLevel === 'admin') return; // admin already has full access regardless
+  try{
+    const { data, error } = await supabaseClient.from('events').select('family_editable').eq('id', state.currentEvent).single();
+    if (error || !data) return;
+    const ev = state.events[state.currentEvent];
+    if (ev && ev.family_editable !== data.family_editable){
+      ev.family_editable = data.family_editable;
+      renderSummary();
+      renderSection();
+      toast(data.family_editable ? "You can now edit this event" : "This event is now view-only");
+    }
+  } catch(e){ /* offline or transient — just try again next interval */ }
+}
+
 async function toggleFamilyEditable(){
   const eventId = state.currentEvent;
   const ev = state.events[eventId];
@@ -2804,7 +2819,11 @@ function finishUnlock(role){
   if (role === 'admin' && !presenceChannel){
     initPresence(localStorage.getItem('wedplanner_who') || 'Guest');
   }
+  if (role !== 'admin' && !familyEditablePollTimer){
+    familyEditablePollTimer = setInterval(pollFamilyEditable, 15000);
+  }
 }
+let familyEditablePollTimer = null;
 
 const ROLE_PIN = { admin: APP_PIN, bride_family: BRIDE_FAMILY_PIN, groom_family: GROOM_FAMILY_PIN };
 const ROLE_LABEL = { bride_family: "Bride's Family", groom_family: "Groom's Family" };
