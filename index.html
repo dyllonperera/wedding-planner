@@ -580,6 +580,27 @@
   .vdocs-card .eyebrow{color:var(--ink-soft); margin-bottom:4px;}
   .vdocs-card h2{font-family:var(--font-display); font-weight:600; font-size:1.3rem; margin:0 0 18px; color:var(--ink);}
   #vdocsGrid{margin-top:18px;}
+  #auditHistoryModal{
+    position:fixed; inset:0; z-index:92; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,6,.55); opacity:0; pointer-events:none; transition:opacity .35s var(--ease); padding:20px;
+  }
+  #auditHistoryModal.show{opacity:1; pointer-events:auto;}
+  #auditHistoryList{margin-top:16px; display:flex; flex-direction:column; gap:10px;}
+  .audit-entry{
+    border:1px solid var(--line); border-radius:12px; padding:12px 14px; background:var(--paper-warm);
+    animation:fadeInUp .3s var(--ease) both;
+  }
+  .audit-entry .ae-top{display:flex; justify-content:space-between; align-items:center; gap:10px; margin-bottom:5px;}
+  .audit-entry .ae-actor{
+    font-family:var(--font-body); font-weight:700; font-size:.76rem; padding:2px 10px; border-radius:100px;
+    background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff; white-space:nowrap;
+  }
+  .audit-entry .ae-time{font-family:var(--font-mono); font-size:.68rem; color:var(--ink-soft); white-space:nowrap;}
+  .audit-entry .ae-action{font-size:.7rem; font-weight:700; text-transform:uppercase; letter-spacing:.05em; margin-bottom:2px;}
+  .audit-entry .ae-action.insert{color:#2E6B3E;}
+  .audit-entry .ae-action.update{color:#8C6D3F;}
+  .audit-entry .ae-action.delete{color:var(--danger);}
+  .audit-entry .ae-details{font-size:.84rem; color:var(--ink); line-height:1.5; word-break:break-word;}
   .doc-btn{
     display:inline-flex; align-items:center; gap:5px; background:var(--paper-warm); border:1px solid var(--line);
     border-radius:100px; padding:6px 11px; font-size:.76rem; color:var(--ink-soft); cursor:pointer;
@@ -833,6 +854,9 @@
   <button class="icon-btn family-edit-pill" id="familyEditBtn" title="Tap to allow/block editing for this family" aria-label="Toggle family edit access" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/></svg>
     <span id="familyEditLabel">Family</span>
+  </button>
+  <button class="icon-btn" id="auditHistoryBtn" title="View family edit history" aria-label="View family edit history" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
   </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
@@ -1105,6 +1129,17 @@
 <div id="printSheet"></div>
 
 <div id="toast"></div>
+<div id="auditHistoryModal">
+  <div class="vdocs-card">
+    <button class="lb-close" id="auditHistoryClose" aria-label="Close" style="position:absolute; top:14px; right:14px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <p class="eyebrow">Edit history for</p>
+    <h2 id="auditHistoryTitle"></h2>
+    <div id="auditHistoryList"></div>
+  </div>
+</div>
+
 <div id="vendorDocsModal">
   <div class="vdocs-card">
     <button class="lb-close" id="vdocsClose" aria-label="Close" style="position:absolute; top:14px; right:14px;">
@@ -1527,30 +1562,63 @@ async function refreshCurrentTable(table){
   renderSection();
 }
 
+const TABLE_SINGULAR = { vendors:'vendor', tasks:'task', guests:'guest', moodboard_categories:'mood board category', vendor_docs:'document' };
+
+async function logAudit(action, table, recordLabel, details){
+  if (state.accessLevel === 'admin') return; // only family-role actions need auditing
+  const actor = state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
+  try{
+    await supabaseClient.from('audit_log').insert([{
+      event_id: state.currentEvent, actor, action, table_name: table,
+      record_label: recordLabel || null, details: details || null
+    }]);
+  } catch(e){ /* never block the user's action just because logging failed */ }
+}
+function fmtAuditVal(v){
+  if (v === null || v === undefined || v === '') return '(empty)';
+  if (typeof v === 'boolean') return v ? 'yes' : 'no';
+  return String(v);
+}
+
 async function insertRow(table, payload){
   if (guardWrite()) return false;
   const { error } = await supabaseClient.from(table).insert([{ ...payload, event_id: state.currentEvent }]);
   if (error){ toast(error.message, true); return false; }
   toast('Added');
+  const label = payload.name || payload.title || '';
+  logAudit('insert', table, label, `Added ${TABLE_SINGULAR[table] || table}${label ? ': ' + label : ''}`);
   await refreshCurrentTable(table);
   return true;
 }
 
 async function updateRow(table, id, payload){
   if (guardWrite()) return;
-  const { error } = await supabaseClient.from(table).update(payload).eq('id', id);
-  if (error){ toast(error.message, true); return; }
   const list = state.data[state.currentEvent][table];
   const row = list.find(r => r.id === id);
+  const before = row ? { ...row } : null;
+  const { error } = await supabaseClient.from(table).update(payload).eq('id', id);
+  if (error){ toast(error.message, true); return; }
   if (row) Object.assign(row, payload);
   renderStats();
+  if (before){
+    const label = before.name || before.title || '';
+    const changes = Object.entries(payload)
+      .filter(([k, v]) => before[k] !== v)
+      .map(([k, v]) => `${k}: ${fmtAuditVal(before[k])} → ${fmtAuditVal(v)}`)
+      .join('; ');
+    if (changes) logAudit('update', table, label, changes);
+  }
 }
 
 async function deleteRow(table, id){
   if (guardWrite()) return;
+  const list = state.data[state.currentEvent][table];
+  const row = list.find(r => r.id === id);
+  const label = row ? (row.name || row.title || '') : '';
   const { error } = await supabaseClient.from(table).delete().eq('id', id);
   if (error){ toast(error.message, true); return; }
   toast('Deleted');
+  logAudit('delete', table, label, `Deleted ${TABLE_SINGULAR[table] || table}${label ? ': ' + label : ''}`);
   await refreshCurrentTable(table);
 }
 
@@ -1763,11 +1831,13 @@ async function handleVendorDocDelete(name){
   if (guardWrite()) return;
   if (!confirm('Remove this file?')) return;
   const eventId = state.currentEvent, vendorId = state.vendorDocsFor;
+  const vendor = state.data[eventId].vendors.find(v => v.id === vendorId);
   const { error } = await supabaseClient.storage.from('moodboard').remove([`vendor-docs/${eventId}/${vendorId}/${name}`]);
   if (error){ toast(error.message, true); return; }
   state.data[eventId].vendorDocs[vendorId] = await fetchVendorDocs(eventId, vendorId);
   renderVendorDocsGrid();
   if (state.currentSection === 'vendors') renderSection();
+  logAudit('delete', 'vendor_docs', name.replace(/^\d+-/, ''), `Deleted document from vendor "${vendor ? vendor.name : vendorId}"`);
   toast('Removed');
 }
 
@@ -2162,6 +2232,7 @@ async function deleteMoodCategory(categoryId, categoryName){
   if (state.data[eventId].moodPhotos) delete state.data[eventId].moodPhotos[categoryId];
   if (state.moodCategory === categoryId) state.moodCategory = null;
   renderSection();
+  logAudit('delete', 'moodboard_categories', categoryName, `Deleted mood board category "${categoryName}"${photos.length ? ` and its ${photos.length} photo${photos.length===1?'':'s'}` : ''}`);
   toast('Category deleted');
 }
 
@@ -2185,10 +2256,12 @@ async function handleMoodDelete(name){
   if (guardWrite()) return;
   if (!confirm('Remove this photo?')) return;
   const eventId = state.currentEvent, categoryId = state.moodCategory;
+  const cat = state.data[eventId].moodCategories.find(c => c.id === categoryId);
   const { error } = await supabaseClient.storage.from('moodboard').remove([`${eventId}/${categoryId}/${name}`]);
   if (error){ toast(error.message, true); return; }
   state.data[eventId].moodPhotos[categoryId] = await fetchMoodPhotos(eventId, categoryId);
   renderSection();
+  logAudit('delete', 'moodboard_categories', name.replace(/^\d+-/, ''), `Deleted a photo from "${cat ? cat.name : categoryId}"`);
   toast('Removed');
 }
 
@@ -2219,6 +2292,8 @@ function renderFamilyEditToggle(){
   }
   const backupBtn = document.getElementById('backupBtn');
   if (backupBtn) backupBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
+  const auditBtn = document.getElementById('auditHistoryBtn');
+  if (auditBtn) auditBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
 
   portals.style.display = state.eventLocked ? 'none' : '';
 
@@ -2786,6 +2861,48 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   }
 });
 
+async function openAuditHistory(){
+  document.getElementById('auditHistoryTitle').textContent = THEME_COPY[state.currentEvent].title;
+  const modal = document.getElementById('auditHistoryModal');
+  const list = document.getElementById('auditHistoryList');
+  modal.classList.add('show');
+  list.innerHTML = `<p class="empty-row" style="text-align:center; padding:30px 0;">Loading…</p>`;
+  const { data, error } = await supabaseClient
+    .from('audit_log').select('*')
+    .eq('event_id', state.currentEvent)
+    .order('created_at', { ascending: false })
+    .limit(150);
+  if (error){
+    list.innerHTML = `<p class="empty-row" style="text-align:center; padding:30px 0;">Couldn't load history — ${esc(error.message)}</p>`;
+    return;
+  }
+  if (!data.length){
+    list.innerHTML = `<p class="empty-row" style="text-align:center; padding:30px 0;">No family edits recorded yet for ${esc(THEME_COPY[state.currentEvent].title)}.</p>`;
+    return;
+  }
+  const actionLabel = { insert:'Added', update:'Changed', delete:'Deleted' };
+  list.innerHTML = data.map(entry => {
+    const when = new Date(entry.created_at).toLocaleString('en-AU', { day:'numeric', month:'short', hour:'numeric', minute:'2-digit' });
+    return `
+    <div class="audit-entry">
+      <div class="ae-top">
+        <span class="ae-actor">${esc(entry.actor)}</span>
+        <span class="ae-time">${esc(when)}</span>
+      </div>
+      <div class="ae-action ${esc(entry.action)}">${actionLabel[entry.action] || entry.action}</div>
+      <div class="ae-details">${esc(entry.details || entry.record_label || '')}</div>
+    </div>`;
+  }).join('');
+}
+function closeAuditHistory(){
+  document.getElementById('auditHistoryModal').classList.remove('show');
+}
+document.getElementById('auditHistoryBtn').addEventListener('click', openAuditHistory);
+document.getElementById('auditHistoryClose').addEventListener('click', closeAuditHistory);
+document.getElementById('auditHistoryModal').addEventListener('click', e => {
+  if (e.target.id === 'auditHistoryModal') closeAuditHistory();
+});
+
 document.getElementById('vdocsClose').addEventListener('click', closeVendorDocsModal);
 document.getElementById('vendorDocsModal').addEventListener('click', e => {
   if (e.target.id === 'vendorDocsModal') closeVendorDocsModal();
@@ -2803,6 +2920,7 @@ document.getElementById('vdocsGrid').addEventListener('click', e => {
 });
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('vendorDocsModal').classList.contains('show')) closeVendorDocsModal();
+  if (e.key === 'Escape' && document.getElementById('auditHistoryModal').classList.contains('show')) closeAuditHistory();
 });
 
 const UNLOCK_KEY = 'wedplanner_unlocked';

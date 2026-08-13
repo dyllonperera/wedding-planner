@@ -245,7 +245,34 @@ alter table events add column if not exists family_editable boolean not null def
 **The "who's this" picker (Nithara/Dyllon) only applies to the `APP_PIN`.** Family PINs
 skip it entirely and drop straight into their event — there's no presence tracking or
 name needed for a view-only guest. If you (admin) ever need to switch which of you is
-using a shared device, there's now a small switch-user icon next to Lock, top-right.
+using a shared device, there's a switch-profile icon top-right that takes you back to
+the picker.
+
+### Edit-history log
+
+Every add, edit, or delete made by a family PIN (while it's switched to editable) gets
+logged — who did it, when, and exactly what changed. A small clock icon appears
+top-right for either of you (Nithara or Dyllon) to review it, filtered to whichever
+event you're currently viewing.
+
+One more SQL step, in Supabase → **SQL Editor**:
+```sql
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null references events(id),
+  actor text not null,
+  action text not null,
+  table_name text not null,
+  record_label text,
+  details text,
+  created_at timestamptz not null default now()
+);
+alter table audit_log enable row level security;
+create policy "anon full access" on audit_log for all using (true) with check (true);
+```
+
+Nothing you or Nithara do (as admin) gets logged here — only actions taken while on a
+family PIN, since that's the access level this exists to keep an eye on.
 
 ## One-time setup (~10 minutes)
 

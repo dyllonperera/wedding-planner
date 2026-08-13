@@ -109,3 +109,19 @@ create table if not exists moodboard_categories (
 );
 alter table moodboard_categories enable row level security;
 create policy "anon full access" on moodboard_categories for all using (true) with check (true);
+
+-- Audit trail for family-role edits (Bride's Family / Groom's Family), so the couple can
+-- review what was added, changed, or deleted if something looks off.
+create table if not exists audit_log (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null references events(id),
+  actor text not null,        -- "Bride's Family" or "Groom's Family"
+  action text not null,       -- 'insert' | 'update' | 'delete'
+  table_name text not null,   -- 'vendors' | 'tasks' | 'guests' | 'moodboard_categories' | 'vendor_docs'
+  record_label text,          -- human-readable name/title of the affected item
+  details text,               -- what changed, in plain language
+  created_at timestamptz not null default now()
+);
+alter table audit_log enable row level security;
+create policy "anon full access" on audit_log for all using (true) with check (true);
+
