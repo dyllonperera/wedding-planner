@@ -191,6 +191,16 @@ alter table events add column if not exists family_editable boolean not null def
 This powers the two new restricted-access PINs — see the **Bride's Family / Groom's
 Family access** section below for the full setup.
 
+### One more step: reorder vendors
+
+Run this once in Supabase → **SQL Editor**:
+```sql
+alter table vendors add column if not exists sort_order integer;
+```
+
+Each vendor row now has ▲▼ buttons to move it up or down — handy for putting your most
+important or most-active vendors at the top of the list.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

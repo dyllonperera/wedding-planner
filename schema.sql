@@ -32,6 +32,7 @@ create table if not exists vendors (
   deposit_amount numeric,
   deposit_paid boolean not null default false, -- legacy, superseded by payment_status
   due_date date, -- next payment due date
+  sort_order integer, -- manual display order set via the ▲▼ reorder buttons
   notes text,
   created_at timestamptz not null default now()
 );
