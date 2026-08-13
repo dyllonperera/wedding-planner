@@ -495,21 +495,6 @@
     padding:8px 16px; border-radius:100px; font-family:var(--font-body); font-weight:600; font-size:.74rem;
     backdrop-filter:blur(10px); white-space:nowrap;
   }
-  .family-edit-toggle{
-    display:flex; align-items:center; gap:8px; background:color-mix(in srgb, var(--paper-warm) 80%, transparent);
-    border:1px solid var(--line); border-radius:100px; padding:6px 14px 6px 16px; font-size:.76rem;
-    color:var(--ink-soft); margin:0 0 18px;
-  }
-  .family-edit-toggle button{
-    position:relative; width:36px; height:20px; border-radius:100px; border:none; cursor:pointer;
-    background:var(--line); transition:background .25s ease; flex-shrink:0;
-  }
-  .family-edit-toggle button::after{
-    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
-    background:#fff; transition:transform .25s ease; box-shadow:0 1px 3px rgba(0,0,0,.3);
-  }
-  .family-edit-toggle button.on{background:var(--accent);}
-  .family-edit-toggle button.on::after{transform:translateX(16px);}
 
   /* ---------- lightbox ---------- */
   #lightbox{
@@ -617,6 +602,7 @@
   /* ---------- who gate ---------- */
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
+    overflow-y:auto; padding:24px 0;
     background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
     transition:opacity .6s var(--ease), visibility .6s, background 1s var(--ease);
   }
@@ -659,6 +645,7 @@
   body:not(.unlocked) #main-content, body:not(.unlocked) .hero{display:none;}
   #pinGate{
     position:fixed; inset:0; z-index:50; display:flex; align-items:center; justify-content:center;
+    overflow-y:auto; padding:24px 0;
     background:linear-gradient(180deg, var(--hero-top), var(--hero-mid) 55%, var(--hero-bottom));
     transition:background 1s var(--ease);
   }
@@ -735,6 +722,7 @@
     transition:all .3s var(--ease);
   }
   .icon-btn:hover{background:var(--accent); border-color:transparent; color:#fff; transform:translateY(-2px);}
+  .icon-btn.on{background:var(--accent); border-color:transparent; color:#fff;}
   .icon-btn svg{width:16px; height:16px;}
   body.unlocked .corner-controls{position:absolute; top:20px;}
   body:not(.unlocked) .corner-controls, body:not(.unlocked) .fx-caption, body:not(.unlocked) #presenceDock{display:none;}
@@ -839,6 +827,9 @@
   </button>
   <button class="icon-btn" id="backupBtn" title="Download full backup" aria-label="Download full backup" style="display:none;">
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+  </button>
+  <button class="icon-btn" id="familyEditBtn" title="Family view is read-only — tap to allow editing" aria-label="Toggle family edit access" style="display:none;">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/></svg>
   </button>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
@@ -1075,7 +1066,6 @@
 </section>
 
 <div id="main-content">
-  <div id="familyEditToggleWrap"></div>
   <div class="stat-row" id="statRow"></div>
 
   <nav class="section-tabs" id="sectionTabs">
@@ -2211,13 +2201,14 @@ function syncReadOnlyClass(){
 }
 
 function renderFamilyEditToggle(){
-  const wrap = document.getElementById('familyEditToggleWrap');
   const roleBadge = document.getElementById('roleBadge');
   const portals = document.getElementById('eventTabs');
-  if (!wrap || !roleBadge || !portals) return;
+  const familyBtn = document.getElementById('familyEditBtn');
+  if (!roleBadge || !portals) return;
+
+  const who = localStorage.getItem('wedplanner_who');
 
   if (roleBadge){
-    const who = localStorage.getItem('wedplanner_who');
     const label = state.accessLevel === 'admin' ? (who || 'Admin')
       : state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
     roleBadge.textContent = label;
@@ -2228,12 +2219,19 @@ function renderFamilyEditToggle(){
 
   portals.style.display = state.eventLocked ? 'none' : '';
 
-  if (state.accessLevel !== 'admin'){ wrap.innerHTML = ''; return; }
-  const ev = state.events[state.currentEvent];
-  const on = !!(ev && ev.family_editable);
-  const roleLabel = state.currentEvent === BRIDE_FAMILY_EVENT ? "Bride's Family" : (state.currentEvent === GROOM_FAMILY_EVENT ? "Groom's Family" : 'Family');
-  wrap.innerHTML = `<div class="family-edit-toggle">${esc(roleLabel)} can edit this event <button type="button" class="${on?'on':''}" id="familyEditBtn" aria-label="Toggle family edit access"></button></div>`;
-  document.getElementById('familyEditBtn').addEventListener('click', toggleFamilyEditable);
+  const isDyllon = state.accessLevel === 'admin' && who === 'Dyllon';
+  if (familyBtn){
+    familyBtn.style.display = isDyllon ? 'flex' : 'none';
+    if (isDyllon){
+      const ev = state.events[state.currentEvent];
+      const on = !!(ev && ev.family_editable);
+      const roleLabel = state.currentEvent === BRIDE_FAMILY_EVENT ? "Bride's Family" : (state.currentEvent === GROOM_FAMILY_EVENT ? "Groom's Family" : 'Family');
+      familyBtn.classList.toggle('on', on);
+      familyBtn.title = on
+        ? `${roleLabel} can currently edit this event — tap to make view-only`
+        : `${roleLabel} is view-only for this event — tap to allow editing`;
+    }
+  }
 }
 
 async function toggleFamilyEditable(){
@@ -2500,6 +2498,7 @@ async function downloadFullBackup(){
   }
 }
 document.getElementById('backupBtn').addEventListener('click', downloadFullBackup);
+document.getElementById('familyEditBtn').addEventListener('click', toggleFamilyEditable);
 
 /* ---------------- parallax ---------------- */
 if (window.matchMedia('(hover: hover)').matches){
