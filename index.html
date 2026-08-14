@@ -26,10 +26,10 @@
     /* wedding — ivory, gold, rose gold, lantern-festival mood */
     --accent:#E0AC4C;
     --accent-deep:#B4842E;
-    --accent2:#C98A94;
-    --accent2-light:#F8E6E4;
-    --hero-top:#3D2530;
-    --hero-mid:#A66B76;
+    --accent2:#A8596A;
+    --accent2-light:#F0D6D2;
+    --hero-top:#331F29;
+    --hero-mid:#8C5561;
     --hero-bottom:#E8A855;
     --hero-text:#F8EEDE;
     --hero-text-soft:#E3C6C4;
@@ -641,14 +641,14 @@
   #introScreen{
     position:fixed; inset:0; z-index:58; display:flex; align-items:center; justify-content:center;
     overflow:hidden; cursor:pointer;
-    background:linear-gradient(180deg, #2B0A12 0%, #7A1F2E 55%, #D9A54A 100%);
+    background:linear-gradient(180deg, #331F29 0%, #8C5561 55%, #E8A855 100%);
     transition:opacity 1.3s var(--ease), visibility 1.3s;
   }
   #introScreen.hide{opacity:0; pointer-events:none; visibility:hidden;}
   .intro-content{position:relative; z-index:2; text-align:center; animation:introFadeIn 1.4s var(--ease) both;}
   .intro-sparkles{position:absolute; inset:-50px; pointer-events:none;}
   .intro-sparkle{
-    position:absolute; color:#FFF3D6; text-shadow:0 0 10px rgba(255,240,200,.85);
+    position:absolute; color:#F8EEDE; text-shadow:0 0 10px rgba(248,238,222,.85);
     animation:introSparkle 2.4s ease-in-out infinite;
   }
   @keyframes introSparkle{
@@ -658,7 +658,7 @@
   .intro-welcome{
     position:relative; font-family:var(--font-display); font-weight:600; font-size:clamp(2.8rem, 9vw, 5rem);
     margin:0; letter-spacing:.01em;
-    background:linear-gradient(100deg, #D9A54A 25%, #FFF6DC 50%, #D9A54A 75%);
+    background:linear-gradient(100deg, #E0AC4C 25%, #F8EEDE 50%, #E0AC4C 75%);
     background-size:250% 100%; background-clip:text; -webkit-background-clip:text;
     -webkit-text-fill-color:transparent; color:transparent;
     filter:drop-shadow(0 4px 30px rgba(0,0,0,.4));
@@ -670,7 +670,7 @@
   }
   .intro-sub{
     font-family:var(--font-mono); font-size:.76rem; letter-spacing:.28em; text-transform:uppercase;
-    color:rgba(255,240,200,.75); margin:16px 0 0;
+    color:rgba(248,238,222,.75); margin:16px 0 0;
   }
   @keyframes introFadeIn{
     0%{opacity:0; transform:scale(.92) translateY(10px);}
@@ -991,7 +991,7 @@
     </div>
     <h2>Enter your PIN</h2>
     <p class="pin-whoami" id="pinWhoami"></p>
-    <input id="pinInput" type="password" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" autofocus>
+    <input id="pinInput" type="text" inputmode="numeric" autocomplete="off" maxlength="8" placeholder="••••" autofocus style="-webkit-text-security:disc; text-security:disc;">
     <div id="pinError"></div>
     <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
   </form>
@@ -1585,7 +1585,7 @@ function fireConfetti(){
   document.body.appendChild(canvas);
   const cx = canvas.getContext('2d');
   const cs = getComputedStyle(document.body);
-  const colors = [cs.getPropertyValue('--accent').trim() || '#E0AC4C', cs.getPropertyValue('--accent2').trim() || '#C98A94', '#FFFFFF'];
+  const colors = [cs.getPropertyValue('--accent').trim() || '#E0AC4C', cs.getPropertyValue('--accent2').trim() || '#A8596A', '#FFFFFF'];
   const particles = Array.from({length: 150}, () => ({
     x: Math.random() * canvas.width, y: -20 - Math.random() * canvas.height * 0.4,
     vx: (Math.random() - 0.5) * 3.2, vy: 2 + Math.random() * 3,
