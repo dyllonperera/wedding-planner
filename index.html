@@ -638,6 +638,32 @@
   .rsvp-deadline-row .hint{font-size:.78rem; color:var(--ink-soft); max-width:38ch; margin:2px 0 0; flex:1; min-width:200px;}
 
   /* ---------- who gate ---------- */
+  #introScreen{
+    position:fixed; inset:0; z-index:58; display:flex; align-items:center; justify-content:center;
+    overflow:hidden; cursor:pointer;
+    background:linear-gradient(to bottom, #C98A94 0%, #E0AC4C 100%);
+    transition:opacity .8s var(--ease), visibility .8s;
+  }
+  #introScreen::before{
+    content:''; position:absolute; inset:0; z-index:0; pointer-events:none;
+    background:linear-gradient(to bottom, #2A3D63 0%, #8B1A2B 100%);
+    -webkit-mask-image:linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%);
+    mask-image:linear-gradient(to right, transparent 0%, transparent 28%, black 72%, black 100%);
+  }
+  #introScreen.hide{opacity:0; pointer-events:none; visibility:hidden;}
+  .intro-content{position:relative; z-index:2; text-align:center; animation:introFadeIn 1.3s var(--ease) both;}
+  .intro-welcome{
+    font-family:var(--font-display); font-weight:600; font-size:clamp(2.8rem, 9vw, 5rem);
+    color:#FBF3E4; margin:0; letter-spacing:.01em; text-shadow:0 4px 40px rgba(0,0,0,.35);
+  }
+  .intro-sub{
+    font-family:var(--font-mono); font-size:.76rem; letter-spacing:.28em; text-transform:uppercase;
+    color:rgba(251,243,228,.75); margin:16px 0 0;
+  }
+  @keyframes introFadeIn{
+    0%{opacity:0; transform:scale(.92) translateY(10px);}
+    100%{opacity:1; transform:scale(1) translateY(0);}
+  }
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
     overflow-y:auto; padding:24px 0;
@@ -761,11 +787,26 @@
   }
   .icon-btn:hover{background:var(--accent); border-color:transparent; color:#fff; transform:translateY(-2px);}
   .icon-btn.on{background:var(--accent); border-color:transparent; color:#fff;}
-  .family-edit-pill{
-    width:auto; border-radius:100px; padding:0 14px 0 10px; gap:6px;
-    font-family:var(--font-body); font-weight:600; font-size:.72rem; white-space:nowrap;
+  .admin-menu-wrap{position:relative;}
+  .admin-menu-panel{
+    position:absolute; top:calc(100% + 10px); right:0; min-width:210px;
+    background:var(--paper); border:1px solid var(--line); border-radius:14px;
+    box-shadow:0 24px 48px -20px rgba(0,0,0,.35); padding:8px;
+    display:none; flex-direction:column; gap:2px; z-index:41;
+    animation:fadeInUp .25s var(--ease) both;
   }
-  .family-edit-pill svg{width:14px; height:14px; flex-shrink:0;}
+  .admin-menu-panel.show{display:flex;}
+  .admin-menu-item{
+    display:flex; align-items:center; gap:10px; width:100%; text-align:left;
+    background:none; border:none; border-radius:9px; padding:10px 11px; cursor:pointer;
+    font-family:var(--font-body); font-weight:600; font-size:.82rem; color:var(--ink);
+    transition:background .2s ease;
+  }
+  .admin-menu-item svg{width:16px; height:16px; flex-shrink:0; color:var(--ink-soft);}
+  .admin-menu-item:hover{background:var(--paper-warm);}
+  .admin-menu-item.on{color:var(--accent-deep);}
+  .admin-menu-item.on svg{color:var(--accent);}
+  .admin-menu-divider{height:1px; background:var(--line); margin:5px 4px;}
   .icon-btn svg{width:16px; height:16px;}
   body.unlocked .corner-controls{position:absolute; top:20px;}
   body:not(.unlocked) .corner-controls, body:not(.unlocked) .fx-caption, body:not(.unlocked) #presenceDock{display:none;}
@@ -808,6 +849,7 @@
     #printSheet h2{font-family:var(--font-display); font-size:1.05rem; margin:24px 0 8px; border-bottom:1px solid #ccc; padding-bottom:5px;}
     #printSheet table{width:100%; border-collapse:collapse; font-size:.82rem; font-family:var(--font-body);}
     #printSheet th, #printSheet td{border:1px solid #ccc; padding:6px 8px; text-align:left;}
+    #printSheet .split-gap{border:none; width:24px; padding:0;}
     #printSheet p{font-family:var(--font-body); font-size:.88rem;}
   }
 
@@ -851,6 +893,13 @@
 </head>
 <body class="theme-boot" data-theme="wedding">
 
+<div id="introScreen">
+  <div class="intro-content">
+    <h1 class="intro-welcome">Welcome</h1>
+    <p class="intro-sub">Wedding &amp; Homecoming</p>
+  </div>
+</div>
+
 <div id="portalOverlay"></div>
 
 <div class="corner-controls">
@@ -862,19 +911,30 @@
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M3 9v6h4l5 5V4L7 9H3z"/><path id="soundWaves" d="M16 8a5 5 0 0 1 0 8M19 5a9 9 0 0 1 0 14"/></svg>
   </button>
   <div class="role-badge" id="roleBadge" style="display:none;"></div>
-  <button class="icon-btn" id="switchWhoBtn2" title="Switch profile" aria-label="Switch profile">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
-  </button>
-  <button class="icon-btn" id="backupBtn" title="Download full backup" aria-label="Download full backup" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
-  </button>
-  <button class="icon-btn family-edit-pill" id="familyEditBtn" title="Tap to allow/block editing for this family" aria-label="Toggle family edit access" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/></svg>
-    <span id="familyEditLabel">Family</span>
-  </button>
-  <button class="icon-btn" id="auditHistoryBtn" title="View family edit history" aria-label="View family edit history" style="display:none;">
-    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
-  </button>
+  <div class="admin-menu-wrap">
+    <button class="icon-btn" id="adminMenuBtn" title="More options" aria-label="More options" style="display:none;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="currentColor"><circle cx="12" cy="5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="19" r="1.8"/></svg>
+    </button>
+    <div class="admin-menu-panel" id="adminMenuPanel">
+      <button class="admin-menu-item" id="switchWhoBtn2">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>
+        Switch profile
+      </button>
+      <button class="admin-menu-item" id="backupBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
+        Download backup
+      </button>
+      <button class="admin-menu-item" id="auditHistoryBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
+        Edit history
+      </button>
+      <div class="admin-menu-divider" id="familyEditDivider" style="display:none;"></div>
+      <button class="admin-menu-item" id="familyEditBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="4" y="10" width="16" height="10" rx="2"/><path d="M8 10V7a4 4 0 0 1 8 0"/></svg>
+        <span id="familyEditLabel">Family</span> can edit
+      </button>
+    </div>
+  </div>
 </div>
 <div class="fx-caption" id="fxCaption">Loading rate…</div>
 <div id="presenceDock"></div>
@@ -1205,6 +1265,19 @@
 <script src="config.js"></script>
 <script>
 const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+(function(){
+  const intro = document.getElementById('introScreen');
+  if (!intro) return;
+  let dismissed = false;
+  function dismissIntro(){
+    if (dismissed) return;
+    dismissed = true;
+    intro.classList.add('hide');
+  }
+  intro.addEventListener('click', dismissIntro);
+  setTimeout(dismissIntro, 2200);
+})();
 
 const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
 const TASK_CATS = ['Venue','Legal & Paperwork','Attire','Vendors','Guests','Design & Decor','Logistics','Other'];
@@ -1599,8 +1672,8 @@ async function refreshCurrentTable(table){
 const TABLE_SINGULAR = { vendors:'vendor', tasks:'task', guests:'guest', moodboard_categories:'mood board category', vendor_docs:'document' };
 
 async function logAudit(action, table, recordLabel, details){
-  if (state.accessLevel === 'admin') return; // only family-role actions need auditing
-  const actor = state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
+  const actor = state.accessLevel === 'admin' ? (localStorage.getItem('wedplanner_who') || 'Admin')
+    : state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
   try{
     await supabaseClient.from('audit_log').insert([{
       event_id: state.currentEvent, actor, action, table_name: table,
@@ -2413,26 +2486,31 @@ function renderFamilyEditToggle(){
   const roleBadge = document.getElementById('roleBadge');
   const portals = document.getElementById('eventTabs');
   const familyBtn = document.getElementById('familyEditBtn');
+  const familyDivider = document.getElementById('familyEditDivider');
+  const adminMenuBtn = document.getElementById('adminMenuBtn');
   if (!roleBadge || !portals) return;
 
   const who = localStorage.getItem('wedplanner_who');
+  const isAdmin = state.accessLevel === 'admin';
 
   if (roleBadge){
-    const label = state.accessLevel === 'admin' ? (who || 'Admin')
+    const label = isAdmin ? (who || 'Admin')
       : state.accessLevel === 'bride_family' ? "Bride's Family" : "Groom's Family";
     roleBadge.textContent = label;
     roleBadge.style.display = 'inline-block';
   }
+  if (adminMenuBtn) adminMenuBtn.style.display = isAdmin ? 'flex' : 'none';
   const backupBtn = document.getElementById('backupBtn');
-  if (backupBtn) backupBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
+  if (backupBtn) backupBtn.style.display = isAdmin ? 'flex' : 'none';
   const auditBtn = document.getElementById('auditHistoryBtn');
-  if (auditBtn) auditBtn.style.display = state.accessLevel === 'admin' ? 'flex' : 'none';
+  if (auditBtn) auditBtn.style.display = isAdmin ? 'flex' : 'none';
 
   portals.style.display = state.eventLocked ? 'none' : '';
 
-  const isDyllon = state.accessLevel === 'admin' && who === 'Dyllon';
+  const isDyllon = isAdmin && who === 'Dyllon';
   if (familyBtn){
     familyBtn.style.display = isDyllon ? 'flex' : 'none';
+    if (familyDivider) familyDivider.style.display = isDyllon ? 'block' : 'none';
     if (isDyllon){
       const ev = state.events[state.currentEvent];
       const on = !!(ev && ev.family_editable);
@@ -2708,21 +2786,40 @@ function buildPrintSheet(){
     : 'Date not yet set';
   const vendorRows = d.vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td>${esc(v.contact_phone||'')}</td><td>${STATUS_LABELS[v.status]||v.status}</td><td>${PAYMENT_LABELS[v.payment_status]||'Not paid'}</td></tr>`).join('')
     || '<tr><td colspan="5">No vendors added</td></tr>';
-  const openTasks = d.tasks.filter(t => !t.completed).sort((a,b) => (a.due_date||'9999') < (b.due_date||'9999') ? -1 : 1);
-  const taskRows = openTasks.map(t => `<tr><td>${esc(t.title)}</td><td>${t.due_date || '—'}</td><td>${esc(t.category||'')}</td></tr>`).join('')
-    || '<tr><td colspan="3">Everything is done</td></tr>';
-  const guestsYes = d.guests.filter(g => g.rsvp_status === 'yes');
-  const headcount = guestsYes.reduce((s,g) => s + (g.party_size || 1), 0);
+
+  const herGuests = [...d.guests].filter(g => (g.side||'Her side') === 'Her side').sort((a,b) => a.name.localeCompare(b.name));
+  const hisGuests = [...d.guests].filter(g => (g.side||'Her side') === 'His side').sort((a,b) => a.name.localeCompare(b.name));
+  const sideSummary = list => ({
+    count: list.length,
+    confirmed: list.filter(g => g.rsvp_status === 'yes').reduce((s,g) => s + (g.party_size||1), 0)
+  });
+  const herSum = sideSummary(herGuests), hisSum = sideSummary(hisGuests);
+  const maxLen = Math.max(herGuests.length, hisGuests.length);
+  let guestRows = '';
+  for (let i = 0; i < maxLen; i++){
+    const h = herGuests[i], m = hisGuests[i];
+    guestRows += `<tr>
+      <td>${h ? esc(h.name) : ''}</td><td>${h ? (h.party_size||1) : ''}</td><td>${h ? (RSVP_LABELS[h.rsvp_status]||h.rsvp_status) : ''}</td>
+      <td class="split-gap"></td>
+      <td>${m ? esc(m.name) : ''}</td><td>${m ? (m.party_size||1) : ''}</td><td>${m ? (RSVP_LABELS[m.rsvp_status]||m.rsvp_status) : ''}</td>
+    </tr>`;
+  }
+  if (!maxLen) guestRows = '<tr><td colspan="7">No guests added yet</td></tr>';
 
   document.getElementById('printSheet').innerHTML = `
     <h1>${THEME_COPY[state.currentEvent].title} — Day-Of Run Sheet</h1>
     <p class="print-date">${dateStr}</p>
     <h2>Vendors</h2>
     <table><thead><tr><th>Category</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th></tr></thead><tbody>${vendorRows}</tbody></table>
-    <h2>Open Tasks</h2>
-    <table><thead><tr><th>Task</th><th>Due</th><th>Category</th></tr></thead><tbody>${taskRows}</tbody></table>
     <h2>Guests</h2>
-    <p>${guestsYes.length} confirmed &middot; ${headcount} total headcount including plus-ones</p>`;
+    <p>Her side: ${herSum.confirmed} confirmed of ${herSum.count} &middot; His side: ${hisSum.confirmed} confirmed of ${hisSum.count} &middot; ${herSum.confirmed + hisSum.confirmed} total headcount</p>
+    <table class="guest-split">
+      <thead>
+        <tr><th colspan="3">Her Side</th><th class="split-gap"></th><th colspan="3">His Side</th></tr>
+        <tr><th>Name</th><th>Party</th><th>RSVP</th><th class="split-gap"></th><th>Name</th><th>Party</th><th>RSVP</th></tr>
+      </thead>
+      <tbody>${guestRows}</tbody>
+    </table>`;
 }
 document.getElementById('printSheetBtn').addEventListener('click', () => {
   buildPrintSheet();
@@ -2762,6 +2859,22 @@ async function downloadFullBackup(){
     btn.disabled = false;
   }
 }
+document.getElementById('adminMenuBtn').addEventListener('click', e => {
+  e.stopPropagation();
+  document.getElementById('adminMenuPanel').classList.toggle('show');
+});
+document.addEventListener('click', e => {
+  const panel = document.getElementById('adminMenuPanel');
+  if (panel.classList.contains('show') && !e.target.closest('.admin-menu-wrap')){
+    panel.classList.remove('show');
+  }
+});
+document.getElementById('adminMenuPanel').addEventListener('click', e => {
+  if (e.target.closest('.admin-menu-item') && !e.target.closest('#familyEditBtn')){
+    document.getElementById('adminMenuPanel').classList.remove('show');
+  }
+});
+
 document.getElementById('backupBtn').addEventListener('click', downloadFullBackup);
 document.getElementById('familyEditBtn').addEventListener('click', toggleFamilyEditable);
 

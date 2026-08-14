@@ -281,8 +281,9 @@ alter table audit_log enable row level security;
 create policy "anon full access" on audit_log for all using (true) with check (true);
 ```
 
-Nothing you or Nithara do (as admin) gets logged here — only actions taken while on a
-family PIN, since that's the access level this exists to keep an eye on.
+Every add, edit, and delete is logged here — yours, Nithara's, and either family PIN's —
+so the history is a complete record of what happened to the data, not just family
+changes.
 
 ## One-time setup (~10 minutes)
 
