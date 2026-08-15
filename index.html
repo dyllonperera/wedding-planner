@@ -9,10 +9,10 @@
 <meta name="apple-mobile-web-app-title" content="D &amp; N">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<meta name="theme-color" content="#13182C">
+<meta name="theme-color" content="#E17A6E">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;0,9..144,700;1,9..144,500;1,9..144,600&family=Dancing+Script:wght@600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
 <style>
   :root{
     /* shared, theme-stable */
@@ -648,16 +648,10 @@
     position:fixed; inset:0; z-index:58; display:flex; align-items:center; justify-content:center;
     overflow:hidden; cursor:pointer;
     background:linear-gradient(180deg, #331F29 0%, #8C5561 55%, #E8A855 100%);
-    clip-path:circle(150% at 50% 50%);
-    transition:clip-path 1.4s var(--portal-ease);
+    transition:opacity 1s var(--ease), visibility 1s;
   }
-  #introScreen.hide{clip-path:circle(0% at 50% 50%); pointer-events:none;}
-  .intro-content{
-    position:relative; z-index:2; text-align:center;
-    animation:introFadeIn 2s var(--ease) both;
-    transition:opacity .7s var(--ease), transform .7s var(--ease);
-  }
-  #introScreen.text-out .intro-content{opacity:0; transform:scale(.94) translateY(-8px);}
+  #introScreen.hide{opacity:0; pointer-events:none; visibility:hidden;}
+  .intro-content{position:relative; z-index:2; text-align:center;}
   .intro-sparkles{position:absolute; inset:-50px; pointer-events:none;}
   .intro-sparkle{
     position:absolute; color:#F8EEDE; text-shadow:0 0 10px rgba(248,238,222,.85);
@@ -668,25 +662,27 @@
     45%,55%{opacity:1; transform:scale(1) rotate(20deg);}
   }
   .intro-welcome{
-    position:relative; font-family:var(--font-display); font-weight:600; font-size:clamp(2.8rem, 9vw, 5rem);
-    margin:0; letter-spacing:.01em;
-    background:linear-gradient(100deg, #E0AC4C 25%, #F8EEDE 50%, #E0AC4C 75%);
-    background-size:250% 100%; background-clip:text; -webkit-background-clip:text;
+    position:relative; font-family:'Dancing Script', var(--font-display); font-weight:700; font-size:clamp(4rem, 15vw, 7.5rem);
+    margin:0; letter-spacing:0;
+    background:linear-gradient(180deg, #F8EEDE 0%, #E0AC4C 60%, #B4842E 100%);
+    background-clip:text; -webkit-background-clip:text;
     -webkit-text-fill-color:transparent; color:transparent;
-    filter:drop-shadow(0 4px 30px rgba(0,0,0,.4));
-    animation:introShimmer 2.2s ease-in-out infinite;
+    text-shadow:0 4px 30px rgba(0,0,0,.4);
+    animation:introZoomIn 1.3s cubic-bezier(.16,1,.3,1) both;
   }
-  @keyframes introShimmer{
-    0%{background-position:250% 0;}
-    100%{background-position:-250% 0;}
+  @keyframes introZoomIn{
+    0%{opacity:0; transform:scale(1.5); filter:blur(10px);}
+    60%{opacity:1; filter:blur(0px);}
+    100%{opacity:1; transform:scale(1); filter:blur(0px);}
   }
   .intro-sub{
     font-family:var(--font-mono); font-size:.76rem; letter-spacing:.28em; text-transform:uppercase;
     color:rgba(248,238,222,.75); margin:16px 0 0;
+    opacity:0; animation:introSubFade .8s var(--ease) .9s both;
   }
-  @keyframes introFadeIn{
-    0%{opacity:0; transform:scale(.92) translateY(10px);}
-    100%{opacity:1; transform:scale(1) translateY(0);}
+  @keyframes introSubFade{
+    0%{opacity:0; transform:translateY(6px);}
+    100%{opacity:1; transform:translateY(0);}
   }
   #whoGate{
     position:fixed; inset:0; z-index:55; display:flex; align-items:center; justify-content:center;
@@ -1016,7 +1012,7 @@
     </div>
     <h2>Enter your PIN</h2>
     <p class="pin-whoami" id="pinWhoami"></p>
-    <input id="pinInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="••••" autofocus style="-webkit-text-security:disc; text-security:disc;">
+    <input id="pinInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter PIN" autofocus>
     <div id="pinError"></div>
     <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
   </form>
@@ -1320,11 +1316,10 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
   function dismissIntro(){
     if (dismissed) return;
     dismissed = true;
-    intro.classList.add('text-out');
-    setTimeout(() => intro.classList.add('hide'), 650);
+    intro.classList.add('hide');
   }
   intro.addEventListener('click', dismissIntro);
-  setTimeout(dismissIntro, 5000); // ~2s reveal + 3s hold, then the exit sequence begins
+  setTimeout(dismissIntro, 2600); // ~1.3s zoom-in reveal + ~1.3s hold
 })();
 
 const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
@@ -3288,9 +3283,23 @@ const ROLE_PIN = { admin: APP_PIN, bride_family: BRIDE_FAMILY_PIN, groom_family:
 const ROLE_LABEL = { bride_family: "Bride's Family", groom_family: "Groom's Family" };
 let pendingRole = null;
 let pendingWho = null;
+let pinRealValue = '';
+
+const pinInputEl = document.getElementById('pinInput');
+pinInputEl.addEventListener('input', () => {
+  const displayed = pinInputEl.value;
+  if (displayed.length > pinRealValue.length){
+    pinRealValue += displayed.slice(pinRealValue.length).replace(/[^0-9]/g, '');
+  } else {
+    pinRealValue = pinRealValue.slice(0, displayed.length);
+  }
+  pinRealValue = pinRealValue.slice(0, 8);
+  pinInputEl.value = '•'.repeat(pinRealValue.length);
+});
 
 function resetProfilePicker(){
   pendingRole = null; pendingWho = null;
+  pinRealValue = '';
   document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('picked', 'fade-out'));
   document.getElementById('whoGate').classList.remove('hide');
   document.getElementById('pinInput').value = '';
@@ -3312,6 +3321,7 @@ document.querySelectorAll('.who-btn').forEach(btn => {
         document.getElementById('switchWhoBtn').addEventListener('click', resetProfilePicker);
       }
       document.getElementById('pinInput').value = '';
+      pinRealValue = '';
       document.getElementById('pinError').textContent = '';
       document.getElementById('pinInput').focus();
     }, 550);
@@ -3322,7 +3332,7 @@ document.getElementById('pinForm').addEventListener('submit', e => {
   e.preventDefault();
   const input = document.getElementById('pinInput');
   const card = document.querySelector('.pin-card');
-  const val = input.value.trim();
+  const val = pinRealValue;
 
   if (!pendingRole){ resetProfilePicker(); return; }
 
@@ -3337,6 +3347,7 @@ document.getElementById('pinForm').addEventListener('submit', e => {
     document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
     input.value = '';
+    pinRealValue = '';
     input.focus();
   }
 });
