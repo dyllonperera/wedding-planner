@@ -336,7 +336,7 @@
     max-height:0; opacity:0; overflow:hidden; transform:translateY(-8px);
     transition:max-height .5s var(--ease), opacity .35s var(--ease), padding .5s var(--ease), margin .5s var(--ease), transform .5s var(--ease);
   }
-  .add-form.open{max-height:560px; opacity:1; padding:20px; margin-bottom:26px; transform:translateY(0);}
+  .add-form.open{max-height:1600px; opacity:1; padding:20px; margin-bottom:26px; transform:translateY(0);}
   .add-form .full{grid-column:1/-1;}
   .field label{display:block; font-size:.68rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); margin-bottom:5px;}
   .field input, .field select, .field textarea{
@@ -1012,7 +1012,7 @@
     </div>
     <h2>Enter your PIN</h2>
     <p class="pin-whoami" id="pinWhoami"></p>
-    <input id="pinInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" placeholder="Enter PIN" autofocus>
+    <input id="pinInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" autofocus>
     <div id="pinError"></div>
     <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
   </form>
