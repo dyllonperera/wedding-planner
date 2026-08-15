@@ -749,13 +749,22 @@
     background:none; border:none; color:inherit; text-decoration:underline; cursor:pointer;
     font-family:inherit; font-size:inherit; padding:0;
   }
-  #pinInput{
-    width:100%; text-align:center; font-family:var(--font-mono); font-size:1.6rem;
-    letter-spacing:.5em; padding:12px 10px 12px 16px; border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent);
-    border-radius:10px; background:color-mix(in srgb, var(--hero-text) 8%, transparent); color:var(--hero-text); margin-bottom:16px;
-    transition:border-color .3s var(--ease), box-shadow .3s var(--ease);
+  .pin-dots{display:flex; justify-content:center; gap:14px; min-height:18px; margin-bottom:24px;}
+  .pin-dot{
+    width:14px; height:14px; border-radius:50%; border:1.5px solid color-mix(in srgb, var(--hero-text) 55%, transparent);
+    background:transparent; transition:background .2s var(--ease-snap), transform .2s var(--ease-snap);
   }
-  #pinInput:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 25%, transparent);}
+  .pin-dot.filled{background:var(--accent); border-color:var(--accent); transform:scale(1.1);}
+  .pin-keypad{display:grid; grid-template-columns:repeat(3, 1fr); gap:12px; margin-bottom:18px;}
+  .pin-key{
+    aspect-ratio:1; border-radius:50%; border:1px solid color-mix(in srgb, var(--hero-text) 25%, transparent);
+    background:color-mix(in srgb, var(--hero-text) 7%, transparent); color:var(--hero-text);
+    font-family:var(--font-display); font-size:1.4rem; font-weight:500; cursor:pointer;
+    transition:background .2s ease, transform .12s var(--ease-snap);
+  }
+  .pin-key:active{background:var(--accent); border-color:transparent; color:#fff; transform:scale(.92);}
+  .pin-key-back{display:flex; align-items:center; justify-content:center;}
+  .pin-key-spacer{visibility:hidden;}
   .pin-card.shake{animation:shake .35s;}
   #pinError{color:#E8877C; font-size:.8rem; min-height:18px; margin-bottom:10px;}
   .pinToggle{display:flex; gap:10px; justify-content:center; margin-bottom:26px;}
@@ -1005,14 +1014,30 @@
     <div class="star" style="top:40%; left:50%; width:1.5px; height:1.5px; animation-delay:2.1s;"></div>
   </div>
   <form class="pin-card" id="pinForm">
-    <p class="eyebrow">Choose your world</p>
+    <p class="eyebrow" id="pinWorldEyebrow">Choose your world</p>
     <div class="pinToggle" id="pinPreviewToggle">
       <button type="button" class="active" data-preview="wedding">Wedding</button>
       <button type="button" data-preview="homecoming">Homecoming</button>
     </div>
     <h2>Enter your PIN</h2>
     <p class="pin-whoami" id="pinWhoami"></p>
-    <input id="pinInput" type="text" inputmode="numeric" autocomplete="one-time-code" maxlength="8" autofocus>
+    <div class="pin-dots" id="pinDots"></div>
+    <div class="pin-keypad" id="pinKeypad">
+      <button type="button" class="pin-key" data-digit="1">1</button>
+      <button type="button" class="pin-key" data-digit="2">2</button>
+      <button type="button" class="pin-key" data-digit="3">3</button>
+      <button type="button" class="pin-key" data-digit="4">4</button>
+      <button type="button" class="pin-key" data-digit="5">5</button>
+      <button type="button" class="pin-key" data-digit="6">6</button>
+      <button type="button" class="pin-key" data-digit="7">7</button>
+      <button type="button" class="pin-key" data-digit="8">8</button>
+      <button type="button" class="pin-key" data-digit="9">9</button>
+      <span class="pin-key-spacer"></span>
+      <button type="button" class="pin-key" data-digit="0">0</button>
+      <button type="button" class="pin-key pin-key-back" id="pinBackspace" aria-label="Backspace">
+        <svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 4H8l-7 8 7 8h13a2 2 0 0 0 2-2V6a2 2 0 0 0-2-2Z"/><path d="M18 9l-6 6M12 9l6 6"/></svg>
+      </button>
+    </div>
     <div id="pinError"></div>
     <button type="submit" class="btn-primary" style="width:100%;">Unlock</button>
   </form>
@@ -3285,16 +3310,32 @@ let pendingRole = null;
 let pendingWho = null;
 let pinRealValue = '';
 
-const pinInputEl = document.getElementById('pinInput');
-pinInputEl.addEventListener('input', () => {
-  const displayed = pinInputEl.value;
-  if (displayed.length > pinRealValue.length){
-    pinRealValue += displayed.slice(pinRealValue.length).replace(/[^0-9]/g, '');
-  } else {
-    pinRealValue = pinRealValue.slice(0, displayed.length);
-  }
-  pinRealValue = pinRealValue.slice(0, 8);
-  pinInputEl.value = '•'.repeat(pinRealValue.length);
+function renderPinDots(){
+  const wrap = document.getElementById('pinDots');
+  if (!wrap) return;
+  wrap.innerHTML = pinRealValue.split('').map(() => `<span class="pin-dot filled"></span>`).join('')
+    || Array.from({length: 4}).map(() => `<span class="pin-dot"></span>`).join('');
+}
+function pinAppendDigit(d){
+  if (pinRealValue.length >= 8) return;
+  pinRealValue += d;
+  renderPinDots();
+}
+function pinBackspace(){
+  pinRealValue = pinRealValue.slice(0, -1);
+  renderPinDots();
+}
+document.getElementById('pinKeypad').addEventListener('click', e => {
+  const key = e.target.closest('.pin-key[data-digit]');
+  if (key){ pinAppendDigit(key.dataset.digit); return; }
+  if (e.target.closest('#pinBackspace')) pinBackspace();
+});
+document.addEventListener('keydown', e => {
+  const onPinStep = document.getElementById('whoGate').classList.contains('hide');
+  if (!onPinStep || document.body.classList.contains('unlocked')) return;
+  if (/^[0-9]$/.test(e.key)) pinAppendDigit(e.key);
+  else if (e.key === 'Backspace') pinBackspace();
+  else if (e.key === 'Enter'){ e.preventDefault(); document.getElementById('pinForm').requestSubmit(); }
 });
 
 function resetProfilePicker(){
@@ -3302,7 +3343,7 @@ function resetProfilePicker(){
   pinRealValue = '';
   document.querySelectorAll('.who-btn').forEach(b => b.classList.remove('picked', 'fade-out'));
   document.getElementById('whoGate').classList.remove('hide');
-  document.getElementById('pinInput').value = '';
+  renderPinDots();
   document.getElementById('pinError').textContent = '';
 }
 
@@ -3320,17 +3361,26 @@ document.querySelectorAll('.who-btn').forEach(btn => {
         whoami.innerHTML = `Entering as <strong>${esc(label)}</strong> &middot; <button type="button" id="switchWhoBtn">Not you?</button>`;
         document.getElementById('switchWhoBtn').addEventListener('click', resetProfilePicker);
       }
-      document.getElementById('pinInput').value = '';
-      pinRealValue = '';
+      const toggle = document.getElementById('pinPreviewToggle');
+      const eyebrow = document.getElementById('pinWorldEyebrow');
+      if (pendingRole === 'bride_family' || pendingRole === 'groom_family'){
+        const lockedEvent = pendingRole === 'bride_family' ? BRIDE_FAMILY_EVENT : GROOM_FAMILY_EVENT;
+        document.body.dataset.theme = lockedEvent;
+        toggle.style.display = 'none';
+        eyebrow.style.display = 'none';
+      } else {
+        toggle.style.display = '';
+        eyebrow.style.display = '';
+      }
       document.getElementById('pinError').textContent = '';
-      document.getElementById('pinInput').focus();
+      pinRealValue = '';
+      renderPinDots();
     }, 550);
   });
 });
 
 document.getElementById('pinForm').addEventListener('submit', e => {
   e.preventDefault();
-  const input = document.getElementById('pinInput');
   const card = document.querySelector('.pin-card');
   const val = pinRealValue;
 
@@ -3346,9 +3396,8 @@ document.getElementById('pinForm').addEventListener('submit', e => {
   } else {
     document.getElementById('pinError').textContent = 'Wrong PIN — try again.';
     card.classList.remove('shake'); void card.offsetWidth; card.classList.add('shake');
-    input.value = '';
     pinRealValue = '';
-    input.focus();
+    renderPinDots();
   }
 });
 
@@ -3376,6 +3425,7 @@ window.addEventListener('resize', () => {
 });
 
 /* ---------------- boot ---------------- */
+renderPinDots();
 let storedRole = localStorage.getItem(ROLE_KEY);
 if (localStorage.getItem(UNLOCK_KEY) === '1' && !storedRole){
   // pre-existing session from before family-access roles existed — only the admin
