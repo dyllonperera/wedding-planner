@@ -512,6 +512,7 @@
     min-height:1.4em; line-height:1.4; display:flex; align-items:center; width:100%; box-sizing:border-box; min-width:0;
   }
   .ro-field.ro-num{font-family:var(--font-mono);}
+  .ro-field.ro-date{white-space:nowrap;}
   .role-badge{
     background:color-mix(in srgb, var(--hero-text) 10%, transparent);
     border:1px solid color-mix(in srgb, var(--hero-text) 30%, transparent); color:var(--hero-text);
@@ -1628,8 +1629,14 @@ function taCell(label, table, id, field, value, opts){
   return `<td data-label="${label}" class="wrap-col"><textarea rows="1" data-autogrow data-table="${table}" data-id="${id}" data-field="${field}"${listAttr}${ph}>${esc(value)}</textarea></td>`;
 }
 
-function roField(displayText, mono){
-  return `<div class="ro-field${mono ? ' ro-num' : ''}">${esc(displayText ?? '—')}</div>`;
+function fmtShortDate(isoStr){
+  if (!isoStr) return null;
+  const d = new Date(isoStr + 'T00:00:00');
+  if (isNaN(d)) return isoStr;
+  return d.toLocaleDateString('en-AU', { day:'numeric', month:'short', year:'numeric' });
+}
+function roField(displayText, mono, extraClass){
+  return `<div class="ro-field${mono ? ' ro-num' : ''}${extraClass ? ' ' + extraClass : ''}">${esc(displayText ?? '—')}</div>`;
 }
 function roBadge(value, labelMap){
   return `<span class="badge ${esc(value)}">${esc((labelMap && labelMap[value]) || value)}</span>`;
@@ -2157,7 +2164,7 @@ function renderVendors(){
           Object.entries(PAYMENT_LABELS).map(([v,l])=>`<option value="${v}" ${v===(r.payment_status||'unpaid')?'selected':''}>${l}</option>`).join('')
         }</select>`}
       </td>
-      <td data-label="Due">${ro ? roField(r.due_date) : `<input type="date" data-table="vendors" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}">`}</td>
+      <td data-label="Due">${ro ? `<div class="ro-field ro-date" style="${overdue?'color:var(--danger); font-weight:600;':''}">${esc(fmtShortDate(r.due_date) ?? '—')}</div>` : `<input type="date" data-table="vendors" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}">`}</td>
       <td data-label="Price (${cur})" class="num-col">${ro ? roField(fmtNum(r.price), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${commaFormat(toDisplayAmount(r.price))}" placeholder="0">`}</td>
       <td data-label="Deposit (${cur})" class="num-col">${ro ? roField(fmtNum(r.deposit_amount), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${commaFormat(toDisplayAmount(r.deposit_amount))}" placeholder="0">`}</td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:700; color:var(--danger);">${fmtMoney(remaining)}</td>
@@ -2231,7 +2238,7 @@ function renderTasks(){
       <td data-label="Done" style="text-align:center;">${ro ? roField(r.completed ? '✓' : '—') : `<input type="checkbox" data-table="tasks" data-id="${r.id}" data-field="completed" ${r.completed?'checked':''}>`}</td>
       ${taCell('Task', 'tasks', r.id, 'title', r.title)}
       ${taCell('Category', 'tasks', r.id, 'category', r.category||'')}
-      <td data-label="Due">${ro ? roField(r.due_date) : `<input type="date" data-table="tasks" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}">`}</td>
+      <td data-label="Due">${ro ? `<div class="ro-field ro-date" style="${overdue?'color:var(--danger); font-weight:600;':''}">${esc(fmtShortDate(r.due_date) ?? '—')}</div>` : `<input type="date" data-table="tasks" data-id="${r.id}" data-field="due_date" value="${r.due_date||''}" style="${overdue?'color:var(--danger); font-weight:600;':''}">`}</td>
       ${taCell('Notes', 'tasks', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="tasks" data-id="${r.id}">✕</button></td>
     </tr>`;
