@@ -2162,11 +2162,10 @@ function renderVendors(){
       <td data-label="Deposit (${cur})" class="num-col">${ro ? roField(fmtNum(r.deposit_amount), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${commaFormat(toDisplayAmount(r.deposit_amount))}" placeholder="0">`}</td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:700; color:var(--danger);">${fmtMoney(remaining)}</td>
       <td data-label="Attending" style="text-align:center;">${ro ? roField(r.attending ? 'Yes' : 'No') : `<input type="checkbox" data-table="vendors" data-id="${r.id}" data-field="attending" ${r.attending?'checked':''}>`}</td>
-      <td data-label="Headcount" class="num-col">${ro ? roField(r.headcount ?? '—', true) : `<input type="number" min="0" data-table="vendors" data-id="${r.id}" data-field="headcount" value="${r.headcount ?? ''}" placeholder="0" style="max-width:64px;">`}</td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="14">No vendors yet for this event — add your first one above.</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="13">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -2209,10 +2208,10 @@ function renderVendors(){
           <col style="width:160px"><col style="width:80px"><col style="width:150px">
           <col style="width:140px"><col style="width:132px"><col style="width:132px">
           <col style="width:114px"><col style="width:110px"><col style="width:110px">
-          <col style="width:110px"><col style="width:90px"><col style="width:100px">
+          <col style="width:110px"><col style="width:90px">
           <col style="width:150px"><col style="width:46px">
         </colgroup>
-        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Attending</th><th>Headcount</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Attending</th><th>Notes</th><th></th></tr></thead>
         <tbody>${body}</tbody>
       </table>
     `}`;
@@ -2263,18 +2262,21 @@ function renderTasks(){
 
 function renderAttendingVendorsList(eventId){
   const vendors = state.data[eventId].vendors.filter(v => v.attending);
+  const ro = isReadOnly();
   if (!vendors.length){
-    return `<p class="empty-row" style="text-align:center; padding:34px 10px; font-style:italic; color:var(--ink-soft);">No vendors marked as attending yet — flag them in the Vendors tab and give them a headcount.</p>`;
+    return `<p class="empty-row" style="text-align:center; padding:34px 10px; font-style:italic; color:var(--ink-soft);">No vendors marked as attending yet — flag them in the Vendors tab.</p>`;
   }
-  const rows = vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td style="font-family:var(--font-mono); font-weight:600;">${Number(v.headcount)||0}</td></tr>`).join('');
+  const rows = vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td class="num-col">${
+    ro ? roField(v.headcount ?? '—', true) : `<input type="number" min="0" data-table="vendors" data-id="${v.id}" data-field="headcount" value="${v.headcount ?? ''}" placeholder="0" style="max-width:80px;">`
+  }</td></tr>`).join('');
   const total = vendors.reduce((s,v) => s + (Number(v.headcount)||0), 0);
   return `
     <table class="data-table">
-      <colgroup><col style="width:160px"><col style="width:200px"><col style="width:110px"></colgroup>
+      <colgroup><col style="width:160px"><col style="width:200px"><col style="width:120px"></colgroup>
       <thead><tr><th>Category</th><th>Vendor</th><th>Headcount</th></tr></thead>
       <tbody>${rows}</tbody>
     </table>
-    <p style="margin-top:14px; font-size:.85rem; color:var(--ink-soft);">Total vendor headcount: <strong style="color:var(--ink);">${total}</strong> — edit attending status or headcount from the Vendors tab.</p>`;
+    <p style="margin-top:14px; font-size:.85rem; color:var(--ink-soft);">Total vendor headcount: <strong style="color:var(--ink);">${total}</strong> — flag who's attending from the Vendors tab; set their headcount right here.</p>`;
 }
 
 function renderGuests(){
@@ -2863,7 +2865,7 @@ document.getElementById('sectionContent').addEventListener('change', async e => 
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','due_date','side'].includes(field)){
+  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','due_date','side','headcount','attending'].includes(field)){
     renderSummary();
     if (['status','payment_status'].includes(field)) return;
     renderSection();
