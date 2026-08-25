@@ -562,6 +562,19 @@
   }
 
   .side-tabs{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  .guest-subtabs{
+    display:inline-flex; gap:4px; background:var(--paper-warm); border:1px solid var(--line);
+    border-radius:100px; padding:4px; margin-bottom:18px;
+  }
+  .guest-subtab{
+    border:none; background:transparent; cursor:pointer; padding:8px 16px; border-radius:100px;
+    font-family:var(--font-body); font-weight:600; font-size:.78rem; color:var(--ink-soft);
+    transition:all .3s var(--ease);
+  }
+  .guest-subtab.active{
+    background:linear-gradient(120deg, var(--accent), var(--accent2)); color:#fff;
+    box-shadow:0 8px 16px -8px color-mix(in srgb, var(--accent) 60%, transparent);
+  }
   .side-tab{
     flex:1; min-width:200px; text-align:left; padding:16px 20px; border-radius:14px;
     border:1.5px solid var(--line); background:color-mix(in srgb, var(--paper-warm) 70%, transparent);
@@ -1350,7 +1363,12 @@ const supabaseClient = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_
 const VENDOR_CATS = ['Venue','Catering','Photography','Videography','Florist','Cake & Desserts','Attire','Hair & Makeup','Music / DJ','Officiant','Transport','Decor & Styling','Invitations & Stationery','Rentals','Other'];
 const TASK_CATS = ['Venue','Legal & Paperwork','Attire','Vendors','Guests','Design & Decor','Logistics','Other'];
 const SIDE_LIST = ['Her side', 'His side'];
-const SIDE_CAPACITY = { 'Her side': 125, 'His side': 75 };
+const SIDE_CAPACITY = {
+  wedding: { 'Her side': 125, 'His side': 75 },
+  homecoming: { 'Her side': 75, 'His side': 175 }
+};
+// The side that vendor attendee headcount counts against, per event — deliberately asymmetric.
+const VENDOR_COUNTED_SIDE = { wedding: 'Her side', homecoming: 'His side' };
 
 const STATUS_LABELS = { researching:'Researching', contacted:'Contacted', booked:'Booked' };
 const PAYMENT_LABELS = { unpaid:'Not paid', deposit_paid:'Deposit paid', paid_full:'Paid in full' };
@@ -1382,6 +1400,7 @@ const state = {
   currentSection:'vendors',
   displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
   guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
+  guestSubTab: 'guests',
   moodCategory: null,
   guestSearch: '',
   vendorDocsFor: null,
@@ -2142,10 +2161,12 @@ function renderVendors(){
       <td data-label="Price (${cur})" class="num-col">${ro ? roField(fmtNum(r.price), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="price" data-currency="true" value="${commaFormat(toDisplayAmount(r.price))}" placeholder="0">`}</td>
       <td data-label="Deposit (${cur})" class="num-col">${ro ? roField(fmtNum(r.deposit_amount), true) : `<input type="text" inputmode="decimal" data-table="vendors" data-id="${r.id}" data-field="deposit_amount" data-currency="true" value="${commaFormat(toDisplayAmount(r.deposit_amount))}" placeholder="0">`}</td>
       <td data-label="Remaining (${cur})" class="num-col" style="font-family:var(--font-mono); font-weight:700; color:var(--danger);">${fmtMoney(remaining)}</td>
+      <td data-label="Attending" style="text-align:center;">${ro ? roField(r.attending ? 'Yes' : 'No') : `<input type="checkbox" data-table="vendors" data-id="${r.id}" data-field="attending" ${r.attending?'checked':''}>`}</td>
+      <td data-label="Headcount" class="num-col">${ro ? roField(r.headcount ?? '—', true) : `<input type="number" min="0" data-table="vendors" data-id="${r.id}" data-field="headcount" value="${r.headcount ?? ''}" placeholder="0" style="max-width:64px;">`}</td>
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="12">No vendors yet for this event — add your first one above.</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="14">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -2188,9 +2209,10 @@ function renderVendors(){
           <col style="width:160px"><col style="width:80px"><col style="width:150px">
           <col style="width:140px"><col style="width:132px"><col style="width:132px">
           <col style="width:114px"><col style="width:110px"><col style="width:110px">
-          <col style="width:110px"><col style="width:150px"><col style="width:46px">
+          <col style="width:110px"><col style="width:90px"><col style="width:100px">
+          <col style="width:150px"><col style="width:46px">
         </colgroup>
-        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Attending</th><th>Headcount</th><th>Notes</th><th></th></tr></thead>
         <tbody>${body}</tbody>
       </table>
     `}`;
@@ -2239,6 +2261,22 @@ function renderTasks(){
     </table>`;
 }
 
+function renderAttendingVendorsList(eventId){
+  const vendors = state.data[eventId].vendors.filter(v => v.attending);
+  if (!vendors.length){
+    return `<p class="empty-row" style="text-align:center; padding:34px 10px; font-style:italic; color:var(--ink-soft);">No vendors marked as attending yet — flag them in the Vendors tab and give them a headcount.</p>`;
+  }
+  const rows = vendors.map(v => `<tr><td>${esc(v.category||'')}</td><td>${esc(v.name)}</td><td style="font-family:var(--font-mono); font-weight:600;">${Number(v.headcount)||0}</td></tr>`).join('');
+  const total = vendors.reduce((s,v) => s + (Number(v.headcount)||0), 0);
+  return `
+    <table class="data-table">
+      <colgroup><col style="width:160px"><col style="width:200px"><col style="width:110px"></colgroup>
+      <thead><tr><th>Category</th><th>Vendor</th><th>Headcount</th></tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+    <p style="margin-top:14px; font-size:.85rem; color:var(--ink-soft);">Total vendor headcount: <strong style="color:var(--ink);">${total}</strong> — edit attending status or headcount from the Vendors tab.</p>`;
+}
+
 function renderGuests(){
   const allRows = state.data[state.currentEvent].guests;
   const psize = r => r.party_size || 1;
@@ -2248,21 +2286,31 @@ function renderGuests(){
     ? allRows.filter(r => r.name.toLowerCase().includes(query) || (r.dietary_notes||'').toLowerCase().includes(query))
     : allRows.filter(r => (r.side || 'Her side') === state.guestSide);
 
+  const capacities = SIDE_CAPACITY[state.currentEvent];
+  const vendorCountedSide = VENDOR_COUNTED_SIDE[state.currentEvent];
+  const vendorHeadcount = state.data[state.currentEvent].vendors
+    .filter(v => v.attending).reduce((s,v) => s + (Number(v.headcount)||0), 0);
+
   const sideStats = SIDE_LIST.map(side => {
     const list = allRows.filter(r => (r.side || 'Her side') === side);
-    const invitedPeople = list.reduce((s,r) => s + psize(r), 0);
-    const confirmedPeople = list.filter(r => r.rsvp_status === 'yes').reduce((s,r) => s + psize(r), 0);
-    const cap = SIDE_CAPACITY[side];
+    const guestPeople = list.reduce((s,r) => s + psize(r), 0);
+    const extraVendor = side === vendorCountedSide ? vendorHeadcount : 0;
+    const invitedPeople = guestPeople + extraVendor;
+    const confirmedPeople = list.filter(r => r.rsvp_status === 'yes').reduce((s,r) => s + psize(r), 0) + extraVendor;
+    const cap = capacities[side];
     const pct = Math.min(100, Math.round((invitedPeople / cap) * 100));
-    return { side, entries: list.length, invitedPeople, confirmedPeople, cap, pct };
+    return { side, entries: list.length, invitedPeople, confirmedPeople, cap, pct, extraVendor };
   });
 
   const tabsHtml = sideStats.map(s => `
     <button class="side-tab ${s.side === state.guestSide ? 'active' : ''}" data-side="${esc(s.side)}">
       <div class="st-name">${esc(s.side)}</div>
-      <div class="st-count">${s.invitedPeople} / ${s.cap} people &middot; ${s.confirmedPeople} confirmed &middot; ${s.entries} ${s.entries===1?'entry':'entries'}</div>
+      <div class="st-count">${s.invitedPeople} / ${s.cap} people${s.extraVendor ? ` (incl. ${s.extraVendor} vendor)` : ''} &middot; ${s.confirmedPeople} confirmed &middot; ${s.entries} ${s.entries===1?'entry':'entries'}</div>
       <div class="side-bar"><div class="side-bar-fill" style="width:${s.pct}%; ${s.pct >= 100 ? 'background:var(--danger);' : ''}"></div></div>
     </button>`).join('');
+
+  const onVendorSide = state.guestSide === vendorCountedSide;
+  const showingVendors = onVendorSide && state.guestSubTab === 'vendors';
 
   const ro = isReadOnly();
   const body = rows.length ? rows.map(r => `
@@ -2286,7 +2334,7 @@ function renderGuests(){
       </td>
     </tr>`).join('') : `<tr class="empty-row"><td colspan="6">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one on ${esc(state.guestSide)} yet — add your first guest above.`}</td></tr>`;
 
-  const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + psize(r), 0);
+  const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + psize(r), 0) + vendorHeadcount;
 
   return `
     <p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 20px; max-width:64ch;">
@@ -2306,7 +2354,7 @@ function renderGuests(){
       <div class="stat-card"><div class="v">${allRows.length}</div><div class="l">Entries on the list</div></div>
       <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='yes').length}</div><div class="l">Entries confirmed</div></div>
       <div class="stat-card"><div class="v">${allRows.filter(r=>r.rsvp_status==='pending').length}</div><div class="l">Pending</div></div>
-      <div class="stat-card"><div class="v">${headcount}</div><div class="l">Confirmed headcount</div></div>
+      <div class="stat-card"><div class="v">${headcount}</div><div class="l">Confirmed headcount (incl. vendors)</div></div>
     </div>
     <div class="guest-search">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>
@@ -2316,25 +2364,32 @@ function renderGuests(){
     ${searching
       ? `<p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 18px;">${rows.length} match${rows.length===1?'':'es'} for "${esc((state.guestSearch||'').trim())}" across both sides.</p>`
       : `<div class="side-tabs" id="sideTabs">${tabsHtml}</div>`}
-    <button class="add-toggle" data-toggle="guestForm">+ Add guest to ${esc(state.guestSide)}</button>
-    <form class="add-form" id="guestForm">
-      <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
-      <div class="field"><label>Party size</label><input id="g_party" type="number" min="1" value="1"></div>
-      <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
-      <div class="field full"><label>Notes</label><input id="g_notes"></div>
-      <div class="submit-row">
-        <button type="button" class="btn-ghost" data-toggle="guestForm">Cancel</button>
-        <button type="submit" class="btn-primary">Save guest</button>
-      </div>
-    </form>
-    <table class="data-table">
-      <colgroup>
-        <col style="width:180px"><col style="width:130px"><col style="width:120px">
-        <col style="width:90px"><col style="width:210px"><col style="width:70px">
-      </colgroup>
-      <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Notes</th><th></th></tr></thead>
-      <tbody>${body}</tbody>
-    </table>`;
+    ${onVendorSide && !searching ? `
+      <div class="guest-subtabs">
+        <button class="guest-subtab ${!showingVendors ? 'active' : ''}" data-guest-subtab="guests">Guests</button>
+        <button class="guest-subtab ${showingVendors ? 'active' : ''}" data-guest-subtab="vendors">Vendors (${vendorHeadcount})</button>
+      </div>` : ''}
+    ${showingVendors ? renderAttendingVendorsList(state.currentEvent) : `
+      <button class="add-toggle" data-toggle="guestForm">+ Add guest to ${esc(state.guestSide)}</button>
+      <form class="add-form" id="guestForm">
+        <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
+        <div class="field"><label>Party size</label><input id="g_party" type="number" min="1" value="1"></div>
+        <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
+        <div class="field full"><label>Notes</label><input id="g_notes"></div>
+        <div class="submit-row">
+          <button type="button" class="btn-ghost" data-toggle="guestForm">Cancel</button>
+          <button type="submit" class="btn-primary">Save guest</button>
+        </div>
+      </form>
+      <table class="data-table">
+        <colgroup>
+          <col style="width:180px"><col style="width:130px"><col style="width:120px">
+          <col style="width:90px"><col style="width:210px"><col style="width:70px">
+        </colgroup>
+        <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Notes</th><th></th></tr></thead>
+        <tbody>${body}</tbody>
+      </table>
+    `}`;
 }
 
 function buildRsvpUrl(eventId, guestId){
@@ -2639,6 +2694,7 @@ document.getElementById('eventTabs').addEventListener('click', e => {
   document.querySelectorAll('#eventTabs .portal-btn').forEach(b => b.classList.toggle('active', b === btn));
   portalSwitch(rect.left + rect.width / 2, rect.top + rect.height / 2, target, () => {
     state.currentEvent = target;
+    state.guestSubTab = 'guests';
     document.body.dataset.theme = target;
     renderSummary();
     renderSection();
@@ -2727,7 +2783,14 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   const sideTab = e.target.closest('[data-side]');
   if (sideTab){
     state.guestSide = sideTab.dataset.side;
+    state.guestSubTab = 'guests';
     localStorage.setItem('wedplanner_guestside', state.guestSide);
+    renderSection();
+    return;
+  }
+  const guestSubTab = e.target.closest('[data-guest-subtab]');
+  if (guestSubTab){
+    state.guestSubTab = guestSubTab.dataset.guestSubtab;
     renderSection();
     return;
   }

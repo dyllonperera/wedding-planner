@@ -201,6 +201,31 @@ alter table vendors add column if not exists sort_order integer;
 Each vendor row now has ▲▼ buttons to move it up or down — handy for putting your most
 important or most-active vendors at the top of the list.
 
+### One more step: vendor staff headcount + per-event guest capacities
+
+Run this once in Supabase → **SQL Editor**:
+```sql
+alter table vendors add column if not exists attending boolean not null default false;
+alter table vendors add column if not exists headcount integer;
+```
+
+Guest capacities are now set per event rather than shared:
+- **Wedding**: Her side 125, His side 75 (unchanged)
+- **Homecoming**: Her side 75, His side 175
+
+Each vendor row now has an **Attending** checkbox and a **Headcount** field. Vendors you
+mark as attending count toward the venue capacity on one specific side per event —
+**Wedding counts vendor staff against Her side, Homecoming counts them against His
+side** (deliberately different per event). That side's capacity bar shows guests +
+vendor staff combined against the same cap, so as you add attending vendor staff, the
+remaining room for actual guests on that side shrinks accordingly.
+
+On whichever side counts vendors, the Guests tab shows a small **Guests / Vendors**
+toggle — Vendors gives you a read-only list of who's attending and their headcount, so
+they're visible in one place instead of mixed into the guest list itself. Edit
+attending status and headcount from the Vendors tab; this view is just for seeing it
+alongside the guest list.
+
 ## Shared PIN login
 
 You and your fiancée unlock the app with one shared PIN — no separate accounts. Set it

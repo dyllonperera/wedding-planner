@@ -33,6 +33,8 @@ create table if not exists vendors (
   deposit_paid boolean not null default false, -- legacy, superseded by payment_status
   due_date date, -- next payment due date
   sort_order integer, -- manual display order set via the ▲▼ reorder buttons
+  attending boolean not null default false, -- whether this vendor's staff will be physically present on the day
+  headcount integer, -- how many of their staff are attending, counted against the venue-side capacity
   notes text,
   created_at timestamptz not null default now()
 );
