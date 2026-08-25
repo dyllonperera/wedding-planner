@@ -509,7 +509,7 @@
   body.read-only .rsvp-deadline-row input{ display:none !important; }
   .ro-field{
     padding:8px 8px; font-size:.85rem; color:var(--ink); font-family:var(--font-body);
-    min-height:1.4em; line-height:1.4; display:flex; align-items:center;
+    min-height:1.4em; line-height:1.4; display:flex; align-items:center; width:100%; flex:1; box-sizing:border-box;
   }
   .ro-field.ro-num{font-family:var(--font-mono);}
   .role-badge{
@@ -2147,12 +2147,12 @@ function renderVendors(){
       <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
       ${taCell('Contact', 'vendors', r.id, 'contact_phone', r.contact_phone||'', {placeholder:'phone / email'})}
-      <td data-label="Status">${ro ? roField(STATUS_LABELS[r.status] || r.status) : `
+      <td data-label="Status">${ro ? roBadge(r.status, STATUS_LABELS) : `
         <select data-table="vendors" data-id="${r.id}" data-field="status" class="badge ${r.status}">${
           Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.status?'selected':''}>${l}</option>`).join('')
         }</select>`}
       </td>
-      <td data-label="Payment">${ro ? roField(PAYMENT_LABELS[r.payment_status||'unpaid']) : `
+      <td data-label="Payment">${ro ? roBadge(r.payment_status||'unpaid', PAYMENT_LABELS) : `
         <select data-table="vendors" data-id="${r.id}" data-field="payment_status" class="badge ${r.payment_status||'unpaid'}">${
           Object.entries(PAYMENT_LABELS).map(([v,l])=>`<option value="${v}" ${v===(r.payment_status||'unpaid')?'selected':''}>${l}</option>`).join('')
         }</select>`}
@@ -2323,7 +2323,7 @@ function renderGuests(){
           SIDE_LIST.map(s => `<option value="${esc(s)}" ${s===(r.side||'Her side')?'selected':''}>${esc(s)}</option>`).join('')
         }</select>`}
       </td>
-      <td data-label="RSVP">${ro ? roField(RSVP_LABELS[r.rsvp_status]) : `
+      <td data-label="RSVP">${ro ? roBadge(r.rsvp_status, RSVP_LABELS) : `
         <select data-table="guests" data-id="${r.id}" data-field="rsvp_status" class="badge ${r.rsvp_status}">${
           Object.entries(RSVP_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.rsvp_status?'selected':''}>${l}</option>`).join('')
         }</select>`}
