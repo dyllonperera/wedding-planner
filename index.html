@@ -563,6 +563,14 @@
   }
 
   .side-tabs{display:flex; gap:12px; margin-bottom:20px; flex-wrap:wrap;}
+  .country-filter{
+    display:flex; align-items:center; gap:10px; margin-bottom:18px; flex-wrap:wrap;
+  }
+  .country-filter label{font-size:.72rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft);}
+  .country-filter select{
+    font-family:var(--font-body); font-size:.85rem; padding:8px 12px; border:1px solid var(--line);
+    border-radius:10px; background:var(--paper); color:var(--ink);
+  }
   .guest-subtabs{
     display:inline-flex; gap:4px; background:var(--paper-warm); border:1px solid var(--line);
     border-radius:100px; padding:4px; margin-bottom:18px;
@@ -1402,6 +1410,7 @@ const state = {
   displayCurrency: localStorage.getItem('wedplanner_currency') || 'LKR',
   guestSide: localStorage.getItem('wedplanner_guestside') || 'Her side',
   guestSubTab: 'guests',
+  guestCountryFilter: '',
   moodCategory: null,
   guestSearch: '',
   vendorDocsFor: null,
@@ -2154,6 +2163,7 @@ function renderVendors(){
       <td data-label="Docs"><button type="button" class="doc-btn" data-vendor-docs="${r.id}" data-vendor-name="${esc(r.name)}">📎 ${docCount === undefined ? '…' : docCount.length}</button></td>
       ${taCell('Name', 'vendors', r.id, 'name', r.name)}
       ${taCell('Contact', 'vendors', r.id, 'contact_phone', r.contact_phone||'', {placeholder:'phone / email'})}
+      ${taCell('Follow-up', 'vendors', r.id, 'responsible_person', r.responsible_person||'', {placeholder:'family member'})}
       <td data-label="Status">${ro ? roBadge(r.status, STATUS_LABELS) : `
         <select data-table="vendors" data-id="${r.id}" data-field="status" class="badge ${r.status}">${
           Object.entries(STATUS_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.status?'selected':''}>${l}</option>`).join('')
@@ -2172,7 +2182,7 @@ function renderVendors(){
       ${taCell('Notes', 'vendors', r.id, 'notes', r.notes||'')}
       <td data-label="" class="actions"><button class="del-btn" data-action="delete" data-table="vendors" data-id="${r.id}">✕</button></td>
     </tr>`;
-  }).join('') : `<tr class="empty-row"><td colspan="13">No vendors yet for this event — add your first one above.</td></tr>`;
+  }).join('') : `<tr class="empty-row"><td colspan="14">No vendors yet for this event — add your first one above.</td></tr>`;
 
   return `
     ${datalist('vendorCatList', VENDOR_CATS)}
@@ -2199,6 +2209,7 @@ function renderVendors(){
         <div class="field"><label>Category</label><input list="vendorCatList" id="v_category" required></div>
         <div class="field"><label>Vendor name</label><input id="v_name" required></div>
         <div class="field"><label>Phone / email</label><input id="v_contact"></div>
+        <div class="field"><label>Follow-up (family member)</label><input id="v_responsible"></div>
         <div class="field"><label>Status</label><select id="v_status">${statusOptions}</select></div>
         <div class="field"><label>Payment</label><select id="v_payment">${paymentOptions}</select></div>
         <div class="field"><label>Price (LKR)</label><input id="v_price" type="number"></div>
@@ -2213,12 +2224,12 @@ function renderVendors(){
       <table class="data-table">
         <colgroup>
           <col style="width:160px"><col style="width:80px"><col style="width:150px">
-          <col style="width:140px"><col style="width:132px"><col style="width:132px">
+          <col style="width:140px"><col style="width:130px"><col style="width:132px"><col style="width:132px">
           <col style="width:114px"><col style="width:110px"><col style="width:110px">
           <col style="width:110px"><col style="width:90px">
           <col style="width:150px"><col style="width:46px">
         </colgroup>
-        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Attending</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>Category</th><th>Docs</th><th>Name</th><th>Contact</th><th>Follow-up</th><th>Status</th><th>Payment</th><th>Due</th><th>Price (${cur})</th><th>Deposit (${cur})</th><th>Remaining (${cur})</th><th>Attending</th><th>Notes</th><th></th></tr></thead>
         <tbody>${body}</tbody>
       </table>
     `}`;
@@ -2291,9 +2302,10 @@ function renderGuests(){
   const psize = r => r.party_size || 1;
   const query = (state.guestSearch || '').trim().toLowerCase();
   const searching = query.length > 0;
+  const countryFilter = state.guestCountryFilter || '';
   const rows = searching
     ? allRows.filter(r => r.name.toLowerCase().includes(query) || (r.dietary_notes||'').toLowerCase().includes(query))
-    : allRows.filter(r => (r.side || 'Her side') === state.guestSide);
+    : allRows.filter(r => (r.side || 'Her side') === state.guestSide && (!countryFilter || (r.country||'').trim() === countryFilter));
 
   const capacities = SIDE_CAPACITY[state.currentEvent];
   const vendorCountedSide = VENDOR_COUNTED_SIDE[state.currentEvent];
@@ -2305,7 +2317,7 @@ function renderGuests(){
     const guestPeople = list.reduce((s,r) => s + psize(r), 0);
     const extraVendor = side === vendorCountedSide ? vendorHeadcount : 0;
     const invitedPeople = guestPeople + extraVendor;
-    const confirmedPeople = list.filter(r => r.rsvp_status === 'yes').reduce((s,r) => s + psize(r), 0) + extraVendor;
+    const confirmedPeople = list.filter(r => r.rsvp_status === 'yes').reduce((s,r) => s + (r.rsvp_party_size ?? psize(r)), 0) + extraVendor;
     const cap = capacities[side];
     const pct = Math.min(100, Math.round((invitedPeople / cap) * 100));
     return { side, entries: list.length, invitedPeople, confirmedPeople, cap, pct, extraVendor };
@@ -2320,8 +2332,10 @@ function renderGuests(){
 
   const onVendorSide = state.guestSide === vendorCountedSide;
   const showingVendors = onVendorSide && state.guestSubTab === 'vendors';
+  const countries = [...new Set(allRows.map(r => (r.country||'').trim()).filter(Boolean))].sort();
 
   const ro = isReadOnly();
+  const INVITE_LABELS = { physical: 'Physical', e_invite: 'E-invite' };
   const body = rows.length ? rows.map(r => `
     <tr>
       ${taCell('Name', 'guests', r.id, 'name', r.name)}
@@ -2335,21 +2349,35 @@ function renderGuests(){
           Object.entries(RSVP_LABELS).map(([v,l])=>`<option value="${v}" ${v===r.rsvp_status?'selected':''}>${l}</option>`).join('')
         }</select>`}
       </td>
-      <td data-label="Party size">${ro ? roField(psize(r), true) : `<input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;">`}</td>
+      <td data-label="Max party">${ro ? roField(psize(r), true) : `<input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;">`}</td>
+      <td data-label="RSVP'd">${ro ? roField(r.rsvp_party_size ?? '—', true) : `<input type="number" min="0" max="${psize(r)}" data-table="guests" data-id="${r.id}" data-field="rsvp_party_size" value="${r.rsvp_party_size ?? ''}" placeholder="—" style="max-width:64px;">`}</td>
+      <td data-label="Table">${ro ? roField(r.table_number||'') : `<input type="text" data-table="guests" data-id="${r.id}" data-field="table_number" value="${esc(r.table_number||'')}" placeholder="—" style="max-width:80px;">`}</td>
+      ${taCell('Phone', 'guests', r.id, 'phone', r.phone||'', {placeholder:'phone number'})}
+      ${taCell('Country', 'guests', r.id, 'country', r.country||'', {placeholder:'e.g. Sri Lanka', list:'countryDatalist'})}
+      <td data-label="Invitation">${ro ? roField(INVITE_LABELS[r.invitation_type] || '—') : `
+        <select data-table="guests" data-id="${r.id}" data-field="invitation_type">
+          <option value="" ${!r.invitation_type?'selected':''}>—</option>
+          <option value="physical" ${r.invitation_type==='physical'?'selected':''}>Physical</option>
+          <option value="e_invite" ${r.invitation_type==='e_invite'?'selected':''}>E-invite</option>
+        </select>`}
+      </td>
+      ${taCell('Invite link/note', 'guests', r.id, 'invitation_note', r.invitation_note||'', {placeholder:'add link once ready'})}
+      ${taCell('Vehicle', 'guests', r.id, 'vehicle_details', r.vehicle_details||'', {placeholder:'e.g. white Prius - ABC-1234'})}
       ${taCell('Notes', 'guests', r.id, 'dietary_notes', r.dietary_notes||'')}
       <td data-label="" class="actions">
         <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
         <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
       </td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="6">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one on ${esc(state.guestSide)} yet — add your first guest above.`}</td></tr>`;
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="14">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one matching this view yet.`}</td></tr>`;
 
-  const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + psize(r), 0) + vendorHeadcount;
+  const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + (r.rsvp_party_size ?? psize(r)), 0) + vendorHeadcount;
 
   return `
+    ${datalist('countryDatalist', countries)}
     <p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 20px; max-width:64ch;">
       Each guest here gets their own private invite — tap 🔗 on a row to copy a link addressed just to them.
-      No open link, no strangers adding themselves. Set "Party size" above 1 for households — e.g. "Mr &amp; Mrs Perera" = 2,
-      "Mr Ajith and family" = however many are actually coming.
+      No open link, no strangers adding themselves. "Max party" is the most you've invited them for — e.g. "Mr &amp; Mrs
+      Perera" = 2; "RSVP'd" fills in once they respond and can't exceed that max.
     </p>
     <div class="rsvp-deadline-row">
       <div>
@@ -2373,6 +2401,14 @@ function renderGuests(){
     ${searching
       ? `<p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 18px;">${rows.length} match${rows.length===1?'':'es'} for "${esc((state.guestSearch||'').trim())}" across both sides.</p>`
       : `<div class="side-tabs" id="sideTabs">${tabsHtml}</div>`}
+    ${!searching && !showingVendors && countries.length ? `
+      <div class="country-filter">
+        <label for="guestCountryFilter">Filter by country</label>
+        <select id="guestCountryFilter">
+          <option value="">All countries</option>
+          ${countries.map(c => `<option value="${esc(c)}" ${c===countryFilter?'selected':''}>${esc(c)}</option>`).join('')}
+        </select>
+      </div>` : ''}
     ${onVendorSide && !searching ? `
       <div class="guest-subtabs">
         <button class="guest-subtab ${!showingVendors ? 'active' : ''}" data-guest-subtab="guests">Guests</button>
@@ -2382,7 +2418,7 @@ function renderGuests(){
       <button class="add-toggle" data-toggle="guestForm">+ Add guest to ${esc(state.guestSide)}</button>
       <form class="add-form" id="guestForm">
         <div class="field"><label>Name</label><input id="g_name" placeholder="e.g. Sam, or Mr &amp; Mrs Perera" required></div>
-        <div class="field"><label>Party size</label><input id="g_party" type="number" min="1" value="1"></div>
+        <div class="field"><label>Max party</label><input id="g_party" type="number" min="1" value="1"></div>
         <div class="field"><label>RSVP</label><select id="g_rsvp"><option value="pending">Pending</option><option value="yes">Yes</option><option value="no">No</option></select></div>
         <div class="field full"><label>Notes</label><input id="g_notes"></div>
         <div class="submit-row">
@@ -2392,10 +2428,13 @@ function renderGuests(){
       </form>
       <table class="data-table">
         <colgroup>
-          <col style="width:180px"><col style="width:130px"><col style="width:120px">
-          <col style="width:90px"><col style="width:210px"><col style="width:70px">
+          <col style="width:170px"><col style="width:110px"><col style="width:110px">
+          <col style="width:95px"><col style="width:90px"><col style="width:90px">
+          <col style="width:150px"><col style="width:150px"><col style="width:110px">
+          <col style="width:170px"><col style="width:170px"><col style="width:170px">
+          <col style="width:70px">
         </colgroup>
-        <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Party size</th><th>Notes</th><th></th></tr></thead>
+        <thead><tr><th>Name</th><th>Side</th><th>RSVP</th><th>Max party</th><th>RSVP'd</th><th>Table</th><th>Phone</th><th>Country</th><th>Invitation</th><th>Invite link/note</th><th>Vehicle</th><th>Notes</th><th></th></tr></thead>
         <tbody>${body}</tbody>
       </table>
     `}`;
@@ -2704,6 +2743,7 @@ document.getElementById('eventTabs').addEventListener('click', e => {
   portalSwitch(rect.left + rect.width / 2, rect.top + rect.height / 2, target, () => {
     state.currentEvent = target;
     state.guestSubTab = 'guests';
+    state.guestCountryFilter = '';
     document.body.dataset.theme = target;
     renderSummary();
     renderSection();
@@ -2793,6 +2833,7 @@ document.getElementById('sectionContent').addEventListener('click', e => {
   if (sideTab){
     state.guestSide = sideTab.dataset.side;
     state.guestSubTab = 'guests';
+    state.guestCountryFilter = '';
     localStorage.setItem('wedplanner_guestside', state.guestSide);
     renderSection();
     return;
@@ -2841,6 +2882,7 @@ document.getElementById('sectionContent').addEventListener('input', e => {
 document.getElementById('sectionContent').addEventListener('change', async e => {
   if (e.target.id === 'moodFileInput'){ handleMoodUpload(e.target.files); return; }
   if (e.target.id === 'rsvpDeadlineInput'){ updateRsvpDeadline(e.target.value); return; }
+  if (e.target.id === 'guestCountryFilter'){ state.guestCountryFilter = e.target.value; renderSection(); return; }
   const el = e.target.closest('[data-field]');
   if (!el) return;
   const table = el.dataset.table, id = el.dataset.id, field = el.dataset.field;
@@ -2872,7 +2914,7 @@ document.getElementById('sectionContent').addEventListener('change', async e => 
     burstSparkles(rect.left + rect.width / 2, rect.top + rect.height / 2);
     playChime('sparkle');
   }
-  if (['status','payment_status','completed','rsvp_status','party_size','price','deposit_amount','due_date','side','headcount','attending'].includes(field)){
+  if (['status','payment_status','completed','rsvp_status','party_size','rsvp_party_size','price','deposit_amount','due_date','side','headcount','attending'].includes(field)){
     renderSummary();
     if (['status','payment_status'].includes(field)) return;
     renderSection();
@@ -2886,6 +2928,7 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
       category: document.getElementById('v_category').value,
       name: document.getElementById('v_name').value,
       contact_phone: document.getElementById('v_contact').value,
+      responsible_person: document.getElementById('v_responsible').value,
       status: document.getElementById('v_status').value,
       payment_status: document.getElementById('v_payment').value,
       due_date: document.getElementById('v_due').value || null,

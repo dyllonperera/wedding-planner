@@ -42,6 +42,7 @@
     border:1px solid var(--line); border-radius:10px; background:var(--paper-warm); color:var(--ink);
   }
   .field input:focus{outline:none; border-color:var(--accent); box-shadow:0 0 0 3px color-mix(in srgb, var(--accent) 18%, transparent);}
+  .party-hint{font-size:.76rem; color:var(--ink-soft); margin:6px 0 0;}
   .rsvp-choice{display:flex; gap:10px;}
   .rsvp-choice button{
     flex:1; padding:12px; border:1.5px solid var(--line); background:var(--paper-warm); border-radius:10px;
@@ -114,6 +115,7 @@
       <div class="field">
         <label>How many in your party?</label>
         <input id="partySize" type="number" min="1" value="1">
+        <p class="party-hint" id="partyHint"></p>
       </div>
       <p class="deadline-note hide" id="deadlineNote"></p>
       <button class="submit" type="submit" id="submitBtn">Send RSVP</button>
@@ -177,7 +179,7 @@ async function loadGuest(){
       document.getElementById('lockedMsg').textContent = `RSVPs closed on ${fmtDate(deadline)}. Here's what we have on file — reach out to the couple directly if anything's changed.`;
       const chip = document.getElementById('lockedResponse');
       chip.textContent = guest.rsvp_status === 'yes'
-        ? `Attending — party of ${guest.party_size || 1}`
+        ? `Attending — party of ${guest.rsvp_party_size ?? guest.party_size ?? 1}`
         : "Not attending";
       chip.className = 'locked-response ' + guest.rsvp_status;
     } else {
@@ -188,7 +190,13 @@ async function loadGuest(){
   }
 
   document.getElementById('guestName').textContent = guest.name;
-  document.getElementById('partySize').value = guest.party_size || 1;
+  const maxParty = guest.party_size || 1;
+  const partyInput = document.getElementById('partySize');
+  partyInput.max = maxParty;
+  partyInput.value = guest.rsvp_party_size ?? maxParty;
+  document.getElementById('partyHint').textContent = maxParty === 1
+    ? "You're invited solo for this one."
+    : `You're invited for up to ${maxParty} — let us know how many are actually coming.`;
   if (guest.rsvp_status === 'yes' || guest.rsvp_status === 'no'){
     document.getElementById('formSub').textContent = "You've already responded — feel free to update it below.";
     const btn = document.querySelector(`.rsvp-choice button[data-v="${guest.rsvp_status}"]`);
@@ -213,14 +221,16 @@ document.getElementById('form').addEventListener('submit', async e => {
   const errEl = document.getElementById('err');
   errEl.textContent = '';
   if (!rsvpValue){ errEl.textContent = 'Please let us know if you can make it.'; return; }
-  const partySize = Math.max(1, Number(document.getElementById('partySize').value || 1));
+  const partyInput = document.getElementById('partySize');
+  const maxParty = Number(partyInput.max) || 1;
+  const partySize = Math.min(maxParty, Math.max(1, Number(partyInput.value || 1)));
 
   const btn = document.getElementById('submitBtn');
   btn.disabled = true; btn.textContent = 'Sending…';
 
   const { error } = await supabaseClient.from('guests').update({
     rsvp_status: rsvpValue,
-    party_size: partySize
+    rsvp_party_size: partySize
   }).eq('id', guestId);
 
   if (error){
