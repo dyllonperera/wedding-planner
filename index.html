@@ -395,7 +395,22 @@
   .data-table input:focus, .data-table select:focus, .data-table textarea:focus{
     outline:none; border-color:var(--accent); background:var(--paper); box-shadow:0 0 0 2px color-mix(in srgb, var(--accent) 15%, transparent);
   }
+  /* Defeat the browser's own autofill styling, which can force a white-on-white
+     (or otherwise mismatched) text color on a field it thinks it recognizes. */
+  .data-table input:-webkit-autofill,
+  .data-table input:-webkit-autofill:hover,
+  .data-table input:-webkit-autofill:focus{
+    -webkit-text-fill-color: var(--ink) !important;
+    -webkit-box-shadow: 0 0 0 1000px var(--paper) inset !important;
+    transition: background-color 9999s ease-in-out 0s;
+  }
   .data-table input[type="number"], .data-table input[data-currency="true"]{font-family:var(--font-mono);}
+  /* Hide native number spin buttons on every number input in these tables, not just .num-col
+     ones — on a narrow input (e.g. the 64px-wide Max party / RSVP'd boxes) an un-hidden
+     spinner can sit right on top of a single digit and make it look blank. */
+  .data-table input[type="number"]::-webkit-outer-spin-button,
+  .data-table input[type="number"]::-webkit-inner-spin-button{ -webkit-appearance:none; margin:0; }
+  .data-table input[type="number"]{ -moz-appearance:textfield; appearance:textfield; text-align:left; }
   .data-table select.badge{min-width:132px; padding:6px 10px;}
   .data-table textarea{
     resize:none; overflow:hidden; line-height:1.4; min-height:30px; display:block;
@@ -2368,7 +2383,7 @@ function renderGuests(){
         <button class="del-btn" data-action="copy-invite" data-id="${r.id}" data-name="${esc(r.name)}" title="Copy private invite link" style="color:var(--accent); opacity:.75;">🔗</button>
         <button class="del-btn" data-action="delete" data-table="guests" data-id="${r.id}">✕</button>
       </td>
-    </tr>`).join('') : `<tr class="empty-row"><td colspan="14">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one matching this view yet.`}</td></tr>`;
+    </tr>`).join('') : `<tr class="empty-row"><td colspan="13">${searching ? `No guests match "${esc((state.guestSearch||'').trim())}".` : `No one matching this view yet.`}</td></tr>`;
 
   const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + (r.rsvp_party_size ?? psize(r)), 0) + vendorHeadcount;
 
@@ -2546,6 +2561,7 @@ function renderMoodboard(){
     ${addForm}
     <label class="add-toggle" for="moodFileInput" style="display:inline-block; cursor:pointer;">+ Add photo to ${esc(activeCat.name)}</label>
     <input type="file" id="moodFileInput" accept="image/*,application/pdf" style="display:none;" multiple>
+    ${isReadOnly() ? '' : `<p style="font-size:.78rem; color:var(--ink-soft); margin:8px 0 0;">Copied a photo? Just paste it (Ctrl/Cmd+V) anywhere on this page and it'll land in ${esc(activeCat.name)}.</p>`}
     <div class="mood-grid">${grid}</div>`;
 }
 
@@ -2877,6 +2893,28 @@ document.getElementById('sectionContent').addEventListener('input', e => {
     const newInput = document.getElementById('guestSearchInput');
     if (newInput){ newInput.focus(); newInput.setSelectionRange(cursorPos, cursorPos); }
   }
+});
+
+// Paste a copied photo straight into the Mood Board — no download-then-upload round trip.
+document.addEventListener('paste', e => {
+  if (state.currentSection !== 'moodboard') return;
+  const items = (e.clipboardData || window.clipboardData)?.items;
+  if (!items) return;
+  const imageFiles = [];
+  for (const item of items){
+    if (item.kind === 'file' && item.type.startsWith('image/')){
+      const file = item.getAsFile();
+      if (file) imageFiles.push(file);
+    }
+  }
+  if (!imageFiles.length) return;
+  e.preventDefault();
+  if (guardWrite()) return;
+  if (!state.moodCategory){
+    toast('Add a category first, then paste your photo in', true);
+    return;
+  }
+  handleMoodUpload(imageFiles);
 });
 
 document.getElementById('sectionContent').addEventListener('change', async e => {
