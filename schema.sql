@@ -35,6 +35,7 @@ create table if not exists vendors (
   sort_order integer, -- manual display order set via the ▲▼ reorder buttons
   attending boolean not null default false, -- whether this vendor's staff will be physically present on the day
   headcount integer, -- how many of their staff are attending, counted against the venue-side capacity
+  responsible_person text, -- family member handling follow-up with this vendor
   notes text,
   created_at timestamptz not null default now()
 );
@@ -68,9 +69,30 @@ create table if not exists guests (
   side text, -- his side | her side | family | friends
   rsvp_status text not null default 'pending', -- pending | yes | no
   plus_one boolean not null default false, -- legacy, superseded by party_size
-  party_size integer not null default 1, -- people this entry covers, e.g. "Mr & Mrs Perera" = 2
+  party_size integer not null default 1, -- MAX people this entry is invited for, e.g. "Mr & Mrs Perera" = 2
+  rsvp_party_size integer, -- how many the guest actually confirmed via their RSVP (capped at party_size)
+  table_number text, -- seating reference, e.g. "5" or "Head table"
+  phone text,
+  country text, -- for filtering local vs overseas guests
+  invitation_type text, -- 'physical' | 'e_invite'
+  invitation_note text, -- freeform note re: invitation link/status, until that feature is designed
+  vehicle_details text, -- for on-the-day identification, e.g. "White Prius - ABC-1234"
   dietary_notes text,
   notes text,
+  created_at timestamptz not null default now()
+);
+
+create table if not exists seating_tables (
+  id uuid primary key default gen_random_uuid(),
+  event_id text not null references events(id),
+  label text not null, -- table name/number, e.g. "5" or "Head table" — matched against guests.table_number
+  zone text, -- e.g. "Lotus Ballroom - Pink", shown as a small tag in the table drawer
+  capacity integer not null default 10,
+  shape text not null default 'round', -- 'round' | 'rect'
+  pos_x integer, -- grid column (1-10) in the floor plan; null = unplaced, shown in the overflow list instead
+  pos_y integer, -- grid row (2-5)
+  col_span integer not null default 1,
+  sort_order integer,
   created_at timestamptz not null default now()
 );
 
@@ -85,12 +107,14 @@ alter table vendors enable row level security;
 alter table budget_items enable row level security;
 alter table tasks enable row level security;
 alter table guests enable row level security;
+alter table seating_tables enable row level security;
 
 create policy "anon full access" on events for all using (true) with check (true);
 create policy "anon full access" on vendors for all using (true) with check (true);
 create policy "anon full access" on budget_items for all using (true) with check (true);
 create policy "anon full access" on tasks for all using (true) with check (true);
 create policy "anon full access" on guests for all using (true) with check (true);
+create policy "anon full access" on seating_tables for all using (true) with check (true);
 
 -- ============================================================
 -- Mood board photo storage

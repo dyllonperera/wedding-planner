@@ -640,6 +640,63 @@
   .vdocs-card .eyebrow{color:var(--ink-soft); margin-bottom:4px;}
   .vdocs-card h2{font-family:var(--font-display); font-weight:600; font-size:1.3rem; margin:0 0 18px; color:var(--ink);}
   #vdocsGrid{margin-top:18px;}
+  #tableDrawerModal{
+    position:fixed; inset:0; z-index:92; display:flex; align-items:center; justify-content:center;
+    background:rgba(10,8,6,.55); opacity:0; pointer-events:none; transition:opacity .35s var(--ease); padding:20px;
+  }
+  #tableDrawerModal.show{opacity:1; pointer-events:auto;}
+  #tableDrawerModal .vdocs-card{max-width:420px;}
+
+  /* ---------- seating plan ---------- */
+  .seating-grid-wrap{overflow-x:auto; padding-bottom:8px; margin:0 0 10px;}
+  .seating-grid{
+    display:grid; grid-template-columns:repeat(10, minmax(58px, 1fr)); grid-auto-rows:minmax(56px, auto);
+    gap:8px; min-width:760px; padding:16px; background:var(--paper-warm); border:1px solid var(--line); border-radius:16px;
+  }
+  .seat-zone-label{
+    align-self:end; text-align:center; font-family:var(--font-mono); font-size:.62rem; text-transform:uppercase;
+    letter-spacing:.08em; color:var(--accent-deep); padding-bottom:4px; border-bottom:1px solid var(--line);
+  }
+  .seat-decor{
+    display:flex; align-items:center; justify-content:center; text-align:center; font-family:var(--font-mono);
+    font-size:.6rem; text-transform:uppercase; letter-spacing:.05em; color:var(--ink-soft); line-height:1.3;
+    background:repeating-linear-gradient(135deg, transparent, transparent 6px, color-mix(in srgb, var(--ink) 4%, transparent) 6px, color-mix(in srgb, var(--ink) 4%, transparent) 7px);
+    border:1px dashed var(--line); border-radius:10px;
+  }
+  .seat-decor.seat-bar{font-size:.58rem;}
+  .seat-decor.seat-entrance{background:none; border:none; color:var(--ink-soft); letter-spacing:.12em;}
+  .seat-decor.seat-buffet{
+    background:color-mix(in srgb, var(--accent) 8%, transparent); border:1px solid var(--line); color:var(--accent-deep); font-size:.66rem;
+  }
+  .seat-pin{
+    display:flex; flex-direction:column; align-items:center; justify-content:center; gap:2px;
+    border:2px solid var(--accent); background:color-mix(in srgb, var(--accent) 14%, var(--paper));
+    color:var(--ink); cursor:pointer; font-family:var(--font-body); padding:4px;
+    transition:transform .2s var(--ease-snap), box-shadow .2s ease; box-shadow:0 2px 6px rgba(0,0,0,.08);
+  }
+  .seat-pin:hover{transform:translateY(-2px) scale(1.04); box-shadow:0 8px 16px -4px rgba(0,0,0,.25);}
+  .seat-pin-round{border-radius:50%; aspect-ratio:1;}
+  .seat-pin-rect{border-radius:10px;}
+  .seat-pin-label{font-family:var(--font-display); font-weight:600; font-size:.88rem; line-height:1;}
+  .seat-pin-count{font-family:var(--font-mono); font-size:.58rem; color:var(--ink-soft);}
+  .seat-pin.seat-empty{background:var(--paper); border-style:dashed; border-color:var(--line);}
+  .seat-pin.seat-empty .seat-pin-count{opacity:.7;}
+  .seat-pin.seat-over{border-color:var(--danger); background:color-mix(in srgb, var(--danger) 14%, var(--paper));}
+  .seat-pin.seat-over .seat-pin-count{color:var(--danger);}
+  .seat-overflow{display:flex; flex-wrap:wrap; gap:12px;}
+  .seat-overflow .seat-pin{width:68px; height:68px; flex-shrink:0;}
+  .seat-overflow .seat-pin-rect{width:auto; min-width:100px; height:56px; padding:6px 14px;}
+  .seat-guest-list{display:flex; flex-direction:column; gap:2px; max-height:260px; overflow-y:auto;}
+  .seat-guest-row{
+    display:flex; align-items:center; justify-content:space-between; gap:10px;
+    padding:9px 4px; border-bottom:1px solid var(--line);
+  }
+  .seat-guest-row:last-child{border-bottom:none;}
+  .seat-guest-name{font-size:.86rem; color:var(--ink);}
+  .seat-guest-meta{font-size:.72rem; color:var(--ink-soft);}
+  @media (max-width:720px){
+    #tableDrawerModal .vdocs-card{max-height:86vh;}
+  }
   #auditHistoryModal{
     position:fixed; inset:0; z-index:92; display:flex; align-items:center; justify-content:center;
     background:rgba(10,8,6,.55); opacity:0; pointer-events:none; transition:opacity .35s var(--ease); padding:20px;
@@ -1295,6 +1352,10 @@
       <svg viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-4 4-3-3-4 4"/></svg>
       Mood Board
     </button>
+    <button data-section="seating">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="4"/><circle cx="4" cy="6" r="1.6"/><circle cx="4" cy="18" r="1.6"/><circle cx="20" cy="6" r="1.6"/><circle cx="20" cy="18" r="1.6"/><path d="M12 8v8M8 12H4.3M15.7 12H20M9.4 9.4L5.3 6.5M14.6 9.4l4.1-2.9M9.4 14.6L5.3 17.5M14.6 14.6l4.1 2.9"/></svg>
+      Seating
+    </button>
   </nav>
   <button class="btn-ghost" id="printSheetBtn" style="margin:16px 0 24px;">🖨 Print day-of run sheet</button>
 
@@ -1332,6 +1393,15 @@
     <label class="add-toggle" for="vendorDocInput" style="display:inline-block; cursor:pointer;">+ Add file</label>
     <input type="file" id="vendorDocInput" accept="image/*,application/pdf" style="display:none;" multiple>
     <div class="mood-grid" id="vdocsGrid"></div>
+  </div>
+</div>
+
+<div id="tableDrawerModal">
+  <div class="vdocs-card">
+    <button class="lb-close" id="tableDrawerClose" aria-label="Close" style="position:absolute; top:14px; right:14px;">
+      <svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg>
+    </button>
+    <div id="tableDrawerBody"></div>
   </div>
 </div>
 
@@ -1429,12 +1499,13 @@ const state = {
   moodCategory: null,
   guestSearch: '',
   vendorDocsFor: null,
+  seatingTableFor: null,
   accessLevel: 'admin', // 'admin' | 'bride_family' | 'groom_family'
   eventLocked: false,
   fxRate: null, // AUD per 1 LKR
   fxUpdated: null,
   events:{ wedding:{id:'wedding', name:'Wedding', event_date:null, rsvp_deadline:null}, homecoming:{id:'homecoming', name:'Homecoming', event_date:null, rsvp_deadline:null} },
-  data:{ wedding:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{}}, homecoming:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{}} }
+  data:{ wedding:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{},seating_tables:[]}, homecoming:{vendors:[],tasks:[],guests:[],moodCategories:[],moodPhotos:{},vendorDocs:{},seating_tables:[]} }
 };
 
 /* ---------------- currency (LKR entry, live LKR->AUD rate) ---------------- */
@@ -1641,6 +1712,11 @@ function datalist(id, options){
   return `<datalist id="${id}">${options.map(o=>`<option value="${o}">`).join('')}</datalist>`;
 }
 
+// Max people a guest entry is invited for / how many they're actually bringing —
+// shared by the Guests table and the Seating plan so both count the same way.
+function guestMaxParty(g){ return g.party_size || 1; }
+function guestHeadcount(g){ return g.rsvp_party_size ?? guestMaxParty(g); }
+
 // A table cell that wraps long text (e.g. "Photography & Videography") instead of
 // clipping or scrolling — used for category/name/contact/notes-style free-text fields.
 function taCell(label, table, id, field, value, opts){
@@ -1787,7 +1863,7 @@ async function refreshCurrentTable(table){
   renderSection();
 }
 
-const TABLE_SINGULAR = { vendors:'vendor', tasks:'task', guests:'guest', moodboard_categories:'mood board category', vendor_docs:'document' };
+const TABLE_SINGULAR = { vendors:'vendor', tasks:'task', guests:'guest', moodboard_categories:'mood board category', vendor_docs:'document', seating_tables:'table' };
 
 async function logAudit(action, table, recordLabel, details){
   const actor = state.accessLevel === 'admin' ? (localStorage.getItem('wedplanner_who') || 'Admin')
@@ -1971,10 +2047,12 @@ function renderSection(){
   if (state.currentSection === 'vendors') html = renderVendors();
   else if (state.currentSection === 'tasks') html = renderTasks();
   else if (state.currentSection === 'guests') html = renderGuests();
+  else if (state.currentSection === 'seating') html = renderSeating();
   else html = renderMoodboard();
   el.innerHTML = `<div class="table-wrap">${html}</div>`;
   autoGrowTextareas(el);
   if (state.currentSection === 'vendors' && vendorReorderMode) initVendorReorderDrag();
+  if (state.currentSection === 'seating') refreshTableDrawer();
 }
 
 /* ---------------- vendor documents (receipts, invoices, quotations) ---------------- */
@@ -2366,7 +2444,7 @@ function renderGuests(){
       </td>
       <td data-label="Max party">${ro ? roField(psize(r), true) : `<input type="number" min="1" data-table="guests" data-id="${r.id}" data-field="party_size" value="${psize(r)}" style="max-width:64px;">`}</td>
       <td data-label="RSVP'd">${ro ? roField(r.rsvp_party_size ?? '—', true) : `<input type="number" min="0" max="${psize(r)}" data-table="guests" data-id="${r.id}" data-field="rsvp_party_size" value="${r.rsvp_party_size ?? ''}" placeholder="—" style="max-width:64px;">`}</td>
-      <td data-label="Table">${ro ? roField(r.table_number||'') : `<input type="text" data-table="guests" data-id="${r.id}" data-field="table_number" value="${esc(r.table_number||'')}" placeholder="—" style="max-width:80px;">`}</td>
+      <td data-label="Table">${ro ? roField(r.table_number||'') : `<input type="text" list="seatingTableDatalist" data-table="guests" data-id="${r.id}" data-field="table_number" value="${esc(r.table_number||'')}" placeholder="—" style="max-width:80px;">`}</td>
       ${taCell('Phone', 'guests', r.id, 'phone', r.phone||'', {placeholder:'phone number'})}
       ${taCell('Country', 'guests', r.id, 'country', r.country||'', {placeholder:'e.g. Sri Lanka', list:'countryDatalist'})}
       <td data-label="Invitation">${ro ? roField(INVITE_LABELS[r.invitation_type] || '—') : `
@@ -2387,8 +2465,10 @@ function renderGuests(){
 
   const headcount = allRows.filter(r=>r.rsvp_status==='yes').reduce((s,r)=> s + (r.rsvp_party_size ?? psize(r)), 0) + vendorHeadcount;
 
+  const tableLabels = (state.data[state.currentEvent].seating_tables || []).map(t => t.label);
   return `
     ${datalist('countryDatalist', countries)}
+    ${datalist('seatingTableDatalist', tableLabels)}
     <p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 20px; max-width:64ch;">
       Each guest here gets their own private invite — tap 🔗 on a row to copy a link addressed just to them.
       No open link, no strangers adding themselves. "Max party" is the most you've invited them for — e.g. "Mr &amp; Mrs
@@ -2563,6 +2643,162 @@ function renderMoodboard(){
     <input type="file" id="moodFileInput" accept="image/*,application/pdf" style="display:none;" multiple>
     ${isReadOnly() ? '' : `<p style="font-size:.78rem; color:var(--ink-soft); margin:8px 0 0;">Copied a photo? Just paste it (Ctrl/Cmd+V) anywhere on this page and it'll land in ${esc(activeCat.name)}.</p>`}
     <div class="mood-grid">${grid}</div>`;
+}
+
+/* ---------------- seating plan ---------------- */
+function seatGuestsFor(label){
+  const guests = state.data[state.currentEvent].guests || [];
+  const norm = s => String(s||'').trim().toLowerCase();
+  return guests.filter(g => norm(g.table_number) === norm(label));
+}
+
+function renderSeating(){
+  const eventId = state.currentEvent;
+  const tables = (state.data[eventId].seating_tables || []).slice()
+    .sort((a,b) => (a.sort_order ?? 999) - (b.sort_order ?? 999));
+  const ro = isReadOnly();
+  const placed = tables.filter(t => t.pos_x && t.pos_y);
+  const unplaced = tables.filter(t => !t.pos_x || !t.pos_y);
+
+  const pinHtml = t => {
+    const seated = seatGuestsFor(t.label).reduce((s,g) => s + guestHeadcount(g), 0);
+    const over = seated > t.capacity;
+    const empty = seated === 0;
+    const span = t.col_span && t.col_span > 1 ? ` / span ${t.col_span}` : '';
+    const style = t.pos_x && t.pos_y
+      ? `grid-column:${t.pos_x}${span}; grid-row:${t.pos_y};`
+      : '';
+    return `
+      <button type="button" class="seat-pin seat-pin-${t.shape || 'round'} ${over ? 'seat-over' : ''} ${empty ? 'seat-empty' : ''}"
+        data-table-id="${t.id}" style="${style}" title="${esc(t.label)} — ${seated}/${t.capacity} seated">
+        <span class="seat-pin-label">${esc(t.label)}</span>
+        <span class="seat-pin-count">${seated}/${t.capacity}</span>
+      </button>`;
+  };
+
+  const scaffold = eventId === 'wedding' ? `
+      <div class="seat-zone-label" style="grid-column:1/4; grid-row:1;">Pink</div>
+      <div class="seat-zone-label" style="grid-column:4/6; grid-row:1;">Red</div>
+      <div class="seat-zone-label" style="grid-column:6/8; grid-row:1;">White</div>
+      <div class="seat-zone-label" style="grid-column:8/11; grid-row:1;">Yellow</div>
+      <div class="seat-decor" style="grid-column:1/2; grid-row:3/5;">Band<br>Stage</div>
+      <div class="seat-decor" style="grid-column:2/4; grid-row:3/5;">Dance<br>Floor</div>
+      <div class="seat-decor" style="grid-column:6/7; grid-row:3/5;">Standing<br>area</div>
+      <div class="seat-decor" style="grid-column:7/8; grid-row:3/5;">Standing<br>area</div>
+      <div class="seat-decor seat-bar" style="grid-column:10/11; grid-row:3;">Bar</div>
+      <div class="seat-decor seat-bar" style="grid-column:10/11; grid-row:4;">Bar</div>
+      <div class="seat-decor seat-entrance" style="grid-column:4/8; grid-row:6;">Entrance</div>
+      <div class="seat-decor seat-buffet" style="grid-column:1/11; grid-row:7;">Buffet</div>
+  ` : '';
+
+  const addForm = `
+    <form class="add-form" id="seatingTableForm">
+      <div class="field"><label>Table name/number</label><input id="st_label" placeholder="e.g. 20, or Family table" required></div>
+      <div class="field"><label>Seats</label><input id="st_capacity" type="number" min="1" value="10"></div>
+      <div class="submit-row">
+        <button type="button" class="btn-ghost" data-toggle="seatingTableForm">Cancel</button>
+        <button type="submit" class="btn-primary">Add table</button>
+      </div>
+    </form>`;
+
+  return `
+    <p style="font-size:.82rem; color:var(--ink-soft); margin:0 0 20px; max-width:64ch;">
+      Tap a table to see who's seated there, or add guests to it. Setting a guest's table here
+      updates the same "Table" field on their row in Guests — and typing a table number there
+      will show up here too.
+    </p>
+    ${eventId !== 'wedding' && !placed.length && !unplaced.length ? `
+      <p class="empty-row" style="text-align:center; padding:30px 0;">No seating plan for ${esc(THEME_COPY[eventId].title)} yet.</p>
+      ${ro ? '' : `<button class="add-toggle" data-toggle="seatingTableForm">+ Add a table</button>${addForm}`}
+    ` : `
+      ${ro ? '' : `<button class="add-toggle" data-toggle="seatingTableForm">+ Add a table</button>${addForm}`}
+      ${placed.length ? `
+        <div class="seating-grid-wrap">
+          <div class="seating-grid">
+            ${scaffold}
+            ${placed.map(pinHtml).join('')}
+          </div>
+        </div>` : ''}
+      ${unplaced.length ? `
+        <p class="eyebrow" style="margin:22px 0 10px;">Additional tables</p>
+        <div class="seat-overflow">${unplaced.map(pinHtml).join('')}</div>
+      ` : ''}
+    `}
+  `;
+}
+
+/* -- table drawer (click a table to see/assign guests) -- */
+function openTableDrawer(tableId){
+  state.seatingTableFor = tableId;
+  document.getElementById('tableDrawerModal').classList.add('show');
+  renderTableDrawerContent();
+}
+function closeTableDrawer(){
+  document.getElementById('tableDrawerModal').classList.remove('show');
+  state.seatingTableFor = null;
+}
+function refreshTableDrawer(){
+  if (state.seatingTableFor && document.getElementById('tableDrawerModal').classList.contains('show')){
+    renderTableDrawerContent();
+  }
+}
+function renderTableDrawerContent(){
+  const eventId = state.currentEvent;
+  const table = (state.data[eventId].seating_tables || []).find(t => t.id === state.seatingTableFor);
+  const body = document.getElementById('tableDrawerBody');
+  if (!table){ closeTableDrawer(); return; }
+  const ro = isReadOnly();
+  const seated = seatGuestsFor(table.label);
+  const seatedCount = seated.reduce((s,g) => s + guestHeadcount(g), 0);
+  const pct = Math.min(100, Math.round((seatedCount / table.capacity) * 100));
+  const over = seatedCount > table.capacity;
+
+  const seatedIds = new Set(seated.map(g => g.id));
+  const unassigned = (state.data[eventId].guests || [])
+    .filter(g => !seatedIds.has(g.id))
+    .sort((a,b) => a.name.localeCompare(b.name));
+
+  body.innerHTML = `
+    <p class="eyebrow">Table</p>
+    <h2>${ro ? esc(table.label) : `<input id="dr_label" value="${esc(table.label)}" style="font:inherit; font-weight:inherit; border:1px solid transparent; background:transparent; width:100%; padding:2px 0; border-radius:6px;">`}</h2>
+    ${table.zone ? `<p style="font-size:.78rem; color:var(--ink-soft); margin:-12px 0 16px;">${esc(table.zone)}</p>` : ''}
+
+    <div class="field" style="max-width:160px; margin-bottom:6px;">
+      <label>Seats</label>
+      ${ro ? roField(table.capacity, true) : `<input id="dr_capacity" type="number" min="1" value="${table.capacity}">`}
+    </div>
+    <div class="side-bar" style="margin:10px 0 4px;"><div class="side-bar-fill" style="width:${pct}%; ${over ? 'background:var(--danger);' : ''}"></div></div>
+    <p style="font-size:.8rem; color:${over ? 'var(--danger)' : 'var(--ink-soft)'}; margin:0 0 20px;">${seatedCount} of ${table.capacity} seated${over ? ' — over capacity' : ''}</p>
+
+    <p class="eyebrow" style="margin-bottom:10px;">Seated here (${seated.length})</p>
+    ${seated.length ? `
+      <div class="seat-guest-list">
+        ${seated.map(g => `
+          <div class="seat-guest-row">
+            <div>
+              <div class="seat-guest-name">${esc(g.name)}</div>
+              <div class="seat-guest-meta">${guestHeadcount(g)} ${guestHeadcount(g) === 1 ? 'person' : 'people'} &middot; ${esc(g.side || 'Her side')}</div>
+            </div>
+            ${ro ? '' : `<button type="button" class="del-btn" data-unseat="${g.id}" title="Remove from table">✕</button>`}
+          </div>`).join('')}
+      </div>` : `<p class="empty-row" style="padding:14px 0;">No one seated here yet.</p>`}
+
+    ${ro ? '' : `
+      <p class="eyebrow" style="margin:22px 0 10px;">Add a guest</p>
+      <div style="display:flex; gap:8px;">
+        <select id="dr_addGuest" style="flex:1;">
+          <option value="">Choose a guest…</option>
+          ${unassigned.map(g => `<option value="${g.id}">${esc(g.name)} (${guestMaxParty(g)})${g.table_number ? ` — currently ${esc(g.table_number)}` : ''}</option>`).join('')}
+        </select>
+        <button type="button" class="btn-primary" id="dr_addGuestBtn">Add</button>
+      </div>
+      <button type="button" class="btn-ghost" id="dr_deleteTable" style="margin-top:22px; color:var(--danger);">Delete this table</button>
+    `}
+  `;
+}
+
+function afterSeatingChange(){
+  renderSection();
 }
 
 async function fetchMoodCategories(eventId){
@@ -2860,6 +3096,8 @@ document.getElementById('sectionContent').addEventListener('click', e => {
     renderSection();
     return;
   }
+  const seatPin = e.target.closest('[data-table-id]');
+  if (seatPin){ openTableDrawer(seatPin.dataset.tableId); return; }
 });
 
 document.getElementById('sectionContent').addEventListener('focusin', e => {
@@ -2995,6 +3233,14 @@ document.getElementById('sectionContent').addEventListener('submit', e => {
   } else if (e.target.id === 'moodCatForm'){
     addMoodCategory(document.getElementById('mc_name').value);
     e.target.reset(); e.target.classList.remove('open');
+  } else if (e.target.id === 'seatingTableForm'){
+    insertRow('seating_tables', {
+      label: document.getElementById('st_label').value,
+      capacity: Number(document.getElementById('st_capacity').value || 10),
+      shape: 'round',
+      sort_order: Date.now()
+    });
+    e.target.reset(); e.target.classList.remove('open');
   }
 });
 
@@ -3058,11 +3304,11 @@ async function downloadFullBackup(){
   try{
     const backup = { exported_at: new Date().toISOString(), events: {} };
     for (const eventId of ['wedding', 'homecoming']){
-      const [vendors, tasks, guests, moodCategories] = await Promise.all([
+      const [vendors, tasks, guests, moodCategories, seatingTables] = await Promise.all([
         fetchTable('vendors', eventId), fetchTable('tasks', eventId),
-        fetchTable('guests', eventId), fetchTable('moodboard_categories', eventId)
+        fetchTable('guests', eventId), fetchTable('moodboard_categories', eventId), fetchTable('seating_tables', eventId)
       ]);
-      backup.events[eventId] = { ...state.events[eventId], vendors, tasks, guests, moodCategories };
+      backup.events[eventId] = { ...state.events[eventId], vendors, tasks, guests, moodCategories, seatingTables };
     }
     const blob = new Blob([JSON.stringify(backup, null, 2)], { type: 'application/json' });
     const url = URL.createObjectURL(blob);
@@ -3180,10 +3426,10 @@ async function init(){
   evRows.forEach(r => state.events[r.id] = r);
 
   for (const ev of ['wedding','homecoming']){
-    const [vendors, tasks, guests, moodCategories] = await Promise.all([
-      fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodCategories(ev)
+    const [vendors, tasks, guests, moodCategories, seatingTables] = await Promise.all([
+      fetchTable('vendors', ev), fetchTable('tasks', ev), fetchTable('guests', ev), fetchMoodCategories(ev), fetchTable('seating_tables', ev)
     ]);
-    state.data[ev] = { vendors, tasks, guests, moodCategories, moodPhotos:{}, vendorDocs:{} };
+    state.data[ev] = { vendors, tasks, guests, moodCategories, moodPhotos:{}, vendorDocs:{}, seating_tables: seatingTables };
   }
   renderSummary();
   renderSection();
@@ -3427,6 +3673,54 @@ document.getElementById('vdocsGrid').addEventListener('click', e => {
 document.addEventListener('keydown', e => {
   if (e.key === 'Escape' && document.getElementById('vendorDocsModal').classList.contains('show')) closeVendorDocsModal();
   if (e.key === 'Escape' && document.getElementById('auditHistoryModal').classList.contains('show')) closeAuditHistory();
+  if (e.key === 'Escape' && document.getElementById('tableDrawerModal').classList.contains('show')) closeTableDrawer();
+});
+
+document.getElementById('tableDrawerClose').addEventListener('click', closeTableDrawer);
+document.getElementById('tableDrawerModal').addEventListener('click', e => {
+  if (e.target.id === 'tableDrawerModal') closeTableDrawer();
+});
+document.getElementById('tableDrawerBody').addEventListener('click', async e => {
+  const unseat = e.target.closest('[data-unseat]');
+  if (unseat){
+    await updateRow('guests', unseat.dataset.unseat, { table_number: '' });
+    afterSeatingChange();
+    return;
+  }
+  if (e.target.id === 'dr_addGuestBtn'){
+    const sel = document.getElementById('dr_addGuest');
+    const guestId = sel.value;
+    if (!guestId) return;
+    const table = (state.data[state.currentEvent].seating_tables || []).find(t => t.id === state.seatingTableFor);
+    if (!table) return;
+    await updateRow('guests', guestId, { table_number: table.label });
+    afterSeatingChange();
+    return;
+  }
+  if (e.target.id === 'dr_deleteTable'){
+    const table = (state.data[state.currentEvent].seating_tables || []).find(t => t.id === state.seatingTableFor);
+    if (!table) return;
+    if (!confirm(`Delete "${table.label}"? Guests seated here keep their table name set, they just won't show on the plan anymore.`)) return;
+    await deleteRow('seating_tables', table.id);
+    closeTableDrawer();
+  }
+});
+document.getElementById('tableDrawerBody').addEventListener('change', async e => {
+  const table = (state.data[state.currentEvent].seating_tables || []).find(t => t.id === state.seatingTableFor);
+  if (!table) return;
+  if (e.target.id === 'dr_capacity'){
+    const val = Number(e.target.value || 1);
+    await updateRow('seating_tables', table.id, { capacity: val });
+    afterSeatingChange();
+  } else if (e.target.id === 'dr_label'){
+    const newLabel = e.target.value.trim();
+    if (!newLabel || newLabel === table.label) { e.target.value = table.label; return; }
+    const oldLabel = table.label;
+    // keep every guest currently seated at this table pointed at its new name
+    await Promise.all(seatGuestsFor(oldLabel).map(g => updateRow('guests', g.id, { table_number: newLabel })));
+    await updateRow('seating_tables', table.id, { label: newLabel });
+    afterSeatingChange();
+  }
 });
 
 const UNLOCK_KEY = 'wedplanner_unlocked';
