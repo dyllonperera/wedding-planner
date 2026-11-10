@@ -1080,6 +1080,10 @@
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><path d="M7 10l5 5 5-5"/><path d="M12 15V3"/></svg>
         Download backup
       </button>
+      <button class="admin-menu-item" id="vendorZipBtn" style="display:none;">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/><path d="M12 11v5M9.5 14l2.5 2.5 2.5-2.5"/></svg>
+        Download all vendor files (.zip)
+      </button>
       <button class="admin-menu-item" id="auditHistoryBtn" style="display:none;">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 3"/></svg>
         Edit history
@@ -2981,6 +2985,8 @@ function renderFamilyEditToggle(){
   if (familyLockBtn) familyLockBtn.style.display = isAdmin ? 'none' : 'flex';
   const backupBtn = document.getElementById('backupBtn');
   if (backupBtn) backupBtn.style.display = isAdmin ? 'flex' : 'none';
+  const zipBtn = document.getElementById('vendorZipBtn');
+  if (zipBtn) zipBtn.style.display = isAdmin ? 'flex' : 'none';
   const auditBtn = document.getElementById('auditHistoryBtn');
   if (auditBtn) auditBtn.style.display = isAdmin ? 'flex' : 'none';
 
@@ -3397,6 +3403,90 @@ document.getElementById('adminMenuPanel').addEventListener('click', e => {
     document.getElementById('adminMenuPanel').classList.remove('show');
   }
 });
+
+/* ---------------- download every vendor file as one .zip ---------------- */
+// Layout inside the zip:  Wedding/<Vendor>/<file>   and   Homecoming/<Vendor>/<file>
+const JSZIP_URL = 'https://cdn.jsdelivr.net/npm/jszip@3.10.1/dist/jszip.min.js';
+function loadJsZip(){
+  if (window.JSZip) return Promise.resolve(window.JSZip);
+  return new Promise((resolve, reject) => {
+    const s = document.createElement('script');
+    s.src = JSZIP_URL;
+    s.onload = () => window.JSZip ? resolve(window.JSZip) : reject(new Error('zip library did not start'));
+    s.onerror = () => reject(new Error('could not load the zip library'));
+    document.head.appendChild(s);
+  });
+}
+// Vendor names can contain line breaks, slashes or stray spaces, none of which survive as folder names.
+function safeZipName(s, fallback){
+  const cleaned = String(s || '').replace(/[\u0000-\u001f\u007f\\/:*?"<>|]+/g, ' ').replace(/\s+/g, ' ').trim().replace(/[. ]+$/, '').slice(0, 80).trim();
+  return cleaned || fallback;
+}
+function uniqueZipName(used, name){
+  const dot = name.lastIndexOf('.');
+  const base = dot > 0 ? name.slice(0, dot) : name, ext = dot > 0 ? name.slice(dot) : '';
+  let candidate = name, n = 2;
+  while (used.has(candidate.toLowerCase())) candidate = `${base} (${n++})${ext}`;
+  used.add(candidate.toLowerCase());
+  return candidate;
+}
+async function downloadAllVendorFiles(){
+  const btn = document.getElementById('vendorZipBtn');
+  btn.disabled = true; btn.style.opacity = '.5';
+  try{
+    toast('Finding your vendor files…');
+    const JSZip = await loadJsZip();
+    const jobs = [];
+    for (const eventId of ['wedding', 'homecoming']){
+      const eventFolder = eventId === 'wedding' ? 'Wedding' : 'Homecoming';
+      const vendors = state.data[eventId].vendors || [];
+      const fileLists = await Promise.all(vendors.map(v => fetchVendorDocs(eventId, v.id)));
+      const usedFolders = new Set();
+      vendors.forEach((v, i) => {
+        if (!fileLists[i].length) return;
+        const folder = uniqueZipName(usedFolders, safeZipName(v.name, 'Vendor'));
+        const usedFiles = new Set();
+        fileLists[i].forEach(f => {
+          const fileName = uniqueZipName(usedFiles, safeZipName(f.name.replace(/^\d+-/, ''), 'file'));
+          jobs.push({ path: `${eventFolder}/${folder}/${fileName}`, url: f.url });
+        });
+      });
+    }
+    if (!jobs.length){ toast('No vendor files found'); return; }
+
+    const zip = new JSZip();
+    const failed = [];
+    let done = 0, next = 0;
+    const worker = async () => {
+      while (next < jobs.length){
+        const job = jobs[next++];
+        try{
+          const res = await fetch(job.url);
+          if (!res.ok) throw new Error('HTTP ' + res.status);
+          zip.file(job.path, await res.blob());
+        } catch(e){ failed.push(job.path); }
+        toast(`Downloading files… ${++done} of ${jobs.length}`);
+      }
+    };
+    await Promise.all([worker(), worker(), worker(), worker()]);
+    if (failed.length === jobs.length) throw new Error('none of the files could be fetched');
+    if (failed.length) zip.file('_could_not_download.txt', 'These files could not be downloaded, try them from the vendor window instead:\n\n' + failed.sort().join('\n') + '\n');
+
+    toast('Building zip…');
+    const blob = await zip.generateAsync({ type: 'blob', compression: 'STORE' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url; a.download = `vendor-files-${new Date().toISOString().slice(0, 10)}.zip`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 30000);
+    toast(failed.length ? `Zip ready — ${failed.length} file(s) could not be included` : `Zip ready — ${jobs.length} files`, !!failed.length);
+  } catch(e){
+    toast('Could not build the zip: ' + e.message, true);
+  } finally {
+    btn.disabled = false; btn.style.opacity = '';
+  }
+}
+document.getElementById('vendorZipBtn').addEventListener('click', downloadAllVendorFiles);
 
 document.getElementById('backupBtn').addEventListener('click', downloadFullBackup);
 document.getElementById('familyEditBtn').addEventListener('click', toggleFamilyEditable);
